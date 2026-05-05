@@ -23,3 +23,13 @@ O projeto adota a arquitetura de **Monolito Modular (Modular Monolith)** combina
 - **Framework:** Spring Boot (Web, Data JPA, Validation)
 - **Gerenciador de Build:** Maven
 - **Bancos de Dados:** PostgreSQL
+
+## 🌿 Branches
+
+| Branch | Descrição |
+|--------|-----------|
+| `main` | Código em produção, estável e revisado |
+| `staging` | Ambiente de homologação, pré-produção |
+| `develop` | Branch principal de desenvolvimento |
+
+> Novas funcionalidades devem ser criadas a partir de `develop` seguindo o padrão `feature/nome-da-funcionalidade`
