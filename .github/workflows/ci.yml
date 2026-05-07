@@ -33,6 +33,26 @@ jobs:
     if: always() && (needs.validate-branch-flow.result == 'success' || needs.validate-branch-flow.result == 'skipped')
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: agro_backend
+          POSTGRES_USER: agro
+          POSTGRES_PASSWORD: agro
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U agro -d agro_backend"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/agro_backend
+      SPRING_DATASOURCE_USERNAME: agro
+      SPRING_DATASOURCE_PASSWORD: agro
+
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
