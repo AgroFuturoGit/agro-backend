@@ -129,7 +129,7 @@ src/main/resources/db/migration/
 As migrations devem seguir o padrão de nome do Flyway, por exemplo:
 
 ```text
-V1__init_schema.sql
+V1__create_users_table.sql
 ```
 
 ### Rodando os testes
