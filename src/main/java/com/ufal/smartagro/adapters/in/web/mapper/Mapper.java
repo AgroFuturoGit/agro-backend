@@ -1,6 +1,7 @@
 package com.ufal.smartagro.adapters.in.web.mapper;
 
 import com.ufal.smartagro.adapters.in.web.dto.auth.LoginResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.domain.model.User;
 
@@ -18,5 +19,17 @@ public class Mapper {
 
     public static LoginResponseDTO toLoginResponseDTO(String token, User user){
         return new LoginResponseDTO(token, toUserResponseDTO(user));
+    }
+
+    public static User toUser(UserRegisterDTO dto, String encodedPassword) {
+        return new User(
+                null,
+                dto.fullName(),
+                dto.email(),
+                encodedPassword,
+                dto.cpf(),
+                dto.dateOfBirth(),
+                dto.role()
+        );
     }
 }
