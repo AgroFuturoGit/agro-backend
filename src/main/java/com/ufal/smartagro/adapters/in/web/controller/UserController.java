@@ -3,6 +3,7 @@ package com.ufal.smartagro.adapters.in.web.controller;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.application.service.user.UserDeleteUseCase;
+import com.ufal.smartagro.application.service.user.FindUserByIdUseCase;
 import com.ufal.smartagro.application.service.user.UserRegisterUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
@@ -22,6 +23,7 @@ public class UserController {
 
     private final UserRegisterUseCase userRegisterUseCase;
     private final UserDeleteUseCase userDeleteUseCase;
+    private final FindUserByIdUseCase findUserByIdUseCase;
     private final UserRepository userRepository;
 
     @PostMapping("/register")
@@ -46,6 +48,18 @@ public class UserController {
 
         userDeleteUseCase.delete(id, loggedUser);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UserResponseDTO> findById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+
+        UserResponseDTO response = findUserByIdUseCase.findById(id, loggedUser);
+        return ResponseEntity.ok(response);
     }
 }
 
