@@ -3,6 +3,7 @@ package com.ufal.smartagro.adapters.in.web.controller;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserUpdateDTO;
+import com.ufal.smartagro.application.service.user.FindAllUsersUseCase;
 import com.ufal.smartagro.application.service.user.UserDeleteUseCase;
 import com.ufal.smartagro.application.service.user.FindUserByIdUseCase;
 import com.ufal.smartagro.application.service.user.UserRegisterUseCase;
@@ -18,6 +19,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/users")
@@ -27,6 +30,7 @@ public class UserController {
     private final UserDeleteUseCase userDeleteUseCase;
     private final FindUserByIdUseCase findUserByIdUseCase;
     private final UserUpdateUseCase userUpdateUseCase;
+    private final FindAllUsersUseCase findAllUsersUseCase;
     private final UserRepository userRepository;
 
     @PostMapping("/register")
@@ -74,6 +78,17 @@ public class UserController {
                 .orElseThrow(UserNotFoundException::new);
 
         UserResponseDTO response = findUserByIdUseCase.findById(id, loggedUser);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<UserResponseDTO>> findAll(
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+
+        List<UserResponseDTO> response = findAllUsersUseCase.findAll(loggedUser);
         return ResponseEntity.ok(response);
     }
 }
