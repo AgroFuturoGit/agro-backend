@@ -9,8 +9,8 @@ public class Mapper {
     public static UserResponseDTO toUserResponseDTO(User user) {
         return new UserResponseDTO(
                 user.getId(),
-                user.getEmail(),
                 user.getFullName(),
+                user.getEmail(),
                 user.getCpf(),
                 user.getRole(),
                 user.getDateOfBirth());
