@@ -8,6 +8,7 @@ import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
@@ -15,6 +16,7 @@ public class UserUpdateUseCase {
 
     private final UserRepository userRepository;
 
+    @Transactional
     public UserResponseDTO update(UserUpdateDTO dto, User loggedUser) {
         User existingUser = userRepository.findById(loggedUser.getId())
                 .orElseThrow(UserNotFoundException::new);

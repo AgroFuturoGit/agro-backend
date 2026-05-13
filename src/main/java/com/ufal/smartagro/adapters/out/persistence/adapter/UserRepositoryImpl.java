@@ -55,8 +55,8 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public void deleteById(Long id) {
-        jpaUserRepository.deleteById(id);
+    public void softDelete(Long id) {
+        jpaUserRepository.softDeleteById(id);
     }
 
     @Override

@@ -7,6 +7,7 @@ import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
@@ -14,6 +15,7 @@ public class UserDeleteUseCase {
 
     private final UserRepository userRepository;
 
+    @Transactional
     public void delete(Long userId, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException();
@@ -22,6 +24,6 @@ public class UserDeleteUseCase {
         userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
 
-        userRepository.deleteById(userId);
+        userRepository.softDelete(userId);
     }
 }
