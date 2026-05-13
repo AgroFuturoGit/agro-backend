@@ -1,8 +1,10 @@
 package com.ufal.smartagro.adapters.in.web.controller;
 
+import com.ufal.smartagro.adapters.in.web.dto.user.AdminUserUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserUpdateDTO;
+import com.ufal.smartagro.application.service.user.AdminUserUpdateUseCase;
 import com.ufal.smartagro.application.service.user.FindAllUsersUseCase;
 import com.ufal.smartagro.application.service.user.UserDeleteUseCase;
 import com.ufal.smartagro.application.service.user.FindUserByIdUseCase;
@@ -30,6 +32,7 @@ public class UserController {
     private final UserDeleteUseCase userDeleteUseCase;
     private final FindUserByIdUseCase findUserByIdUseCase;
     private final UserUpdateUseCase userUpdateUseCase;
+    private final AdminUserUpdateUseCase adminUserUpdateUseCase;
     private final FindAllUsersUseCase findAllUsersUseCase;
     private final UserRepository userRepository;
 
@@ -66,6 +69,19 @@ public class UserController {
                 .orElseThrow(UserNotFoundException::new);
 
         UserResponseDTO response = userUpdateUseCase.update(dto, loggedUser);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<UserResponseDTO> adminUpdate(
+            @PathVariable Long id,
+            @Valid @RequestBody AdminUserUpdateDTO dto,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+
+        UserResponseDTO response = adminUserUpdateUseCase.update(id, dto, loggedUser);
         return ResponseEntity.ok(response);
     }
 
