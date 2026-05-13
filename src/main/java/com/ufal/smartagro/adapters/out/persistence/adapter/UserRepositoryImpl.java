@@ -51,4 +51,9 @@ public class UserRepositoryImpl implements UserRepository {
     public boolean existsByCpf(String cpf) {
         return jpaUserRepository.existsByCpf(cpf);
     }
+
+    @Override
+    public void deleteById(Long id) {
+        jpaUserRepository.deleteById(id);
+    }
 }
