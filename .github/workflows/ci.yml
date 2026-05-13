@@ -52,6 +52,7 @@ jobs:
       SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/agro_backend
       SPRING_DATASOURCE_USERNAME: agro
       SPRING_DATASOURCE_PASSWORD: agro
+      JWT_SECRET: ci-secret-for-tests-only-not-used-in-production
 
     steps:
       - name: Checkout do código
