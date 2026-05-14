@@ -28,7 +28,7 @@ jobs:
           exit 1
 
   build-and-test:
-    name: Build e Testes
+    name: Build, Lint e Testes
     needs: validate-branch-flow
     if: always() && (needs.validate-branch-flow.result == 'success' || needs.validate-branch-flow.result == 'skipped')
     runs-on: ubuntu-latest
