@@ -19,7 +19,7 @@ public class FindAllUsersUseCase {
     private final UserRepository userRepository;
 
     public List<UserResponseDTO> findAll(User loggedUser) {
-        if (loggedUser.getRole() != Role.ADMIN) {
+        if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.MANAGER) {
             throw new AccessDeniedException();
         }
 
