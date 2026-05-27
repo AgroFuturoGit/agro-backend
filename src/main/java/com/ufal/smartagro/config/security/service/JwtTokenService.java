@@ -28,6 +28,7 @@ public class JwtTokenService {
                 .subject(user.getUsername())
                 .claim("id", user.getId())
                 .claim("name", user.getName())
+                .claim("role", user.getUser().getRole().name())
                 .issuedAt(new Date())
                 .expiration(Date.from(Instant.now().plus(4, ChronoUnit.HOURS)))
                 .signWith(getSigningKey())
