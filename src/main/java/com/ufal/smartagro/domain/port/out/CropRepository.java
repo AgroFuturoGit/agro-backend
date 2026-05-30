@@ -4,4 +4,6 @@ import com.ufal.smartagro.domain.model.Crop;
 
 public interface CropRepository {
     Crop save(Crop crop);
+
+    boolean existsByNameAndVariety(String name, String variety);
 }

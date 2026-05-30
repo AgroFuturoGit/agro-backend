@@ -21,4 +21,9 @@ public class CropRepositoryImpl implements CropRepository {
         CropEntity savedEntity = jpaCropRepository.save(entity);
         return cropMapper.toDomain(savedEntity);
     }
+
+    @Override
+    public boolean existsByNameAndVariety(String name, String variety){
+        return jpaCropRepository.existsByNameAndVariety(name, variety);
+    }
 }

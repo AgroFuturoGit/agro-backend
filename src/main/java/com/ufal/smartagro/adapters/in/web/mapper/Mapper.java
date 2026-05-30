@@ -1,8 +1,11 @@
 package com.ufal.smartagro.adapters.in.web.mapper;
 
 import com.ufal.smartagro.adapters.in.web.dto.auth.LoginResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.crop.CropRegisterDTO;
+import com.ufal.smartagro.adapters.in.web.dto.crop.CropResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
+import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.User;
 
 public class Mapper {
@@ -30,6 +33,24 @@ public class Mapper {
                 dto.cpf(),
                 dto.dateOfBirth(),
                 dto.role()
+        );
+    }
+
+    public static CropResponseDTO toCropResponseDTO(Crop crop) {
+        return new CropResponseDTO(
+                crop.getId(),
+                crop.getName(),
+                crop.getVariety(),
+                crop.getIsPriority()
+        );
+    }
+
+    public static Crop toCrop(CropRegisterDTO dto) {
+        return new Crop(
+                null,
+                dto.name(),
+                dto.variety(),
+                dto.isPriority()
         );
     }
 }

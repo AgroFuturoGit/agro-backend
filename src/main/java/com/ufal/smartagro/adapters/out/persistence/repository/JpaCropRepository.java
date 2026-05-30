@@ -8,4 +8,5 @@ import java.util.UUID;
 
 @Repository
 public interface JpaCropRepository extends JpaRepository<CropEntity, UUID> {
+    boolean existsByNameAndVariety(String name, String variety);
 }
