@@ -3,6 +3,7 @@ package com.ufal.smartagro.adapters.in.web.mapper;
 import com.ufal.smartagro.adapters.in.web.dto.auth.LoginResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.crop.CropRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.crop.CropResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.crop.CropUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.domain.model.Crop;
@@ -23,6 +24,8 @@ public class Mapper {
     public static LoginResponseDTO toLoginResponseDTO(String token, User user){
         return new LoginResponseDTO(token, toUserResponseDTO(user));
     }
+
+
 
     public static User toUser(UserRegisterDTO dto, String encodedPassword) {
         return new User(
@@ -48,6 +51,15 @@ public class Mapper {
     public static Crop toCrop(CropRegisterDTO dto) {
         return new Crop(
                 null,
+                dto.name(),
+                dto.variety(),
+                dto.isPriority()
+        );
+    }
+
+    public static Crop toCrop(CropUpdateDTO dto) {
+        return new Crop(
+                null, // ID is not part of the update DTO
                 dto.name(),
                 dto.variety(),
                 dto.isPriority()
