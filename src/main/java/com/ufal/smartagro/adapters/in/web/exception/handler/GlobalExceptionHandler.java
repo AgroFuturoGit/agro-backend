@@ -53,6 +53,17 @@ public class GlobalExceptionHandler {
         ));
     }
 
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiError> handleSpringAccessDenied(
+            org.springframework.security.access.AccessDeniedException ex, HttpServletRequest httpServletRequest){
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiError(
+                HttpStatus.FORBIDDEN.value(),
+                "Acesso negado. Você não tem permissão para realizar esta ação.",
+                httpServletRequest.getRequestURI(),
+                LocalDateTime.now()
+        ));
+    }
+
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<ApiError> handleEmailAlreadyExists(
             EmailAlreadyExistsException ex, HttpServletRequest httpServletRequest){

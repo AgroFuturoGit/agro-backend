@@ -1,8 +1,10 @@
 package com.ufal.smartagro.adapters.in.web.controller;
 
+import com.ufal.smartagro.adapters.in.web.dto.user.AdminUserUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserUpdateDTO;
+import com.ufal.smartagro.application.service.user.AdminUserUpdateUseCase;
 import com.ufal.smartagro.application.service.user.FindAllUsersUseCase;
 import com.ufal.smartagro.application.service.user.UserDeleteUseCase;
 import com.ufal.smartagro.application.service.user.FindUserByIdUseCase;
@@ -16,6 +18,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,9 +33,11 @@ public class UserController {
     private final UserDeleteUseCase userDeleteUseCase;
     private final FindUserByIdUseCase findUserByIdUseCase;
     private final UserUpdateUseCase userUpdateUseCase;
+    private final AdminUserUpdateUseCase adminUserUpdateUseCase;
     private final FindAllUsersUseCase findAllUsersUseCase;
     private final UserRepository userRepository;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/register")
     public ResponseEntity<UserResponseDTO> register(
             @Valid @RequestBody UserRegisterDTO dto,
@@ -45,6 +50,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable Long id,
@@ -69,6 +75,21 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{id}")
+    public ResponseEntity<UserResponseDTO> adminUpdate(
+            @PathVariable Long id,
+            @Valid @RequestBody AdminUserUpdateDTO dto,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+
+        UserResponseDTO response = adminUserUpdateUseCase.update(id, dto, loggedUser);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDTO> findById(
             @PathVariable Long id,
@@ -81,6 +102,7 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @GetMapping
     public ResponseEntity<List<UserResponseDTO>> findAll(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
