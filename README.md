@@ -26,19 +26,21 @@ O projeto adota a arquitetura de **Monolito Modular (Modular Monolith)** combina
 - **Migrations:** Flyway
 - **Ambiente local:** Docker Compose para o PostgreSQL
 
-## 🚀 Rodando Localmente
+## 🚀 Rodando em Desenvolvimento
+
+A estratégia de desenvolvimento é: **só o banco roda em Docker**; backend e frontend rodam direto na máquina para ter hot reload e debug rápido.
+
+> Para subir tudo em containers (cenário de produção), veja [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ### Pré-requisitos
-
-Para executar o projeto localmente, instale:
 
 - **Java JDK 21**
 - **Git**
 - **Docker** e **Docker Compose**
 
-Não é necessário instalar Maven separadamente, pois o projeto já possui o **Maven Wrapper** (`mvnw`).
+Não é necessário instalar Maven separadamente — o projeto já tem o **Maven Wrapper** (`mvnw`).
 
-Em sistemas baseados em Ubuntu, como Zorin OS:
+Em sistemas baseados em Ubuntu:
 
 ```bash
 sudo apt update
@@ -48,106 +50,75 @@ sudo apt install openjdk-21-jdk git
 Confirme a instalação:
 
 ```bash
-java -version
-javac -version
+java -version    # deve ser 21.x
 ```
 
-As versões exibidas devem ser `21.x`.
-
-### Preparando o projeto
-
-Clone o repositório e entre na pasta do projeto:
+### 1. Clonar e preparar
 
 ```bash
 git clone <url-do-repositorio>
 cd agro-backend
+cp .env.example .env
+chmod +x mvnw   # se necessário
 ```
 
-Caso o Maven Wrapper ainda não tenha permissão de execução, execute:
+Edite `.env` se quiser sobrescrever os valores padrão (usuário, senha, porta).
+
+### 2. Subir o banco de dados
 
 ```bash
-chmod +x mvnw
+docker compose up -d
 ```
 
-Confirme que o Maven Wrapper está funcionando:
+O PostgreSQL sobe na porta `${DB_PORT}` (padrão `5433` para não conflitar com um Postgres local em 5432). Healthcheck e volume persistente já estão configurados.
 
-```bash
-./mvnw -v
-```
-
-Na primeira execução, o Maven pode baixar as dependências do projeto.
-
-### Subindo o banco de dados
-
-O PostgreSQL roda via Docker Compose com os valores padrão:
-
-| Campo | Valor |
-|-------|-------|
-| Banco | `agro_backend` |
-| Usuário | `agro` |
-| Senha | `agro` |
-| Porta | `5432` |
-
-Para iniciar o banco:
-
-```bash
-docker compose up -d db
-```
-
-Para acompanhar os logs:
+Acompanhar os logs:
 
 ```bash
 docker compose logs -f db
 ```
 
-Para parar o banco:
+Parar (mantendo o volume):
 
 ```bash
 docker compose down
 ```
 
-### Executando a aplicação
+Parar e **apagar os dados**:
 
-Para rodar a aplicação localmente:
+```bash
+docker compose down -v
+```
+
+### 3. Rodar a aplicação
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-A aplicação permanece em execução com o servidor Web embutido e escuta, por padrão, em:
+A API fica disponível em `http://localhost:8080`. O Flyway aplica as migrations de `src/main/resources/db/migration/` automaticamente no startup.
 
-```text
-http://localhost:8080
-```
+> Nome de migration segue o padrão Flyway: `V1__create_users_table.sql`.
 
-O Flyway está ativado e procura migrations em:
+### 4. Rodar o frontend (em outro terminal)
 
-```text
-src/main/resources/db/migration/
-```
-
-As migrations devem seguir o padrão de nome do Flyway, por exemplo:
-
-```text
-V1__create_users_table.sql
-```
-
-### Rodando os testes
+O frontend mora no repo irmão [agro-frontend](../agro-frontend). Clone-o lado a lado e rode:
 
 ```bash
-./mvnw test
+cd ../agro-frontend
+cp .env.example .env.local
+npm install
+npm run dev
 ```
 
-### Gerando o arquivo `.jar`
+Frontend em `http://localhost:3000`, falando com a API em `http://localhost:8080`.
+
+### Outros comandos úteis
 
 ```bash
-./mvnw package
-```
-
-O arquivo gerado ficará na pasta `target/`. Para executá-lo:
-
-```bash
-java -jar target/*.jar
+./mvnw test          # rodar testes
+./mvnw package       # gerar .jar em target/
+java -jar target/*.jar  # rodar o jar empacotado
 ```
 
 ## 🌿 Branches
@@ -174,5 +145,8 @@ Adotar o padrão Conventional Commits.
 - test: testes
 - chore: tarefas gerais/configuração
 
-## Como rodar
-> A definir
+## 🚢 Deploy
+
+Para subir o banco e o backend em containers (produção), ver [DEPLOYMENT.md](DEPLOYMENT.md).
+
+O frontend é deployado de forma independente no repo [agro-frontend](../agro-frontend).
