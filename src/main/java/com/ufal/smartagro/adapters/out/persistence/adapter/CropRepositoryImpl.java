@@ -7,6 +7,7 @@ import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.port.out.CropRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -42,5 +43,11 @@ public class CropRepositoryImpl implements CropRepository {
         return jpaCropRepository.findAll().stream()
                 .map(cropMapper::toDomain)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void deleteById(UUID id) {
+        jpaCropRepository.softDeleteById(id);
     }
 }

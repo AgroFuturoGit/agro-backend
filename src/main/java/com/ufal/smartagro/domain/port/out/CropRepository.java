@@ -14,4 +14,6 @@ public interface CropRepository {
     Optional<Crop> findById(UUID id);
 
     List<Crop> findAll();
+
+    void deleteById(UUID id);
 }

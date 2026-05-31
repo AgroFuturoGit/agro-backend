@@ -8,6 +8,7 @@ import com.ufal.smartagro.application.service.crop.CropFindAllUseCase;
 import com.ufal.smartagro.application.service.crop.CropFindByIdUseCase;
 import com.ufal.smartagro.application.service.crop.CropRegisterUseCase;
 import com.ufal.smartagro.application.service.crop.CropUpdateUseCase;
+import com.ufal.smartagro.application.service.crop.CropDeleteUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.Crop;
@@ -33,6 +34,7 @@ public class CropController {
     private final CropUpdateUseCase cropUpdateUseCase;
     private final CropFindByIdUseCase cropFindByIdUseCase;
     private final CropFindAllUseCase cropFindAllUseCase;
+    private final CropDeleteUseCase cropDeleteUseCase;
     private final UserRepository userRepository;
 
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
@@ -89,5 +91,14 @@ public class CropController {
                 .map(Mapper::toCropResponseDTO)
                 .toList();
         return ResponseEntity.ok(responseDTOs);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+        cropDeleteUseCase.execute(id, loggedUser);
+        return ResponseEntity.noContent().build();
     }
 }
