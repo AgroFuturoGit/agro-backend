@@ -4,6 +4,8 @@ import com.ufal.smartagro.adapters.in.web.dto.crop.CropRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.crop.CropResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.crop.CropUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+import com.ufal.smartagro.application.service.crop.CropFindAllUseCase;
+import com.ufal.smartagro.application.service.crop.CropFindByIdUseCase;
 import com.ufal.smartagro.application.service.crop.CropRegisterUseCase;
 import com.ufal.smartagro.application.service.crop.CropUpdateUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
@@ -19,15 +21,18 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/crop")
+@RequestMapping("/crops")
 public class CropController {
 
     private final CropRegisterUseCase cropRegisterUseCase;
     private final CropUpdateUseCase cropUpdateUseCase;
+    private final CropFindByIdUseCase cropFindByIdUseCase;
+    private final CropFindAllUseCase cropFindAllUseCase;
     private final UserRepository userRepository;
 
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
@@ -62,5 +67,27 @@ public class CropController {
         CropResponseDTO responseDTO = Mapper.toCropResponseDTO(updatedCrop);
 
         return ResponseEntity.ok(responseDTO);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @GetMapping("/{id}")
+    public ResponseEntity<CropResponseDTO> findById(@PathVariable UUID id, @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+        Crop crop = cropFindByIdUseCase.execute(id, loggedUser);
+        CropResponseDTO responseDTO = Mapper.toCropResponseDTO(crop);
+        return ResponseEntity.ok(responseDTO);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @GetMapping
+    public ResponseEntity<List<CropResponseDTO>> findAll(@AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+        List<Crop> crops = cropFindAllUseCase.execute(loggedUser);
+        List<CropResponseDTO> responseDTOs = crops.stream()
+                .map(Mapper::toCropResponseDTO)
+                .toList();
+        return ResponseEntity.ok(responseDTOs);
     }
 }

@@ -8,6 +8,11 @@ import com.ufal.smartagro.domain.port.out.CropRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 @Component
 @RequiredArgsConstructor
 public class CropRepositoryImpl implements CropRepository {
@@ -25,5 +30,17 @@ public class CropRepositoryImpl implements CropRepository {
     @Override
     public boolean existsByNameAndVariety(String name, String variety){
         return jpaCropRepository.existsByNameAndVariety(name, variety);
+    }
+
+    @Override
+    public Optional<Crop> findById(UUID id) {
+        return jpaCropRepository.findById(id).map(cropMapper::toDomain);
+    }
+
+    @Override
+    public List<Crop> findAll() {
+        return jpaCropRepository.findAll().stream()
+                .map(cropMapper::toDomain)
+                .collect(Collectors.toList());
     }
 }
