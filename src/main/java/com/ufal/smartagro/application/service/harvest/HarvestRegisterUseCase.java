@@ -22,6 +22,10 @@ public class HarvestRegisterUseCase {
             throw new AccessDeniedException("Usuário não tem permissão para registar uma safra.");
         }
 
+        if (harvest.getStartDate().isAfter(harvest.getEndDate())) {
+            throw new IllegalArgumentException("A data de início não pode ser superior à data de término.");
+        }
+
         if (harvestRepository.existsByLabel(harvest.getLabel())) {
             throw new HarvestAlreadyExistsException("Já existe uma safra com o rótulo: " + harvest.getLabel());
         }

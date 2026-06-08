@@ -28,6 +28,10 @@ public class HarvestUpdateUseCase {
         Harvest existingHarvest = harvestRepository.findById(id)
                 .orElseThrow(HarvestNotFoundException::new);
 
+        if (updatedHarvestData.getStartDate().isAfter(updatedHarvestData.getEndDate())) {
+            throw new IllegalArgumentException("A data de início não pode ser superior à data de término.");
+        }
+
         boolean isLabelChanged = !existingHarvest.getLabel().equals(updatedHarvestData.getLabel());
         if (isLabelChanged && harvestRepository.existsByLabel(updatedHarvestData.getLabel())) {
             throw new HarvestAlreadyExistsException("Já existe uma safra com o rótulo: " + updatedHarvestData.getLabel());
