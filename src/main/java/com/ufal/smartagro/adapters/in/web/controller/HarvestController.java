@@ -4,6 +4,8 @@ import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+import com.ufal.smartagro.application.service.harvest.HarvestFindAllUseCase;
+import com.ufal.smartagro.application.service.harvest.HarvestFindByIdUseCase;
 import com.ufal.smartagro.application.service.harvest.HarvestRegisterUseCase;
 import com.ufal.smartagro.application.service.harvest.HarvestUpdateUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
@@ -19,6 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -28,6 +31,8 @@ public class HarvestController {
 
     private final HarvestRegisterUseCase harvestRegisterUseCase;
     private final HarvestUpdateUseCase harvestUpdateUseCase;
+    private final HarvestFindAllUseCase harvestFindAllUseCase;
+    private final HarvestFindByIdUseCase harvestFindByIdUseCase;
     private final UserRepository userRepository;
 
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
@@ -60,5 +65,34 @@ public class HarvestController {
         HarvestResponseDTO responseDTO = Mapper.toHarvestResponseDTO(updatedHarvest);
 
         return ResponseEntity.ok(responseDTO);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @GetMapping("/{id}")
+    public ResponseEntity<HarvestResponseDTO> findById(@PathVariable UUID id,
+                                                       @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        User loggedUser = userRepository.findById(userDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+
+        Harvest harvest = harvestFindByIdUseCase.execute(id, loggedUser);
+
+        HarvestResponseDTO responseDTO = Mapper.toHarvestResponseDTO(harvest);
+
+        return ResponseEntity.ok(responseDTO);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @GetMapping
+    public ResponseEntity<List<HarvestResponseDTO>> findAll(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        User loggedUser = userRepository.findById(userDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+
+        List<Harvest> harvests = harvestFindAllUseCase.execute(loggedUser);
+
+        List<HarvestResponseDTO> responseDTOs = harvests.stream()
+                .map(Mapper::toHarvestResponseDTO)
+                .toList();
+
+        return ResponseEntity.ok(responseDTOs);
     }
 }
