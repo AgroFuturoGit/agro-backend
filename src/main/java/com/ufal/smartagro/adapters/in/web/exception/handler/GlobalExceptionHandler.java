@@ -4,6 +4,7 @@ import com.ufal.smartagro.adapters.in.web.exception.dto.ApiError;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.CpfAlreadyExistsException;
 import com.ufal.smartagro.domain.exception.EmailAlreadyExistsException;
+import com.ufal.smartagro.domain.exception.HarvestAlreadyExistsException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -78,6 +79,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CpfAlreadyExistsException.class)
     public ResponseEntity<ApiError> handleCpfAlreadyExists(
             CpfAlreadyExistsException ex, HttpServletRequest httpServletRequest){
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiError(
+                HttpStatus.CONFLICT.value(),
+                ex.getMessage(),
+                httpServletRequest.getRequestURI(),
+                LocalDateTime.now()
+        ));
+    }
+
+    @ExceptionHandler(HarvestAlreadyExistsException.class)
+    public ResponseEntity<ApiError> handleHarvestAlreadyExists(
+            HarvestAlreadyExistsException ex, HttpServletRequest httpServletRequest){
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiError(
                 HttpStatus.CONFLICT.value(),
                 ex.getMessage(),
