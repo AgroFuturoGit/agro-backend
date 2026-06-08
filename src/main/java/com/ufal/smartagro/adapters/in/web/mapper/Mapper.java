@@ -8,6 +8,7 @@ import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestUpdateDTO;
 import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.User;
@@ -84,6 +85,15 @@ public class Mapper {
                 harvest.getLabel(),
                 harvest.getStartDate(),
                 harvest.getEndDate()
+        );
+    }
+
+    public static Harvest toHarvest(HarvestUpdateDTO dto) {
+        return new Harvest(
+                null,
+                dto.label(),
+                dto.startDate(),
+                dto.endDate()
         );
     }
 }
