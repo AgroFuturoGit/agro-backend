@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,10 +34,7 @@ public class HarvestRepositoryImpl implements HarvestRepository {
         return jpaHarvestRepository.existsByLabel(label);
     }
 
-    @Override
-    public boolean existsByStartDateAndEndDate(LocalDate startDate, LocalDate endDate) {
-        return jpaHarvestRepository.existsByStartDateAndEndDate(startDate, endDate);
-    }
+
 
     @Override
     public Optional<Harvest> findById(UUID id) {

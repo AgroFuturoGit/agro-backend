@@ -30,10 +30,6 @@ public class HarvestRegisterUseCase {
             throw new HarvestAlreadyExistsException("Já existe uma safra com o rótulo: " + harvest.getLabel());
         }
 
-        if (harvestRepository.existsByStartDateAndEndDate(harvest.getStartDate(), harvest.getEndDate())) {
-            throw new HarvestAlreadyExistsException("Já existe uma safra com o mesmo período.");
-        }
-
         return harvestRepository.save(harvest);
     }
 }

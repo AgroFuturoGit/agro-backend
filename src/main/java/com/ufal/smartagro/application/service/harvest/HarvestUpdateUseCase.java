@@ -37,12 +37,6 @@ public class HarvestUpdateUseCase {
             throw new HarvestAlreadyExistsException("Já existe uma safra com o rótulo: " + updatedHarvestData.getLabel());
         }
 
-        boolean isDatesChanged = !existingHarvest.getStartDate().equals(updatedHarvestData.getStartDate()) ||
-                !existingHarvest.getEndDate().equals(updatedHarvestData.getEndDate());
-        if (isDatesChanged && harvestRepository.existsByStartDateAndEndDate(updatedHarvestData.getStartDate(), updatedHarvestData.getEndDate())) {
-            throw new HarvestAlreadyExistsException("Já existe uma safra com o mesmo período.");
-        }
-
         Harvest harvestToSave = new Harvest(
                 existingHarvest.getId(),
                 updatedHarvestData.getLabel(),
