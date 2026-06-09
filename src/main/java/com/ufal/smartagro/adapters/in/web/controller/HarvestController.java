@@ -4,6 +4,7 @@ import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+import com.ufal.smartagro.application.service.harvest.HarvestDeleteUseCase;
 import com.ufal.smartagro.application.service.harvest.HarvestFindAllUseCase;
 import com.ufal.smartagro.application.service.harvest.HarvestFindByIdUseCase;
 import com.ufal.smartagro.application.service.harvest.HarvestRegisterUseCase;
@@ -33,6 +34,7 @@ public class HarvestController {
     private final HarvestUpdateUseCase harvestUpdateUseCase;
     private final HarvestFindAllUseCase harvestFindAllUseCase;
     private final HarvestFindByIdUseCase harvestFindByIdUseCase;
+    private final HarvestDeleteUseCase harvestDeleteUseCase;
     private final UserRepository userRepository;
 
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
@@ -94,5 +96,17 @@ public class HarvestController {
                 .toList();
 
         return ResponseEntity.ok(responseDTOs);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id,
+                                       @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        User loggedUser = userRepository.findById(userDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+
+        harvestDeleteUseCase.execute(id, loggedUser);
+
+        return ResponseEntity.noContent().build();
     }
 }

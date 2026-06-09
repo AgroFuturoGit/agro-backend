@@ -13,6 +13,6 @@ public interface JpaHarvestRepository extends JpaRepository <HarvestEntity, UUID
     boolean existsByLabel(String label);
 
     @Modifying
-    @Query("UPDATE CropEntity c SET c.deletedAt = CURRENT_TIMESTAMP WHERE c.id = :id")
+    @Query("UPDATE HarvestEntity h SET h.deletedAt = CURRENT_TIMESTAMP WHERE h.id = :id")
     void softDeleteById(@Param("id") UUID id);
 }
