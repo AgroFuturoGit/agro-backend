@@ -4,6 +4,8 @@ import com.ufal.smartagro.adapters.in.web.exception.dto.ApiError;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.CpfAlreadyExistsException;
 import com.ufal.smartagro.domain.exception.EmailAlreadyExistsException;
+import com.ufal.smartagro.domain.exception.HarvestAlreadyExistsException;
+import com.ufal.smartagro.domain.exception.HarvestNotFoundException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -86,6 +88,28 @@ public class GlobalExceptionHandler {
         ));
     }
 
+    @ExceptionHandler(HarvestAlreadyExistsException.class)
+    public ResponseEntity<ApiError> handleHarvestAlreadyExists(
+            HarvestAlreadyExistsException ex, HttpServletRequest httpServletRequest){
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiError(
+                HttpStatus.CONFLICT.value(),
+                ex.getMessage(),
+                httpServletRequest.getRequestURI(),
+                LocalDateTime.now()
+        ));
+    }
+
+    @ExceptionHandler(HarvestNotFoundException.class)
+    public ResponseEntity<ApiError> handleHarvestNotFound(
+            HarvestNotFoundException ex, HttpServletRequest httpServletRequest){
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError(
+                HttpStatus.NOT_FOUND.value(),
+                ex.getMessage(),
+                httpServletRequest.getRequestURI(),
+                LocalDateTime.now()
+        ));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(
             MethodArgumentNotValidException ex, HttpServletRequest httpServletRequest){
@@ -95,6 +119,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiError(
                 HttpStatus.BAD_REQUEST.value(),
                 message,
+                httpServletRequest.getRequestURI(),
+                LocalDateTime.now()
+        ));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleIllegalArgument(
+            IllegalArgumentException ex, HttpServletRequest httpServletRequest){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(),
                 httpServletRequest.getRequestURI(),
                 LocalDateTime.now()
         ));

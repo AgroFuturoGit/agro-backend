@@ -6,7 +6,11 @@ import com.ufal.smartagro.adapters.in.web.dto.crop.CropResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.crop.CropUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestRegisterDTO;
+import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestUpdateDTO;
 import com.ufal.smartagro.domain.model.Crop;
+import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.User;
 
 public class Mapper {
@@ -59,10 +63,37 @@ public class Mapper {
 
     public static Crop toCrop(CropUpdateDTO dto) {
         return new Crop(
-                null, // ID is not part of the update DTO
+                null, 
                 dto.name(),
                 dto.variety(),
                 dto.isPriority()
+        );
+    }
+
+    public static Harvest toHarvest(HarvestRegisterDTO dto) {
+        return new Harvest(
+                null,
+                dto.label(),
+                dto.startDate(),
+                dto.endDate()
+        );
+    }
+
+    public static HarvestResponseDTO toHarvestResponseDTO(Harvest harvest) {
+        return new HarvestResponseDTO(
+                harvest.getId(),
+                harvest.getLabel(),
+                harvest.getStartDate(),
+                harvest.getEndDate()
+        );
+    }
+
+    public static Harvest toHarvest(HarvestUpdateDTO dto) {
+        return new Harvest(
+                null,
+                dto.label(),
+                dto.startDate(),
+                dto.endDate()
         );
     }
 }
