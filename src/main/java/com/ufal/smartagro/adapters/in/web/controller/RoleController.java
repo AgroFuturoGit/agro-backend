@@ -17,6 +17,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
@@ -36,7 +37,7 @@ public class RoleController {
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/users/{userId}")
     public ResponseEntity<UserResponseDTO> assignRole(
-            @PathVariable Long userId,
+            @PathVariable UUID userId,
             @Valid @RequestBody AssignRoleDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
         

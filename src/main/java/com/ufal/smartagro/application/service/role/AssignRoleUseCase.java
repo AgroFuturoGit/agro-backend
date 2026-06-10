@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class AssignRoleUseCase {
@@ -18,7 +20,7 @@ public class AssignRoleUseCase {
     private final UserRepository userRepository;
 
     @Transactional
-    public UserResponseDTO assignRole(Long userId, Role newRole, User loggedUser) {
+    public UserResponseDTO assignRole(UUID userId, Role newRole, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException();
         }

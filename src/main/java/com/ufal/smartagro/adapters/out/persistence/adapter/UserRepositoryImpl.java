@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
@@ -27,7 +28,7 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public Optional<User> findById(Long id) {
+    public Optional<User> findById(UUID id) {
         return jpaUserRepository.findById(id)
                 .map(userMapper::toDomain);
     }
@@ -55,7 +56,7 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public void softDelete(Long id) {
+    public void softDelete(UUID id) {
         jpaUserRepository.softDeleteById(id);
     }
 

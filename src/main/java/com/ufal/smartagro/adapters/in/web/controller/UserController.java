@@ -23,6 +23,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
@@ -53,7 +54,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
@@ -78,7 +79,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}")
     public ResponseEntity<UserResponseDTO> adminUpdate(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @RequestBody AdminUserUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
@@ -92,7 +93,7 @@ public class UserController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDTO> findById(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
