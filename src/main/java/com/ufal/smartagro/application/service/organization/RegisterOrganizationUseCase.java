@@ -1,4 +1,4 @@
-package com .ufal.smartagro.application.service.organization;
+package com.ufal.smartagro.application.service.organization;
 
 import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationResponseDTO;
