@@ -25,6 +25,10 @@ public class AssignRoleUseCase {
             throw new AccessDeniedException();
         }
 
+        if (newRole == Role.MANAGER || newRole == Role.PRODUCER) {
+            throw new IllegalArgumentException("Para criar ou promover gestores e produtores, utilize as rotas específicas de Organização e Comunidade.");
+        }
+
         User user = userRepository.findById(userId)
             .orElseThrow(UserNotFoundException::new);
 

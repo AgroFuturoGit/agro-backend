@@ -27,6 +27,10 @@ public class UserRegisterUseCase {
             throw new AccessDeniedException();
         }
 
+        if (dto.role() == Role.MANAGER || dto.role() == Role.PRODUCER) {
+            throw new IllegalArgumentException("Para criar gestores ou produtores, utilize as rotas específicas de Organização e Comunidade.");
+        }
+
         if (userRepository.existsByEmail(dto.email())) {
             throw new EmailAlreadyExistsException();
         }

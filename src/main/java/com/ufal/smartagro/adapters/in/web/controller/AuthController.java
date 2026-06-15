@@ -1,6 +1,8 @@
 package com.ufal.smartagro.adapters.in.web.controller;
+
 import com.ufal.smartagro.adapters.in.web.dto.auth.LoginDTO;
 import com.ufal.smartagro.adapters.in.web.dto.auth.LoginResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.auth.MyInfoResponseDTO;
 import com.ufal.smartagro.application.service.auth.LoginUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,18 +22,18 @@ public class AuthController {
     private final LoginUseCase loginUseCase;
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginDTO loginDTO){
+    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginDTO loginDTO) {
         return ResponseEntity.ok(loginUseCase.login(loginDTO));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<com.ufal.smartagro.adapters.in.web.dto.auth.MyInfoResponseDTO> me(
+    public ResponseEntity<MyInfoResponseDTO> me(
             @org.springframework.security.core.annotation.AuthenticationPrincipal com.ufal.smartagro.config.security.details.UserDetailsImpl userDetails) {
-        return ResponseEntity.ok(new com.ufal.smartagro.adapters.in.web.dto.auth.MyInfoResponseDTO(
-            userDetails.getId(),
-            userDetails.getName(),
-            userDetails.getUsername(),
-            userDetails.getUser().getRole()
+        return ResponseEntity.ok(new MyInfoResponseDTO(
+                userDetails.getId(),
+                userDetails.getName(),
+                userDetails.getUsername(),
+                userDetails.getUser().getRole()
         ));
     }
 }

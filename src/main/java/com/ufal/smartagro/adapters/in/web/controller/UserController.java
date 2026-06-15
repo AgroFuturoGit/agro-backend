@@ -38,6 +38,7 @@ public class UserController {
     private final FindAllUsersUseCase findAllUsersUseCase;
     private final UserRepository userRepository;
 
+    @Deprecated(since = "2.0", forRemoval = true)
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/register")
     public ResponseEntity<UserResponseDTO> register(
