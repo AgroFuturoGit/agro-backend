@@ -27,6 +27,12 @@ public class UserRegisterUseCase {
             throw new AccessDeniedException();
         }
 
+        User savedUser = createBaseUser(dto);
+        return Mapper.toUserResponseDTO(savedUser);
+    }
+
+    @Transactional
+    public User createBaseUser(UserRegisterDTO dto) {
         if (userRepository.existsByEmail(dto.email())) {
             throw new EmailAlreadyExistsException();
         }
@@ -38,8 +44,6 @@ public class UserRegisterUseCase {
         String encodedPassword = passwordEncoder.encode(dto.password());
 
         User newUser = Mapper.toUser(dto, encodedPassword);
-        User savedUser = userRepository.save(newUser);
-
-        return Mapper.toUserResponseDTO(savedUser);
+        return userRepository.save(newUser);
     }
 }

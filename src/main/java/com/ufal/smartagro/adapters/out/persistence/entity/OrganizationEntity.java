@@ -1,5 +1,6 @@
 package com.ufal.smartagro.adapters.out.persistence.entity;
-import com.ufal.smartagro.domain.model.enums.Role;
+
+import com.ufal.smartagro.domain.model.enums.OrganizationType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -7,10 +8,8 @@ import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
-
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -18,31 +17,24 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "users")
+@Table(name = "organizations")
 @EntityListeners(AuditingEntityListener.class)
 @SQLRestriction("deleted_at IS NULL")
-public class UserEntity {
+public class OrganizationEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(nullable = false)
-    private String fullName;
+    private String name;
 
-    @Column(nullable = false, unique = true)
-    private String email;
-
-    @Column(nullable = false)
-    private String password;
-
-    @Column(nullable = false, unique = true, length = 14)
-    private String cpf;
-
-    private LocalDate dateOfBirth;
+    @Column(name = "tax_id", nullable = false, unique = true)
+    private String taxId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role;
+    private OrganizationType type;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -52,5 +44,4 @@ public class UserEntity {
     private LocalDateTime updatedAt;
 
     private LocalDateTime deletedAt;
-
 }

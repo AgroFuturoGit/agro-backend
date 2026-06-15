@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @RequiredArgsConstructor
 @Service
 public class AdminUserUpdateUseCase {
@@ -19,7 +21,7 @@ public class AdminUserUpdateUseCase {
     private final UserRepository userRepository;
 
     @Transactional
-    public UserResponseDTO update(Long userId, AdminUserUpdateDTO dto, User loggedUser) {
+    public UserResponseDTO update(UUID userId, AdminUserUpdateDTO dto, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException();
         }

@@ -9,9 +9,17 @@ import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestUpdateDTO;
+import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.manager.ManagerResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.community.CommunityResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.producer.ProducerResponseDTO;
 import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.Organization;
+import com.ufal.smartagro.domain.model.Manager;
+import com.ufal.smartagro.domain.model.Community;
+import com.ufal.smartagro.domain.model.Producer;
 
 public class Mapper {
 
@@ -94,6 +102,53 @@ public class Mapper {
                 dto.label(),
                 dto.startDate(),
                 dto.endDate()
+        );
+    }
+
+    public static OrganizationResponseDTO toOrganizationResponseDTO(Organization organization) {
+        if (organization == null) return null;
+        return new OrganizationResponseDTO(
+                organization.getId(),
+                organization.getName(),
+                organization.getTaxId(),
+                organization.getType(),
+                organization.getCreatedAt(),
+                organization.getUpdatedAt()
+        );
+    }
+
+    public static ManagerResponseDTO toManagerResponseDTO(Manager manager) {
+        if (manager == null) return null;
+        return new ManagerResponseDTO(
+                manager.getId(),
+                toUserResponseDTO(manager.getUser()),
+                toOrganizationResponseDTO(manager.getOrganization()),
+                manager.getCreatedAt(),
+                manager.getUpdatedAt()
+        );
+    }
+
+    public static CommunityResponseDTO toCommunityResponseDTO(Community community) {
+        if (community == null) return null;
+        return new CommunityResponseDTO(
+                community.getId(),
+                community.getName(),
+                toOrganizationResponseDTO(community.getOrganization()),
+                community.getCreatedAt(),
+                community.getUpdatedAt()
+        );
+    }
+
+    public static ProducerResponseDTO toProducerResponseDTO(Producer producer) {
+        if (producer == null) return null;
+        return new ProducerResponseDTO(
+                producer.getId(),
+                toUserResponseDTO(producer.getUser()),
+                toCommunityResponseDTO(producer.getCommunity()),
+                producer.getAliasName(),
+                producer.getIsCompliant(),
+                producer.getCreatedAt(),
+                producer.getUpdatedAt()
         );
     }
 }

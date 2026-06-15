@@ -10,13 +10,15 @@ import com.ufal.smartagro.domain.port.out.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @RequiredArgsConstructor
 @Service
 public class FindUserByIdUseCase {
 
     private final UserRepository userRepository;
 
-    public UserResponseDTO findById(Long userId, User loggedUser) {
+    public UserResponseDTO findById(UUID userId, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.MANAGER) {
             throw new AccessDeniedException();
         }
