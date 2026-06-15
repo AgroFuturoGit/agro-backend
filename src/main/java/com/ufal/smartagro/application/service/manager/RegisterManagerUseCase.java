@@ -1,10 +1,9 @@
 package com.ufal.smartagro.application.service.manager;
 
 import com.ufal.smartagro.adapters.in.web.dto.manager.ManagerRegisterDTO;
-import com.ufal.smartagro.adapters.in.web.dto.manager.ManagerResponseDTO;
-import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationResponseDTO;
+
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
-import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Organization;
@@ -28,7 +27,7 @@ public class RegisterManagerUseCase {
     private final UserRegisterUseCase userRegisterUseCase;
 
     @Transactional
-    public ManagerResponseDTO register(UUID organizationId, ManagerRegisterDTO dto, User loggedUser) {
+    public Manager register(UUID organizationId, ManagerRegisterDTO dto, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException();
         }
@@ -50,21 +49,6 @@ public class RegisterManagerUseCase {
                 null
         );
 
-        Manager savedManager = managerRepository.save(manager);
-
-        return new ManagerResponseDTO(
-                savedManager.getId(),
-                Mapper.toUserResponseDTO(savedUser),
-                new OrganizationResponseDTO(
-                        organization.getId(),
-                        organization.getName(),
-                        organization.getTaxId(),
-                        organization.getType(),
-                        organization.getCreatedAt(),
-                        organization.getUpdatedAt()
-                ),
-                savedManager.getCreatedAt(),
-                savedManager.getUpdatedAt()
-        );
+        return managerRepository.save(manager);
     }
 }

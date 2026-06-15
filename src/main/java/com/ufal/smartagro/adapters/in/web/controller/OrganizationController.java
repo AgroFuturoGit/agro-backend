@@ -4,10 +4,13 @@ import com.ufal.smartagro.adapters.in.web.dto.manager.ManagerRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.manager.ManagerResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationResponseDTO;
+import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.manager.RegisterManagerUseCase;
 import com.ufal.smartagro.application.service.organization.RegisterOrganizationUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
+import com.ufal.smartagro.domain.model.Manager;
+import com.ufal.smartagro.domain.model.Organization;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.UserRepository;
 import jakarta.validation.Valid;
@@ -38,7 +41,8 @@ public class OrganizationController {
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
 
-        OrganizationResponseDTO response = registerOrganizationUseCase.register(dto, loggedUser);
+        Organization organization = registerOrganizationUseCase.register(dto, loggedUser);
+        OrganizationResponseDTO response = Mapper.toOrganizationResponseDTO(organization);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -52,7 +56,8 @@ public class OrganizationController {
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
 
-        ManagerResponseDTO response = registerManagerUseCase.register(id, dto, loggedUser);
+        Manager manager = registerManagerUseCase.register(id, dto, loggedUser);
+        ManagerResponseDTO response = Mapper.toManagerResponseDTO(manager);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

@@ -1,8 +1,7 @@
 package com.ufal.smartagro.application.service.community;
 
 import com.ufal.smartagro.adapters.in.web.dto.community.CommunityRegisterDTO;
-import com.ufal.smartagro.adapters.in.web.dto.community.CommunityResponseDTO;
-import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationResponseDTO;
+
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Organization;
@@ -24,7 +23,7 @@ public class RegisterCommunityUseCase {
     private final OrganizationRepository organizationRepository;
 
     @Transactional
-    public CommunityResponseDTO register(UUID organizationId, CommunityRegisterDTO dto, User loggedUser) {
+    public Community register(UUID organizationId, CommunityRegisterDTO dto, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.MANAGER) {
             throw new AccessDeniedException();
         }
@@ -41,21 +40,6 @@ public class RegisterCommunityUseCase {
                 null
         );
 
-        Community saved = communityRepository.save(community);
-
-        return new CommunityResponseDTO(
-                saved.getId(),
-                saved.getName(),
-                new OrganizationResponseDTO(
-                        organization.getId(),
-                        organization.getName(),
-                        organization.getTaxId(),
-                        organization.getType(),
-                        organization.getCreatedAt(),
-                        organization.getUpdatedAt()
-                ),
-                saved.getCreatedAt(),
-                saved.getUpdatedAt()
-        );
+        return communityRepository.save(community);
     }
 }

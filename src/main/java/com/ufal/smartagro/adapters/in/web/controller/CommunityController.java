@@ -4,10 +4,13 @@ import com.ufal.smartagro.adapters.in.web.dto.community.CommunityRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.community.CommunityResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.producer.ProducerRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.producer.ProducerResponseDTO;
+import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.community.RegisterCommunityUseCase;
 import com.ufal.smartagro.application.service.producer.RegisterProducerUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
+import com.ufal.smartagro.domain.model.Community;
+import com.ufal.smartagro.domain.model.Producer;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.UserRepository;
 import jakarta.validation.Valid;
@@ -39,7 +42,8 @@ public class CommunityController {
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
 
-        CommunityResponseDTO response = registerCommunityUseCase.register(orgId, dto, loggedUser);
+        Community community = registerCommunityUseCase.register(orgId, dto, loggedUser);
+        CommunityResponseDTO response = Mapper.toCommunityResponseDTO(community);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -53,7 +57,8 @@ public class CommunityController {
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
 
-        ProducerResponseDTO response = registerProducerUseCase.register(id, dto, loggedUser);
+        Producer producer = registerProducerUseCase.register(id, dto, loggedUser);
+        ProducerResponseDTO response = Mapper.toProducerResponseDTO(producer);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

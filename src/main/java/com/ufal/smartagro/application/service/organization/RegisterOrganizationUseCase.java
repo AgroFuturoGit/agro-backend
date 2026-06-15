@@ -1,7 +1,7 @@
 package com.ufal.smartagro.application.service.organization;
 
 import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationRegisterDTO;
-import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationResponseDTO;
+
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.Organization;
 import com.ufal.smartagro.domain.model.User;
@@ -18,7 +18,7 @@ public class RegisterOrganizationUseCase {
     private final OrganizationRepository organizationRepository;
 
     @Transactional
-    public OrganizationResponseDTO register(OrganizationRegisterDTO dto, User loggedUser) {
+    public Organization register(OrganizationRegisterDTO dto, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException();
         }
@@ -37,15 +37,6 @@ public class RegisterOrganizationUseCase {
                 null
         );
 
-        Organization saved = organizationRepository.save(organization);
-
-        return new OrganizationResponseDTO(
-                saved.getId(),
-                saved.getName(),
-                saved.getTaxId(),
-                saved.getType(),
-                saved.getCreatedAt(),
-                saved.getUpdatedAt()
-        );
+        return organizationRepository.save(organization);
     }
 }
