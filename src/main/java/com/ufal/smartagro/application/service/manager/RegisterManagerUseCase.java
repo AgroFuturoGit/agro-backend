@@ -6,17 +6,14 @@ import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationResponseD
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
-import com.ufal.smartagro.domain.exception.CpfAlreadyExistsException;
-import com.ufal.smartagro.domain.exception.EmailAlreadyExistsException;
 import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Organization;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
 import com.ufal.smartagro.domain.port.out.OrganizationRepository;
-import com.ufal.smartagro.domain.port.out.UserRepository;
+import com.ufal.smartagro.application.service.user.UserRegisterUseCase;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,8 +25,7 @@ public class RegisterManagerUseCase {
 
     private final ManagerRepository managerRepository;
     private final OrganizationRepository organizationRepository;
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final UserRegisterUseCase userRegisterUseCase;
 
     @Transactional
     public ManagerResponseDTO register(UUID organizationId, ManagerRegisterDTO dto, User loggedUser) {
@@ -40,21 +36,10 @@ public class RegisterManagerUseCase {
         Organization organization = organizationRepository.findById(organizationId)
                 .orElseThrow(() -> new IllegalArgumentException("Organização não encontrada"));
 
-        if (userRepository.existsByEmail(dto.email())) {
-            throw new EmailAlreadyExistsException();
-        }
-
-        if (userRepository.existsByCpf(dto.cpf())) {
-            throw new CpfAlreadyExistsException();
-        }
-
-        String encodedPassword = passwordEncoder.encode(dto.password());
-        
         UserRegisterDTO userDto = new UserRegisterDTO(
                 dto.fullName(), dto.email(), dto.password(), dto.cpf(), dto.dateOfBirth(), Role.MANAGER
         );
-        User newUser = Mapper.toUser(userDto, encodedPassword);
-        User savedUser = userRepository.save(newUser);
+        User savedUser = userRegisterUseCase.createBaseUser(userDto);
 
         Manager manager = new Manager(
                 null,

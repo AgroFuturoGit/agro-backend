@@ -27,10 +27,12 @@ public class UserRegisterUseCase {
             throw new AccessDeniedException();
         }
 
-        if (dto.role() == Role.MANAGER || dto.role() == Role.PRODUCER) {
-            throw new IllegalArgumentException("Para criar gestores ou produtores, utilize as rotas específicas de Organização e Comunidade.");
-        }
+        User savedUser = createBaseUser(dto);
+        return Mapper.toUserResponseDTO(savedUser);
+    }
 
+    @Transactional
+    public User createBaseUser(UserRegisterDTO dto) {
         if (userRepository.existsByEmail(dto.email())) {
             throw new EmailAlreadyExistsException();
         }
@@ -42,8 +44,6 @@ public class UserRegisterUseCase {
         String encodedPassword = passwordEncoder.encode(dto.password());
 
         User newUser = Mapper.toUser(dto, encodedPassword);
-        User savedUser = userRepository.save(newUser);
-
-        return Mapper.toUserResponseDTO(savedUser);
+        return userRepository.save(newUser);
     }
 }
