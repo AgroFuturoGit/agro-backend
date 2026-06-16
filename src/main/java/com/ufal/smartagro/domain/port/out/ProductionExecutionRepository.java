@@ -9,4 +9,5 @@ public interface ProductionExecutionRepository {
     ProductionExecution save(ProductionExecution productionExecution);
     Optional<ProductionExecution> findById(UUID id);
     java.util.List<ProductionExecution> findAllByProductionPlanId(UUID planId);
+    void delete(UUID id);
 }

@@ -35,4 +35,9 @@ public class ProductionExecutionRepositoryImpl implements ProductionExecutionRep
                 .map(productionExecutionMapper::toDomain)
                 .toList();
     }
+
+    @Override
+    public void delete(UUID id) {
+        jpaRepository.softDeleteById(id);
+    }
 }

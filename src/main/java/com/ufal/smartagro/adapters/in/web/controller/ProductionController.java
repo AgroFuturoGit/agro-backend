@@ -34,6 +34,7 @@ public class ProductionController {
     private final ListProductionExecutionsUseCase listProductionExecutionsUseCase;
     private final CompareProductionUseCase compareProductionUseCase;
     private final FindProductionExecutionByIdUseCase findProductionExecutionByIdUseCase;
+    private final DeleteProductionExecutionUseCase deleteProductionExecutionUseCase;
 
     @PreAuthorize("hasRole('PRODUCER')")
     @PostMapping("/producers/{producerId}/production-plans")
@@ -149,5 +150,15 @@ public class ProductionController {
         ProductionExecution execution = findProductionExecutionByIdUseCase.findById(executionId);
         ProductionExecutionResponseDTO response = Mapper.toProductionExecutionResponseDTO(execution);
         return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('PRODUCER')")
+    @DeleteMapping("/production-executions/{executionId}")
+    public ResponseEntity<Void> deleteProductionExecution(
+            @PathVariable UUID executionId,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        deleteProductionExecutionUseCase.delete(executionId);
+        return ResponseEntity.noContent().build();
     }
 }
