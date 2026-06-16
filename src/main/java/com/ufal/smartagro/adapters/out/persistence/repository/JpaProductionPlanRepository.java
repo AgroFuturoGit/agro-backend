@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.UUID;
 
 public interface JpaProductionPlanRepository extends JpaRepository<ProductionPlanEntity, UUID> {
+    java.util.List<ProductionPlanEntity> findAllByProducerId(UUID producerId);
 }

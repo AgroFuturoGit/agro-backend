@@ -8,4 +8,5 @@ import java.util.UUID;
 public interface ProductionPlanRepository {
     ProductionPlan save(ProductionPlan productionPlan);
     Optional<ProductionPlan> findById(UUID id);
+    java.util.List<ProductionPlan> findAllByProducerId(UUID producerId);
 }

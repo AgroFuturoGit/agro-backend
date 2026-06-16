@@ -23,6 +23,7 @@ public class ProductionPlanMapper {
                 cropMapper.toDomain(entity.getCrop()),
                 entity.getPlantedArea(),
                 entity.getExpectedYield(),
+                entity.getPlannedPlantingDate(),
                 entity.getPlannedCalendar(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt(),
@@ -39,6 +40,7 @@ public class ProductionPlanMapper {
         entity.setCrop(cropMapper.toEntity(domain.getCrop()));
         entity.setPlantedArea(domain.getPlantedArea());
         entity.setExpectedYield(domain.getExpectedYield());
+        entity.setPlannedPlantingDate(domain.getPlannedPlantingDate());
         entity.setPlannedCalendar(domain.getPlannedCalendar());
         entity.setCreatedAt(domain.getCreatedAt());
         entity.setUpdatedAt(domain.getUpdatedAt());

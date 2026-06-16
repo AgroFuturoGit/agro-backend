@@ -5,6 +5,7 @@ CREATE TABLE production_plans (
     crop_id UUID NOT NULL,
     planted_area NUMERIC(10, 2) NOT NULL,
     expected_yield NUMERIC(10, 2) NOT NULL,
+    planned_planting_date DATE,
     planned_calendar JSONB,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP,

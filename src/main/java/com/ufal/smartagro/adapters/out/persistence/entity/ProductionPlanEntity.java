@@ -12,6 +12,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
@@ -46,6 +47,9 @@ public class ProductionPlanEntity {
 
     @Column(name = "expected_yield", nullable = false, precision = 10, scale = 2)
     private BigDecimal expectedYield;
+
+    @Column(name = "planned_planting_date")
+    private LocalDate plannedPlantingDate;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "planned_calendar", columnDefinition = "jsonb")

@@ -162,6 +162,7 @@ public class Mapper {
                 toCropResponseDTO(plan.getCrop()),
                 plan.getPlantedArea(),
                 plan.getExpectedYield(),
+                plan.getPlannedPlantingDate(),
                 plan.getPlannedCalendar(),
                 plan.getCreatedAt()
         );

@@ -42,6 +42,7 @@ public class CreateProductionPlanUseCase {
                 crop,
                 dto.plantedArea(),
                 dto.expectedYield(),
+                dto.plannedPlantingDate(),
                 dto.plannedCalendar(),
                 null,
                 null,
