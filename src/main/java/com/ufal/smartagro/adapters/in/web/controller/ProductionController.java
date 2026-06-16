@@ -8,6 +8,7 @@ import com.ufal.smartagro.adapters.in.web.dto.production.ProductionPlanUpdateDTO
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.production.CreateProductionExecutionUseCase;
 import com.ufal.smartagro.application.service.production.CreateProductionPlanUseCase;
+import com.ufal.smartagro.application.service.production.DeleteProductionPlanUseCase;
 import com.ufal.smartagro.application.service.production.FindProductionPlanByIdUseCase;
 import com.ufal.smartagro.application.service.production.ListProductionPlansUseCase;
 import com.ufal.smartagro.application.service.production.UpdateProductionPlanUseCase;
@@ -35,6 +36,7 @@ public class ProductionController {
     private final UpdateProductionPlanUseCase updateProductionPlanUseCase;
     private final ListProductionPlansUseCase listProductionPlansUseCase;
     private final FindProductionPlanByIdUseCase findProductionPlanByIdUseCase;
+    private final DeleteProductionPlanUseCase deleteProductionPlanUseCase;
 
     @PreAuthorize("hasRole('PRODUCER')")
     @PostMapping("/producers/{producerId}/production-plans")
@@ -94,5 +96,15 @@ public class ProductionController {
         ProductionPlan plan = findProductionPlanByIdUseCase.findById(planId);
         ProductionPlanResponseDTO response = Mapper.toProductionPlanResponseDTO(plan);
         return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('PRODUCER')")
+    @DeleteMapping("/production-plans/{planId}")
+    public ResponseEntity<Void> deleteProductionPlan(
+            @PathVariable UUID planId,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        deleteProductionPlanUseCase.delete(planId);
+        return ResponseEntity.noContent().build();
     }
 }

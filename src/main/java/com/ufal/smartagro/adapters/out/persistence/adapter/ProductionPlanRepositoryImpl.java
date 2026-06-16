@@ -35,4 +35,9 @@ public class ProductionPlanRepositoryImpl implements ProductionPlanRepository {
                 .map(productionPlanMapper::toDomain)
                 .toList();
     }
+
+    @Override
+    public void delete(UUID id) {
+        jpaRepository.softDeleteById(id);
+    }
 }
