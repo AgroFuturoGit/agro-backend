@@ -4,6 +4,8 @@ import com.ufal.smartagro.adapters.in.web.dto.auth.LoginResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.crop.CropRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.crop.CropResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.crop.CropUpdateDTO;
+import com.ufal.smartagro.adapters.in.web.dto.production.ProductionExecutionResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.production.ProductionPlanResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestRegisterDTO;
@@ -149,6 +151,31 @@ public class Mapper {
                 producer.getIsCompliant(),
                 producer.getCreatedAt(),
                 producer.getUpdatedAt()
+        );
+    }
+    public static ProductionPlanResponseDTO toProductionPlanResponseDTO(com.ufal.smartagro.domain.model.ProductionPlan plan) {
+        if (plan == null) return null;
+        return new ProductionPlanResponseDTO(
+                plan.getId(),
+                toProducerResponseDTO(plan.getProducer()),
+                toHarvestResponseDTO(plan.getHarvest()),
+                toCropResponseDTO(plan.getCrop()),
+                plan.getPlantedArea(),
+                plan.getExpectedYield(),
+                plan.getPlannedPlantingDate(),
+                plan.getPlannedCalendar(),
+                plan.getCreatedAt()
+        );
+    }
+
+    public static ProductionExecutionResponseDTO toProductionExecutionResponseDTO(com.ufal.smartagro.domain.model.ProductionExecution exec) {
+        if (exec == null) return null;
+        return new ProductionExecutionResponseDTO(
+                exec.getId(),
+                exec.getProductionPlan() != null ? exec.getProductionPlan().getId() : null,
+                exec.getActualYield(),
+                exec.getHarvestDate(),
+                exec.getCreatedAt()
         );
     }
 }
