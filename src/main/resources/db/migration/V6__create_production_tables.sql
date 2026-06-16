@@ -19,7 +19,7 @@ CREATE TABLE production_executions (
     id UUID PRIMARY KEY,
     production_plan_id UUID NOT NULL,
     actual_yield NUMERIC(10, 2) NOT NULL,
-    recorded_at TIMESTAMP NOT NULL,
+    harvest_date DATE NOT NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,

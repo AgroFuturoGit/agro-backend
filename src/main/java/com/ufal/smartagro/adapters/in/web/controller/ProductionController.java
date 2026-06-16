@@ -1,17 +1,9 @@
 package com.ufal.smartagro.adapters.in.web.controller;
 
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionExecutionRegisterDTO;
-import com.ufal.smartagro.adapters.in.web.dto.production.ProductionExecutionResponseDTO;
-import com.ufal.smartagro.adapters.in.web.dto.production.ProductionPlanRegisterDTO;
-import com.ufal.smartagro.adapters.in.web.dto.production.ProductionPlanResponseDTO;
-import com.ufal.smartagro.adapters.in.web.dto.production.ProductionPlanUpdateDTO;
+import com.ufal.smartagro.adapters.in.web.dto.production.*;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
-import com.ufal.smartagro.application.service.production.CreateProductionExecutionUseCase;
-import com.ufal.smartagro.application.service.production.CreateProductionPlanUseCase;
-import com.ufal.smartagro.application.service.production.DeleteProductionPlanUseCase;
-import com.ufal.smartagro.application.service.production.FindProductionPlanByIdUseCase;
-import com.ufal.smartagro.application.service.production.ListProductionPlansUseCase;
-import com.ufal.smartagro.application.service.production.UpdateProductionPlanUseCase;
+import com.ufal.smartagro.application.service.production.*;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.ProductionPlan;
@@ -37,6 +29,11 @@ public class ProductionController {
     private final ListProductionPlansUseCase listProductionPlansUseCase;
     private final FindProductionPlanByIdUseCase findProductionPlanByIdUseCase;
     private final DeleteProductionPlanUseCase deleteProductionPlanUseCase;
+    
+    private final UpdateProductionExecutionUseCase updateProductionExecutionUseCase;
+    private final ListProductionExecutionsUseCase listProductionExecutionsUseCase;
+    private final CompareProductionUseCase compareProductionUseCase;
+    private final FindProductionExecutionByIdUseCase findProductionExecutionByIdUseCase;
 
     @PreAuthorize("hasRole('PRODUCER')")
     @PostMapping("/producers/{producerId}/production-plans")
@@ -106,5 +103,51 @@ public class ProductionController {
 
         deleteProductionPlanUseCase.delete(planId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasRole('PRODUCER')")
+    @PutMapping("/production-executions/{executionId}")
+    public ResponseEntity<ProductionExecutionResponseDTO> updateProductionExecution(
+            @PathVariable UUID executionId,
+            @Valid @RequestBody ProductionExecutionUpdateDTO dto,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        ProductionExecution execution = updateProductionExecutionUseCase.update(executionId, dto);
+        ProductionExecutionResponseDTO response = Mapper.toProductionExecutionResponseDTO(execution);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('PRODUCER')")
+    @GetMapping("/production-plans/{planId}/executions")
+    public ResponseEntity<List<ProductionExecutionResponseDTO>> listProductionExecutions(
+            @PathVariable UUID planId,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        List<ProductionExecution> executions = listProductionExecutionsUseCase.listByProductionPlan(planId);
+        List<ProductionExecutionResponseDTO> response = executions.stream()
+                .map(Mapper::toProductionExecutionResponseDTO)
+                .toList();
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('PRODUCER')")
+    @GetMapping("/production-plans/{planId}/comparison")
+    public ResponseEntity<ProductionComparisonDTO> compareProduction(
+            @PathVariable UUID planId,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        ProductionComparisonDTO response = compareProductionUseCase.compare(planId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('PRODUCER')")
+    @GetMapping("/production-executions/{executionId}")
+    public ResponseEntity<ProductionExecutionResponseDTO> findProductionExecutionById(
+            @PathVariable UUID executionId,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        ProductionExecution execution = findProductionExecutionByIdUseCase.findById(executionId);
+        ProductionExecutionResponseDTO response = Mapper.toProductionExecutionResponseDTO(execution);
+        return ResponseEntity.ok(response);
     }
 }

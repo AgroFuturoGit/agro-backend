@@ -27,7 +27,7 @@ public class CreateProductionExecutionUseCase {
                 null,
                 plan,
                 dto.actualYield(),
-                dto.recordedAt(),
+                dto.harvestDate(),
                 null,
                 null,
                 null

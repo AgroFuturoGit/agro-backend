@@ -174,7 +174,7 @@ public class Mapper {
                 exec.getId(),
                 exec.getProductionPlan() != null ? exec.getProductionPlan().getId() : null,
                 exec.getActualYield(),
-                exec.getRecordedAt(),
+                exec.getHarvestDate(),
                 exec.getCreatedAt()
         );
     }

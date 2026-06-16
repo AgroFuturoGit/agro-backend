@@ -18,7 +18,7 @@ public class ProductionExecutionMapper {
                 entity.getId(),
                 productionPlanMapper.toDomain(entity.getProductionPlan()),
                 entity.getActualYield(),
-                entity.getRecordedAt(),
+                entity.getHarvestDate(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt(),
                 entity.getDeletedAt()
@@ -31,7 +31,7 @@ public class ProductionExecutionMapper {
         entity.setId(domain.getId());
         entity.setProductionPlan(productionPlanMapper.toEntity(domain.getProductionPlan()));
         entity.setActualYield(domain.getActualYield());
-        entity.setRecordedAt(domain.getRecordedAt());
+        entity.setHarvestDate(domain.getHarvestDate());
         entity.setCreatedAt(domain.getCreatedAt());
         entity.setUpdatedAt(domain.getUpdatedAt());
         entity.setDeletedAt(domain.getDeletedAt());

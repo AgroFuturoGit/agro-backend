@@ -28,4 +28,11 @@ public class ProductionExecutionRepositoryImpl implements ProductionExecutionRep
     public Optional<ProductionExecution> findById(UUID id) {
         return jpaRepository.findById(id).map(productionExecutionMapper::toDomain);
     }
+
+    @Override
+    public java.util.List<ProductionExecution> findAllByProductionPlanId(UUID planId) {
+        return jpaRepository.findAllByProductionPlanId(planId).stream()
+                .map(productionExecutionMapper::toDomain)
+                .toList();
+    }
 }
