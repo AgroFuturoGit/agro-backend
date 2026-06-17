@@ -2,12 +2,14 @@ package com.ufal.smartagro.adapters.in.web.controller;
 
 import com.ufal.smartagro.adapters.in.web.dto.community.CommunityRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.community.CommunityResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.community.CommunityUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.dto.producer.ProducerRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.producer.ProducerResponseDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.community.FindAllCommunitiesUseCase;
 import com.ufal.smartagro.application.service.community.FindCommunityByIdUseCase;
 import com.ufal.smartagro.application.service.community.RegisterCommunityUseCase;
+import com.ufal.smartagro.application.service.community.UpdateCommunityUseCase;
 import com.ufal.smartagro.application.service.producer.RegisterProducerUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
@@ -34,6 +36,7 @@ public class CommunityController {
     private final RegisterProducerUseCase registerProducerUseCase;
     private final FindCommunityByIdUseCase findCommunityByIdUseCase;
     private final FindAllCommunitiesUseCase findAllCommunitiesUseCase;
+    private final UpdateCommunityUseCase updateCommunityUseCase;
     private final UserRepository userRepository;
 
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
@@ -85,6 +88,18 @@ public class CommunityController {
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         Community community = findCommunityByIdUseCase.findById(id);
+        CommunityResponseDTO response = Mapper.toCommunityResponseDTO(community);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
+    @PutMapping("/{id}")
+    public ResponseEntity<CommunityResponseDTO> updateCommunity(
+            @PathVariable UUID id,
+            @Valid @RequestBody CommunityUpdateDTO dto,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        Community community = updateCommunityUseCase.update(id, dto);
         CommunityResponseDTO response = Mapper.toCommunityResponseDTO(community);
         return ResponseEntity.ok(response);
     }
