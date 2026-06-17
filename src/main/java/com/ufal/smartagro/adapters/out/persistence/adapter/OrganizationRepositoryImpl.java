@@ -43,4 +43,9 @@ public class OrganizationRepositoryImpl implements OrganizationRepository {
     public boolean existsByTaxId(String taxId) {
         return jpaRepository.existsByTaxId(taxId);
     }
+
+    @Override
+    public void delete(UUID id) {
+        jpaRepository.softDeleteById(id);
+    }
 }

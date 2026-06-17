@@ -10,6 +10,7 @@ import com.ufal.smartagro.application.service.organization.FindAllOrganizationsU
 import com.ufal.smartagro.application.service.organization.FindOrganizationByIdUseCase;
 import com.ufal.smartagro.application.service.organization.RegisterOrganizationUseCase;
 import com.ufal.smartagro.application.service.organization.UpdateOrganizationUseCase;
+import com.ufal.smartagro.application.service.organization.DeleteOrganizationUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.Manager;
@@ -36,6 +37,7 @@ public class OrganizationController {
     private final FindOrganizationByIdUseCase findOrganizationByIdUseCase;
     private final FindAllOrganizationsUseCase findAllOrganizationsUseCase;
     private final UpdateOrganizationUseCase updateOrganizationUseCase;
+    private final DeleteOrganizationUseCase deleteOrganizationUseCase;
     private final UserRepository userRepository;
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -100,5 +102,15 @@ public class OrganizationController {
         Organization organization = updateOrganizationUseCase.update(id, dto);
         OrganizationResponseDTO response = Mapper.toOrganizationResponseDTO(organization);
         return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteOrganization(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        deleteOrganizationUseCase.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

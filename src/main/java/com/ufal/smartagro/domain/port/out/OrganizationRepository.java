@@ -10,4 +10,5 @@ public interface OrganizationRepository {
     Optional<Organization> findById(UUID id);
     List<Organization> findAll();
     boolean existsByTaxId(String taxId);
+    void delete(UUID id);
 }
