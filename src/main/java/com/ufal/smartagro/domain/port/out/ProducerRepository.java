@@ -7,4 +7,7 @@ import java.util.UUID;
 public interface ProducerRepository {
     Producer save(Producer producer);
     Optional<Producer> findById(UUID id);
+    Optional<Producer> findByUserId(UUID userId);
+    java.util.List<Producer> findAll();
+    void delete(UUID id);
 }

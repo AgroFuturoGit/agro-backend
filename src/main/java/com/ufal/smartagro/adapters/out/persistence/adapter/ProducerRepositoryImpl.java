@@ -29,4 +29,21 @@ public class ProducerRepositoryImpl implements ProducerRepository {
     public Optional<Producer> findById(UUID id) {
         return jpaRepository.findById(id).map(mapper::toDomain);
     }
+
+    @Override
+    public Optional<Producer> findByUserId(UUID userId) {
+        return jpaRepository.findByUserId(userId).map(mapper::toDomain);
+    }
+
+    @Override
+    public java.util.List<Producer> findAll() {
+        return jpaRepository.findAll().stream()
+                .map(mapper::toDomain)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    public void delete(UUID id) {
+        jpaRepository.softDeleteById(id);
+    }
 }
