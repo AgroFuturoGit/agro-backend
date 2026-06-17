@@ -10,6 +10,7 @@ import com.ufal.smartagro.application.service.community.FindAllCommunitiesUseCas
 import com.ufal.smartagro.application.service.community.FindCommunityByIdUseCase;
 import com.ufal.smartagro.application.service.community.RegisterCommunityUseCase;
 import com.ufal.smartagro.application.service.community.UpdateCommunityUseCase;
+import com.ufal.smartagro.application.service.community.DeleteCommunityUseCase;
 import com.ufal.smartagro.application.service.producer.RegisterProducerUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
@@ -37,6 +38,7 @@ public class CommunityController {
     private final FindCommunityByIdUseCase findCommunityByIdUseCase;
     private final FindAllCommunitiesUseCase findAllCommunitiesUseCase;
     private final UpdateCommunityUseCase updateCommunityUseCase;
+    private final DeleteCommunityUseCase deleteCommunityUseCase;
     private final UserRepository userRepository;
 
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
@@ -102,5 +104,15 @@ public class CommunityController {
         Community community = updateCommunityUseCase.update(id, dto);
         CommunityResponseDTO response = Mapper.toCommunityResponseDTO(community);
         return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCommunity(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        deleteCommunityUseCase.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }
