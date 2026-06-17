@@ -26,6 +26,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -73,10 +74,11 @@ public class CommunityController {
 
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<java.util.List<CommunityResponseDTO>> findAllCommunities(
+    public ResponseEntity<List<CommunityResponseDTO>> findAllCommunities(
+            @RequestParam(required = false) UUID orgId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        java.util.List<Community> communities = findAllCommunitiesUseCase.findAll();
+        java.util.List<Community> communities = findAllCommunitiesUseCase.findAll(orgId);
         java.util.List<CommunityResponseDTO> response = communities.stream()
                 .map(Mapper::toCommunityResponseDTO)
                 .toList();

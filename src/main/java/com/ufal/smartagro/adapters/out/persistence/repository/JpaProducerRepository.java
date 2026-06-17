@@ -11,6 +11,7 @@ import java.util.UUID;
 
 public interface JpaProducerRepository extends JpaRepository<ProducerEntity, UUID> {
     Optional<ProducerEntity> findByUserId(UUID userId);
+    java.util.List<ProducerEntity> findAllByCommunityId(UUID communityId);
 
     @Modifying
     @Query("UPDATE ProducerEntity p SET p.deletedAt = CURRENT_TIMESTAMP WHERE p.id = :id")

@@ -40,9 +40,10 @@ public class ProducerController {
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<ProducerResponseDTO>> findAllProducers(
+            @RequestParam(required = false) UUID communityId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        List<Producer> producers = findAllProducersUseCase.findAll();
+        List<Producer> producers = findAllProducersUseCase.findAll(communityId);
         List<ProducerResponseDTO> response = producers.stream()
                 .map(Mapper::toProducerResponseDTO)
                 .toList();

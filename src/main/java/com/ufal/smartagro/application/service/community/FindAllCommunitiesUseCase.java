@@ -15,7 +15,10 @@ public class FindAllCommunitiesUseCase {
     private final CommunityRepository communityRepository;
 
     @Transactional(readOnly = true)
-    public List<Community> findAll() {
+    public List<Community> findAll(java.util.UUID orgId) {
+        if (orgId != null) {
+            return communityRepository.findAllByOrganizationId(orgId);
+        }
         return communityRepository.findAll();
     }
 }

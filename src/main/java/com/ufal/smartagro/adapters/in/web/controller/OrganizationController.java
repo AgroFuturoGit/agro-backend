@@ -25,6 +25,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -71,7 +72,7 @@ public class OrganizationController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<java.util.List<OrganizationResponseDTO>> findAllOrganizations(
+    public ResponseEntity<List<OrganizationResponseDTO>> findAllOrganizations(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         java.util.List<Organization> organizations = findAllOrganizationsUseCase.findAll();

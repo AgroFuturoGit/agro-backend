@@ -43,6 +43,13 @@ public class ProducerRepositoryImpl implements ProducerRepository {
     }
 
     @Override
+    public java.util.List<Producer> findAllByCommunityId(UUID communityId) {
+        return jpaRepository.findAllByCommunityId(communityId).stream()
+                .map(mapper::toDomain)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
     public void delete(UUID id) {
         jpaRepository.softDeleteById(id);
     }

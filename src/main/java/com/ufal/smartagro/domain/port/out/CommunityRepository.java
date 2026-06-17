@@ -8,5 +8,6 @@ public interface CommunityRepository {
     Community save(Community community);
     Optional<Community> findById(UUID id);
     java.util.List<Community> findAll();
+    java.util.List<Community> findAllByOrganizationId(UUID organizationId);
     void delete(UUID id);
 }

@@ -9,5 +9,6 @@ public interface ProducerRepository {
     Optional<Producer> findById(UUID id);
     Optional<Producer> findByUserId(UUID userId);
     java.util.List<Producer> findAll();
+    java.util.List<Producer> findAllByCommunityId(UUID communityId);
     void delete(UUID id);
 }

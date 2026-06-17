@@ -38,6 +38,13 @@ public class CommunityRepositoryImpl implements CommunityRepository {
     }
 
     @Override
+    public java.util.List<Community> findAllByOrganizationId(UUID organizationId) {
+        return jpaRepository.findAllByOrganizationId(organizationId).stream()
+                .map(mapper::toDomain)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
     public void delete(UUID id) {
         jpaRepository.softDeleteById(id);
     }

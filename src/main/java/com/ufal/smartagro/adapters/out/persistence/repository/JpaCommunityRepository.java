@@ -8,6 +8,8 @@ import org.springframework.data.repository.query.Param;
 import java.util.UUID;
 
 public interface JpaCommunityRepository extends JpaRepository<CommunityEntity, UUID> {
+    java.util.List<CommunityEntity> findAllByOrganizationId(UUID organizationId);
+
     @Modifying
     @Query("UPDATE CommunityEntity c SET c.deletedAt = CURRENT_TIMESTAMP WHERE c.id = :id")
     void softDeleteById(@Param("id") UUID id);

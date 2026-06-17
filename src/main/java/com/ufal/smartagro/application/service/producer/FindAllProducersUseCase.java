@@ -15,7 +15,10 @@ public class FindAllProducersUseCase {
     private final ProducerRepository producerRepository;
 
     @Transactional(readOnly = true)
-    public List<Producer> findAll() {
+    public List<Producer> findAll(java.util.UUID communityId) {
+        if (communityId != null) {
+            return producerRepository.findAllByCommunityId(communityId);
+        }
         return producerRepository.findAll();
     }
 }
