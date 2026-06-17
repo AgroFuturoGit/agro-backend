@@ -6,6 +6,8 @@ import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationRegisterD
 import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationResponseDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.manager.RegisterManagerUseCase;
+import com.ufal.smartagro.application.service.organization.FindAllOrganizationsUseCase;
+import com.ufal.smartagro.application.service.organization.FindOrganizationByIdUseCase;
 import com.ufal.smartagro.application.service.organization.RegisterOrganizationUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
@@ -30,6 +32,8 @@ public class OrganizationController {
 
     private final RegisterOrganizationUseCase registerOrganizationUseCase;
     private final RegisterManagerUseCase registerManagerUseCase;
+    private final FindOrganizationByIdUseCase findOrganizationByIdUseCase;
+    private final FindAllOrganizationsUseCase findAllOrganizationsUseCase;
     private final UserRepository userRepository;
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -59,5 +63,28 @@ public class OrganizationController {
         Manager manager = registerManagerUseCase.register(id, dto, loggedUser);
         ManagerResponseDTO response = Mapper.toManagerResponseDTO(manager);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping
+    public ResponseEntity<java.util.List<OrganizationResponseDTO>> findAllOrganizations(
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        java.util.List<Organization> organizations = findAllOrganizationsUseCase.findAll();
+        java.util.List<OrganizationResponseDTO> response = organizations.stream()
+                .map(Mapper::toOrganizationResponseDTO)
+                .toList();
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{id}")
+    public ResponseEntity<OrganizationResponseDTO> findOrganizationById(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        Organization organization = findOrganizationByIdUseCase.findById(id);
+        OrganizationResponseDTO response = Mapper.toOrganizationResponseDTO(organization);
+        return ResponseEntity.ok(response);
     }
 }
