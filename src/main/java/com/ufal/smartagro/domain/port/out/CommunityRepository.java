@@ -7,4 +7,5 @@ import java.util.UUID;
 public interface CommunityRepository {
     Community save(Community community);
     Optional<Community> findById(UUID id);
+    java.util.List<Community> findAll();
 }

@@ -29,4 +29,11 @@ public class CommunityRepositoryImpl implements CommunityRepository {
     public Optional<Community> findById(UUID id) {
         return jpaRepository.findById(id).map(mapper::toDomain);
     }
+
+    @Override
+    public java.util.List<Community> findAll() {
+        return jpaRepository.findAll().stream()
+                .map(mapper::toDomain)
+                .collect(java.util.stream.Collectors.toList());
+    }
 }

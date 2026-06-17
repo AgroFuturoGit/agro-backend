@@ -5,6 +5,8 @@ import com.ufal.smartagro.adapters.in.web.dto.community.CommunityResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.producer.ProducerRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.producer.ProducerResponseDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+import com.ufal.smartagro.application.service.community.FindAllCommunitiesUseCase;
+import com.ufal.smartagro.application.service.community.FindCommunityByIdUseCase;
 import com.ufal.smartagro.application.service.community.RegisterCommunityUseCase;
 import com.ufal.smartagro.application.service.producer.RegisterProducerUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
@@ -30,6 +32,8 @@ public class CommunityController {
 
     private final RegisterCommunityUseCase registerCommunityUseCase;
     private final RegisterProducerUseCase registerProducerUseCase;
+    private final FindCommunityByIdUseCase findCommunityByIdUseCase;
+    private final FindAllCommunitiesUseCase findAllCommunitiesUseCase;
     private final UserRepository userRepository;
 
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
@@ -60,5 +64,28 @@ public class CommunityController {
         Producer producer = registerProducerUseCase.register(id, dto, loggedUser);
         ProducerResponseDTO response = Mapper.toProducerResponseDTO(producer);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
+    @GetMapping
+    public ResponseEntity<java.util.List<CommunityResponseDTO>> findAllCommunities(
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        java.util.List<Community> communities = findAllCommunitiesUseCase.findAll();
+        java.util.List<CommunityResponseDTO> response = communities.stream()
+                .map(Mapper::toCommunityResponseDTO)
+                .toList();
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
+    @GetMapping("/{id}")
+    public ResponseEntity<CommunityResponseDTO> findCommunityById(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        Community community = findCommunityByIdUseCase.findById(id);
+        CommunityResponseDTO response = Mapper.toCommunityResponseDTO(community);
+        return ResponseEntity.ok(response);
     }
 }
