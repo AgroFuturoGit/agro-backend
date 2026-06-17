@@ -9,6 +9,7 @@ import com.ufal.smartagro.application.service.manager.RegisterManagerUseCase;
 import com.ufal.smartagro.application.service.organization.FindAllOrganizationsUseCase;
 import com.ufal.smartagro.application.service.organization.FindOrganizationByIdUseCase;
 import com.ufal.smartagro.application.service.organization.RegisterOrganizationUseCase;
+import com.ufal.smartagro.application.service.organization.UpdateOrganizationUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.Manager;
@@ -34,6 +35,7 @@ public class OrganizationController {
     private final RegisterManagerUseCase registerManagerUseCase;
     private final FindOrganizationByIdUseCase findOrganizationByIdUseCase;
     private final FindAllOrganizationsUseCase findAllOrganizationsUseCase;
+    private final UpdateOrganizationUseCase updateOrganizationUseCase;
     private final UserRepository userRepository;
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -84,6 +86,18 @@ public class OrganizationController {
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         Organization organization = findOrganizationByIdUseCase.findById(id);
+        OrganizationResponseDTO response = Mapper.toOrganizationResponseDTO(organization);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{id}")
+    public ResponseEntity<OrganizationResponseDTO> updateOrganization(
+            @PathVariable UUID id,
+            @Valid @RequestBody com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationUpdateDTO dto,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        Organization organization = updateOrganizationUseCase.update(id, dto);
         OrganizationResponseDTO response = Mapper.toOrganizationResponseDTO(organization);
         return ResponseEntity.ok(response);
     }
