@@ -29,4 +29,21 @@ public class ManagerRepositoryImpl implements ManagerRepository {
     public Optional<Manager> findById(UUID id) {
         return jpaRepository.findById(id).map(mapper::toDomain);
     }
+
+    @Override
+    public Optional<Manager> findByUserId(UUID userId) {
+        return jpaRepository.findByUserId(userId).map(mapper::toDomain);
+    }
+
+    @Override
+    public java.util.List<Manager> findAll() {
+        return jpaRepository.findAll().stream()
+                .map(mapper::toDomain)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    public void delete(UUID id) {
+        jpaRepository.softDeleteById(id);
+    }
 }

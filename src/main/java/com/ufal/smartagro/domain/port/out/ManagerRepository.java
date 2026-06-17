@@ -7,4 +7,7 @@ import java.util.UUID;
 public interface ManagerRepository {
     Manager save(Manager manager);
     Optional<Manager> findById(UUID id);
+    Optional<Manager> findByUserId(UUID userId);
+    java.util.List<Manager> findAll();
+    void delete(UUID id);
 }

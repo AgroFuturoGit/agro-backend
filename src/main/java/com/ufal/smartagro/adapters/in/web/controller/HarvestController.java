@@ -69,7 +69,7 @@ public class HarvestController {
         return ResponseEntity.ok(responseDTO);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'PRODUCER')")
     @GetMapping("/{id}")
     public ResponseEntity<HarvestResponseDTO> findById(@PathVariable UUID id,
                                                        @AuthenticationPrincipal UserDetailsImpl userDetails) {
@@ -83,7 +83,7 @@ public class HarvestController {
         return ResponseEntity.ok(responseDTO);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'PRODUCER')")
     @GetMapping
     public ResponseEntity<List<HarvestResponseDTO>> findAll(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         User loggedUser = userRepository.findById(userDetails.getId())
