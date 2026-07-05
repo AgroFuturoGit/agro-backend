@@ -1,0 +1,31 @@
+# Compose para ambiente de DESENVOLVIMENTO.
+# Sobe apenas o PostgreSQL. Backend e frontend rodam na máquina do dev
+# (./mvnw spring-boot:run e npm run dev) para ter hot reload e debug nativo.
+#
+# Uso:
+#   cp .env.example .env
+#   docker compose up -d
+#
+# Para produção, ver docker-compose.prod.yml e DEPLOYMENT.md.
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: agro-backend-db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
