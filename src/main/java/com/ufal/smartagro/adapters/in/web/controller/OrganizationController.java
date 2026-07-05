@@ -1,0 +1,117 @@
+package com.ufal.smartagro.adapters.in.web.controller;
+
+import com.ufal.smartagro.adapters.in.web.dto.manager.ManagerRegisterDTO;
+import com.ufal.smartagro.adapters.in.web.dto.manager.ManagerResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationRegisterDTO;
+import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationResponseDTO;
+import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+import com.ufal.smartagro.application.service.manager.RegisterManagerUseCase;
+import com.ufal.smartagro.application.service.organization.FindAllOrganizationsUseCase;
+import com.ufal.smartagro.application.service.organization.FindOrganizationByIdUseCase;
+import com.ufal.smartagro.application.service.organization.RegisterOrganizationUseCase;
+import com.ufal.smartagro.application.service.organization.UpdateOrganizationUseCase;
+import com.ufal.smartagro.application.service.organization.DeleteOrganizationUseCase;
+import com.ufal.smartagro.config.security.details.UserDetailsImpl;
+import com.ufal.smartagro.domain.exception.UserNotFoundException;
+import com.ufal.smartagro.domain.model.Manager;
+import com.ufal.smartagro.domain.model.Organization;
+import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.port.out.UserRepository;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
+
+@RequiredArgsConstructor
+@RestController
+@RequestMapping("/organizations")
+public class OrganizationController {
+
+    private final RegisterOrganizationUseCase registerOrganizationUseCase;
+    private final RegisterManagerUseCase registerManagerUseCase;
+    private final FindOrganizationByIdUseCase findOrganizationByIdUseCase;
+    private final FindAllOrganizationsUseCase findAllOrganizationsUseCase;
+    private final UpdateOrganizationUseCase updateOrganizationUseCase;
+    private final DeleteOrganizationUseCase deleteOrganizationUseCase;
+    private final UserRepository userRepository;
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping
+    public ResponseEntity<OrganizationResponseDTO> registerOrganization(
+            @Valid @RequestBody OrganizationRegisterDTO dto,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+
+        Organization organization = registerOrganizationUseCase.register(dto, loggedUser);
+        OrganizationResponseDTO response = Mapper.toOrganizationResponseDTO(organization);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{id}/managers")
+    public ResponseEntity<ManagerResponseDTO> registerManager(
+            @PathVariable UUID id,
+            @Valid @RequestBody ManagerRegisterDTO dto,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+
+        Manager manager = registerManagerUseCase.register(id, dto, loggedUser);
+        ManagerResponseDTO response = Mapper.toManagerResponseDTO(manager);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping
+    public ResponseEntity<List<OrganizationResponseDTO>> findAllOrganizations(
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        java.util.List<Organization> organizations = findAllOrganizationsUseCase.findAll();
+        java.util.List<OrganizationResponseDTO> response = organizations.stream()
+                .map(Mapper::toOrganizationResponseDTO)
+                .toList();
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{id}")
+    public ResponseEntity<OrganizationResponseDTO> findOrganizationById(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        Organization organization = findOrganizationByIdUseCase.findById(id);
+        OrganizationResponseDTO response = Mapper.toOrganizationResponseDTO(organization);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{id}")
+    public ResponseEntity<OrganizationResponseDTO> updateOrganization(
+            @PathVariable UUID id,
+            @Valid @RequestBody com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationUpdateDTO dto,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        Organization organization = updateOrganizationUseCase.update(id, dto);
+        OrganizationResponseDTO response = Mapper.toOrganizationResponseDTO(organization);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteOrganization(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        deleteOrganizationUseCase.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+}

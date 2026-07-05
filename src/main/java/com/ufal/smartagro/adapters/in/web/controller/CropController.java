@@ -71,7 +71,7 @@ public class CropController {
         return ResponseEntity.ok(responseDTO);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'PRODUCER')")
     @GetMapping("/{id}")
     public ResponseEntity<CropResponseDTO> findById(@PathVariable UUID id, @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
@@ -81,7 +81,7 @@ public class CropController {
         return ResponseEntity.ok(responseDTO);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'PRODUCER')")
     @GetMapping
     public ResponseEntity<List<CropResponseDTO>> findAll(@AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
         User loggedUser = userRepository.findById(loggedUserDetails.getId())

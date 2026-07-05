@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @RequiredArgsConstructor
 @Service
 public class UserDeleteUseCase {
@@ -16,7 +18,7 @@ public class UserDeleteUseCase {
     private final UserRepository userRepository;
 
     @Transactional
-    public void delete(Long userId, User loggedUser) {
+    public void delete(UUID userId, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException();
         }

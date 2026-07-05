@@ -23,6 +23,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
@@ -37,11 +38,16 @@ public class UserController {
     private final FindAllUsersUseCase findAllUsersUseCase;
     private final UserRepository userRepository;
 
+    @Deprecated(since = "2.0", forRemoval = true)
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/register")
     public ResponseEntity<UserResponseDTO> register(
             @Valid @RequestBody UserRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        if (dto.role() == com.ufal.smartagro.domain.model.enums.Role.MANAGER || dto.role() == com.ufal.smartagro.domain.model.enums.Role.PRODUCER) {
+            throw new IllegalArgumentException("Para criar gestores ou produtores, utilize as rotas específicas de Organização e Comunidade.");
+        }
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
@@ -53,7 +59,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
@@ -78,7 +84,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}")
     public ResponseEntity<UserResponseDTO> adminUpdate(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @RequestBody AdminUserUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
@@ -92,7 +98,7 @@ public class UserController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDTO> findById(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
