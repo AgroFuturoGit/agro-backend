@@ -17,7 +17,10 @@ public class CropFindByIdUseCase {
     private final CropRepository cropRepository;
 
     public Crop execute(UUID id, User loggedUser) {
-        if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN) {
+        if (loggedUser.getRole() != Role.ADMIN
+                && loggedUser.getRole() != Role.TECHNICIAN
+                && loggedUser.getRole() != Role.MANAGER
+                && loggedUser.getRole() != Role.PRODUCER) {
             throw new AccessDeniedException("User does not have permission to view a crop.");
         }
         return cropRepository.findById(id).orElseThrow();

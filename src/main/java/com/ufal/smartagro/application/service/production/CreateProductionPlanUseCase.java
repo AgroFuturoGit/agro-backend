@@ -5,6 +5,7 @@ import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.Producer;
 import com.ufal.smartagro.domain.model.ProductionPlan;
+import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.CropRepository;
 import com.ufal.smartagro.domain.port.out.HarvestRepository;
 import com.ufal.smartagro.domain.port.out.ProducerRepository;
@@ -23,11 +24,14 @@ public class CreateProductionPlanUseCase {
     private final ProducerRepository producerRepository;
     private final HarvestRepository harvestRepository;
     private final CropRepository cropRepository;
+    private final ProductionAccessValidator accessValidator;
 
     @Transactional
-    public ProductionPlan create(UUID producerId, ProductionPlanRegisterDTO dto) {
+    public ProductionPlan create(UUID producerId, ProductionPlanRegisterDTO dto, User loggedUser) {
         Producer producer = producerRepository.findById(producerId)
                 .orElseThrow(() -> new IllegalArgumentException("Produtor não encontrado."));
+
+        accessValidator.validateAccess(producer, loggedUser);
 
         Harvest harvest = harvestRepository.findById(dto.harvestId())
                 .orElseThrow(() -> new IllegalArgumentException("Safra não encontrada."));

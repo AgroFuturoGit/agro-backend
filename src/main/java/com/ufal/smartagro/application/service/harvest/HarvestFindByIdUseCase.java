@@ -18,7 +18,10 @@ public class HarvestFindByIdUseCase {
     private final HarvestRepository harvestRepository;
 
     public Harvest execute(UUID id, User loggedUser) {
-        if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN) {
+        if (loggedUser.getRole() != Role.ADMIN
+                && loggedUser.getRole() != Role.TECHNICIAN
+                && loggedUser.getRole() != Role.MANAGER
+                && loggedUser.getRole() != Role.PRODUCER) {
             throw new AccessDeniedException("Usuário não tem permissão para visualizar uma safra.");
         }
         return harvestRepository.findById(id)

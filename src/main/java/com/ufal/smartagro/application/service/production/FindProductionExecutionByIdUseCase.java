@@ -1,6 +1,7 @@
 package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.domain.model.ProductionExecution;
+import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.ProductionExecutionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,10 +14,17 @@ import java.util.UUID;
 public class FindProductionExecutionByIdUseCase {
 
     private final ProductionExecutionRepository productionExecutionRepository;
+    private final ProductionAccessValidator accessValidator;
 
     @Transactional(readOnly = true)
-    public ProductionExecution findById(UUID id) {
-        return productionExecutionRepository.findById(id)
+    public ProductionExecution findById(UUID id, User loggedUser) {
+        ProductionExecution execution = productionExecutionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Execução de produção não encontrada."));
+
+        if (execution.getProductionPlan() != null) {
+            accessValidator.validateAccess(execution.getProductionPlan().getProducer(), loggedUser);
+        }
+
+        return execution;
     }
 }

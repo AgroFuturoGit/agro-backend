@@ -3,6 +3,7 @@ package com.ufal.smartagro.application.service.production;
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionComparisonDTO;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.ProductionPlan;
+import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.ProductionExecutionRepository;
 import com.ufal.smartagro.domain.port.out.ProductionPlanRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,11 +21,14 @@ public class CompareProductionUseCase {
 
     private final ProductionPlanRepository productionPlanRepository;
     private final ProductionExecutionRepository productionExecutionRepository;
+    private final ProductionAccessValidator accessValidator;
 
     @Transactional(readOnly = true)
-    public ProductionComparisonDTO compare(UUID planId) {
+    public ProductionComparisonDTO compare(UUID planId, User loggedUser) {
         ProductionPlan plan = productionPlanRepository.findById(planId)
                 .orElseThrow(() -> new IllegalArgumentException("Plano de produção não encontrado."));
+
+        accessValidator.validateAccess(plan.getProducer(), loggedUser);
 
         List<ProductionExecution> executions = productionExecutionRepository.findAllByProductionPlanId(planId);
 
