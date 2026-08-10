@@ -22,6 +22,7 @@ import com.ufal.smartagro.domain.model.Organization;
 import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Producer;
+import com.ufal.smartagro.adapters.out.persistence.entity.UserEntity;
 
 public class Mapper {
 
@@ -33,6 +34,17 @@ public class Mapper {
                 user.getCpf(),
                 user.getRole(),
                 user.getDateOfBirth());
+    }
+
+    public static UserResponseDTO toUserResponseDTO(UserEntity entity) {
+        if (entity == null) return null;
+        return new UserResponseDTO(
+                entity.getId(),
+                entity.getFullName(),
+                entity.getEmail(),
+                entity.getCpf(),
+                entity.getRole(),
+                entity.getDateOfBirth());
     }
 
     public static LoginResponseDTO toLoginResponseDTO(String token, User user){
