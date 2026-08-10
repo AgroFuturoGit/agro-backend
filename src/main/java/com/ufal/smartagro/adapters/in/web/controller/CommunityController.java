@@ -1,6 +1,5 @@
 package com.ufal.smartagro.adapters.in.web.controller;
 
-import com.ufal.smartagro.adapters.in.web.dto.community.CommunityRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.community.CommunityResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.community.CommunityUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.dto.producer.ProducerRegisterDTO;
@@ -8,7 +7,6 @@ import com.ufal.smartagro.adapters.in.web.dto.producer.ProducerResponseDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.community.FindAllCommunitiesUseCase;
 import com.ufal.smartagro.application.service.community.FindCommunityByIdUseCase;
-import com.ufal.smartagro.application.service.community.RegisterCommunityUseCase;
 import com.ufal.smartagro.application.service.community.UpdateCommunityUseCase;
 import com.ufal.smartagro.application.service.community.DeleteCommunityUseCase;
 import com.ufal.smartagro.application.service.producer.RegisterProducerUseCase;
@@ -31,10 +29,9 @@ import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping
+@RequestMapping("/communities")
 public class CommunityController {
 
-    private final RegisterCommunityUseCase registerCommunityUseCase;
     private final RegisterProducerUseCase registerProducerUseCase;
     private final FindCommunityByIdUseCase findCommunityByIdUseCase;
     private final FindAllCommunitiesUseCase findAllCommunitiesUseCase;
@@ -43,22 +40,7 @@ public class CommunityController {
     private final UserRepository userRepository;
 
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    @PostMapping("/organizations/{orgId}/communities")
-    public ResponseEntity<CommunityResponseDTO> registerCommunity(
-            @PathVariable UUID orgId,
-            @Valid @RequestBody CommunityRegisterDTO dto,
-            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
-
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
-
-        Community community = registerCommunityUseCase.register(orgId, dto, loggedUser);
-        CommunityResponseDTO response = Mapper.toCommunityResponseDTO(community);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    @PostMapping("/communities/{id}/producers")
+    @PostMapping("/{id}/producers")
     public ResponseEntity<ProducerResponseDTO> registerProducer(
             @PathVariable UUID id,
             @Valid @RequestBody ProducerRegisterDTO dto,

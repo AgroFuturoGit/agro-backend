@@ -1,10 +1,13 @@
 package com.ufal.smartagro.adapters.in.web.controller;
 
+import com.ufal.smartagro.adapters.in.web.dto.community.CommunityRegisterDTO;
+import com.ufal.smartagro.adapters.in.web.dto.community.CommunityResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.manager.ManagerRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.manager.ManagerResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationResponseDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+import com.ufal.smartagro.application.service.community.RegisterCommunityUseCase;
 import com.ufal.smartagro.application.service.manager.RegisterManagerUseCase;
 import com.ufal.smartagro.application.service.organization.FindAllOrganizationsUseCase;
 import com.ufal.smartagro.application.service.organization.FindOrganizationByIdUseCase;
@@ -13,6 +16,7 @@ import com.ufal.smartagro.application.service.organization.UpdateOrganizationUse
 import com.ufal.smartagro.application.service.organization.DeleteOrganizationUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
+import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Organization;
 import com.ufal.smartagro.domain.model.User;
@@ -35,6 +39,7 @@ public class OrganizationController {
 
     private final RegisterOrganizationUseCase registerOrganizationUseCase;
     private final RegisterManagerUseCase registerManagerUseCase;
+    private final RegisterCommunityUseCase registerCommunityUseCase;
     private final FindOrganizationByIdUseCase findOrganizationByIdUseCase;
     private final FindAllOrganizationsUseCase findAllOrganizationsUseCase;
     private final UpdateOrganizationUseCase updateOrganizationUseCase;
@@ -67,6 +72,21 @@ public class OrganizationController {
 
         Manager manager = registerManagerUseCase.register(id, dto, loggedUser);
         ManagerResponseDTO response = Mapper.toManagerResponseDTO(manager);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PostMapping("/{orgId}/communities")
+    public ResponseEntity<CommunityResponseDTO> registerCommunity(
+            @PathVariable UUID orgId,
+            @Valid @RequestBody CommunityRegisterDTO dto,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+
+        Community community = registerCommunityUseCase.register(orgId, dto, loggedUser);
+        CommunityResponseDTO response = Mapper.toCommunityResponseDTO(community);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
