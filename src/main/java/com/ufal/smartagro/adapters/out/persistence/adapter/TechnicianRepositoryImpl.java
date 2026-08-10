@@ -45,6 +45,18 @@ public class TechnicianRepositoryImpl implements TechnicianRepository {
     }
 
     @Override
+    public List<Technician> findAllByOrganizationId(UUID organizationId) {
+        return jpaRepository.findAllByOrganizationId(organizationId).stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean existsByIdAndOrganizationId(UUID technicianId, UUID organizationId) {
+        return jpaRepository.existsByIdAndOrganizationId(technicianId, organizationId);
+    }
+
+    @Override
     public void delete(UUID id) {
         jpaRepository.softDeleteById(id);
     }

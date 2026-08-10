@@ -11,5 +11,7 @@ public interface TechnicianRepository {
     Optional<Technician> findById(UUID id);
     Optional<Technician> findByUserId(UUID userId);
     List<Technician> findAll();
+    List<Technician> findAllByOrganizationId(UUID organizationId);
+    boolean existsByIdAndOrganizationId(UUID technicianId, UUID organizationId);
     void delete(UUID id);
 }

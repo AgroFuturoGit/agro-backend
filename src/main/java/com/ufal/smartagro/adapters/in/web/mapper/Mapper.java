@@ -15,6 +15,7 @@ import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationResponseD
 import com.ufal.smartagro.adapters.in.web.dto.manager.ManagerResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.community.CommunityResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.producer.ProducerResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.technician.TechnicianResponseDTO;
 import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.User;
@@ -22,6 +23,7 @@ import com.ufal.smartagro.domain.model.Organization;
 import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Producer;
+import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.adapters.out.persistence.entity.UserEntity;
 
 public class Mapper {
@@ -188,6 +190,18 @@ public class Mapper {
                 exec.getActualYield(),
                 exec.getHarvestDate(),
                 exec.getCreatedAt()
+        );
+    }
+
+    public static TechnicianResponseDTO toTechnicianResponseDTO(Technician technician) {
+        if (technician == null) return null;
+        return new TechnicianResponseDTO(
+                technician.getId(),
+                toUserResponseDTO(technician.getUser()),
+                technician.getProfessionalId(),
+                technician.getSpecialty(),
+                technician.getCreatedAt(),
+                technician.getUpdatedAt()
         );
     }
 }
