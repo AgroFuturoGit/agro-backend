@@ -115,13 +115,16 @@ public class ProductionController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'PRODUCER')")
     @DeleteMapping("/production-plans/{planId}")
     public ResponseEntity<Void> deleteProductionPlan(
             @PathVariable UUID planId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        deleteProductionPlanUseCase.delete(planId);
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+
+        deleteProductionPlanUseCase.delete(planId, loggedUser);
         return ResponseEntity.noContent().build();
     }
 
@@ -183,13 +186,16 @@ public class ProductionController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'PRODUCER')")
     @DeleteMapping("/production-executions/{executionId}")
     public ResponseEntity<Void> deleteProductionExecution(
             @PathVariable UUID executionId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        deleteProductionExecutionUseCase.delete(executionId);
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+
+        deleteProductionExecutionUseCase.delete(executionId, loggedUser);
         return ResponseEntity.noContent().build();
     }
 }

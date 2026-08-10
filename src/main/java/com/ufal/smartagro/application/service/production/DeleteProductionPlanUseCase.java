@@ -1,5 +1,7 @@
 package com.ufal.smartagro.application.service.production;
 
+import com.ufal.smartagro.domain.model.ProductionPlan;
+import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.ProductionPlanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,12 +14,15 @@ import java.util.UUID;
 public class DeleteProductionPlanUseCase {
 
     private final ProductionPlanRepository productionPlanRepository;
+    private final ProductionAccessValidator accessValidator;
 
     @Transactional
-    public void delete(UUID planId) {
-        productionPlanRepository.findById(planId)
+    public void delete(UUID planId, User loggedUser) {
+        ProductionPlan plan = productionPlanRepository.findById(planId)
                 .orElseThrow(() -> new IllegalArgumentException("Plano de produção não encontrado."));
-        
+
+        accessValidator.validateAccess(plan.getProducer(), loggedUser);
+
         productionPlanRepository.delete(planId);
     }
 }
