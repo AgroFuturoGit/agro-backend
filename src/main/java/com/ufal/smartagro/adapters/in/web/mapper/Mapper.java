@@ -24,7 +24,9 @@ import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Producer;
 import com.ufal.smartagro.domain.model.Technician;
+import com.ufal.smartagro.domain.model.TechnicalAssistance;
 import com.ufal.smartagro.adapters.out.persistence.entity.UserEntity;
+import com.ufal.smartagro.adapters.in.web.dto.technicalassistance.TechnicalAssistanceResponseDTO;
 
 public class Mapper {
 
@@ -202,6 +204,16 @@ public class Mapper {
                 technician.getSpecialty(),
                 technician.getCreatedAt(),
                 technician.getUpdatedAt()
+        );
+    }
+    public static TechnicalAssistanceResponseDTO toTechnicalAssistanceResponseDTO(TechnicalAssistance assistance) {
+        if (assistance == null) return null;
+        return new TechnicalAssistanceResponseDTO(
+                assistance.getId(),
+                assistance.getTechnician().getId(),
+                assistance.getProducer().getId(),
+                assistance.getStartDate(),
+                assistance.getEndDate()
         );
     }
 }
