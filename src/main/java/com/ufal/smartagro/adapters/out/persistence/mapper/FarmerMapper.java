@@ -1,22 +1,22 @@
 package com.ufal.smartagro.adapters.out.persistence.mapper;
 
-import com.ufal.smartagro.adapters.out.persistence.entity.ProducerEntity;
-import com.ufal.smartagro.domain.model.Producer;
+import com.ufal.smartagro.adapters.out.persistence.entity.FarmerEntity;
+import com.ufal.smartagro.domain.model.Farmer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class ProducerMapper {
+public class FarmerMapper {
 
     private final UserMapper userMapper;
     private final CommunityMapper communityMapper;
 
-    public Producer toDomain(ProducerEntity entity) {
+    public Farmer toDomain(FarmerEntity entity) {
         if (entity == null) {
             return null;
         }
-        return new Producer(
+        return new Farmer(
                 entity.getId(),
                 userMapper.toDomain(entity.getUser()),
                 communityMapper.toDomain(entity.getCommunity()),
@@ -28,11 +28,11 @@ public class ProducerMapper {
         );
     }
 
-    public ProducerEntity toEntity(Producer domain) {
+    public FarmerEntity toEntity(Farmer domain) {
         if (domain == null) {
             return null;
         }
-        ProducerEntity entity = new ProducerEntity();
+        FarmerEntity entity = new FarmerEntity();
         entity.setId(domain.getId());
         entity.setUser(userMapper.toEntity(domain.getUser()));
         entity.setCommunity(communityMapper.toEntity(domain.getCommunity()));

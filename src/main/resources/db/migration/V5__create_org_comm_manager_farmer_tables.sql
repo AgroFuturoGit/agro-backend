@@ -29,7 +29,7 @@ CREATE TABLE managers (
     CONSTRAINT fk_manager_organization FOREIGN KEY (organization_id) REFERENCES organizations(id)
 );
 
-CREATE TABLE producers (
+CREATE TABLE farmers (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL UNIQUE,
     community_id UUID NOT NULL,
@@ -38,6 +38,6 @@ CREATE TABLE producers (
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
-    CONSTRAINT fk_producer_user FOREIGN KEY (user_id) REFERENCES users(id),
-    CONSTRAINT fk_producer_community FOREIGN KEY (community_id) REFERENCES communities(id)
+    CONSTRAINT fk_farmer_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_farmer_community FOREIGN KEY (community_id) REFERENCES communities(id)
 );

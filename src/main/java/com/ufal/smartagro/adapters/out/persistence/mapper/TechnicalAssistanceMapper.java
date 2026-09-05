@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 public class TechnicalAssistanceMapper {
 
     private final TechnicianMapper technicianMapper;
-    private final ProducerMapper producerMapper;
+    private final FarmerMapper farmerMapper;
 
     public TechnicalAssistance toDomain(TechnicalAssistanceEntity entity) {
         if (entity == null) {
@@ -19,7 +19,7 @@ public class TechnicalAssistanceMapper {
         return new TechnicalAssistance(
                 entity.getId(),
                 technicianMapper.toDomain(entity.getTechnician()),
-                producerMapper.toDomain(entity.getProducer()),
+                farmerMapper.toDomain(entity.getFarmer()),
                 entity.getStartDate(),
                 entity.getEndDate(),
                 entity.getCreatedAt(),
@@ -35,7 +35,7 @@ public class TechnicalAssistanceMapper {
         TechnicalAssistanceEntity entity = new TechnicalAssistanceEntity();
         entity.setId(domain.getId());
         entity.setTechnician(technicianMapper.toEntity(domain.getTechnician()));
-        entity.setProducer(producerMapper.toEntity(domain.getProducer()));
+        entity.setFarmer(farmerMapper.toEntity(domain.getFarmer()));
         entity.setStartDate(domain.getStartDate());
         entity.setEndDate(domain.getEndDate());
         entity.setCreatedAt(domain.getCreatedAt());

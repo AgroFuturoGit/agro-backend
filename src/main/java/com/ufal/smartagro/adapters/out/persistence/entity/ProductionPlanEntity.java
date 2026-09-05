@@ -32,8 +32,8 @@ public class ProductionPlanEntity {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "producer_id", nullable = false)
-    private ProducerEntity producer;
+    @JoinColumn(name = "farmer_id", nullable = false)
+    private FarmerEntity farmer;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "harvest_id", nullable = false)

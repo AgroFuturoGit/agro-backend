@@ -11,7 +11,7 @@ import java.util.UUID;
 public class TechnicalAssistance {
     private UUID id;
     private Technician technician;
-    private Producer producer;
+    private Farmer farmer;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private LocalDateTime createdAt;

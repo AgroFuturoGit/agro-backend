@@ -2,18 +2,18 @@ package com.ufal.smartagro.adapters.in.web.controller;
 
 import com.ufal.smartagro.adapters.in.web.dto.community.CommunityResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.community.CommunityUpdateDTO;
-import com.ufal.smartagro.adapters.in.web.dto.producer.ProducerRegisterDTO;
-import com.ufal.smartagro.adapters.in.web.dto.producer.ProducerResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerRegisterDTO;
+import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerResponseDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.community.FindAllCommunitiesUseCase;
 import com.ufal.smartagro.application.service.community.FindCommunityByIdUseCase;
 import com.ufal.smartagro.application.service.community.UpdateCommunityUseCase;
 import com.ufal.smartagro.application.service.community.DeleteCommunityUseCase;
-import com.ufal.smartagro.application.service.producer.RegisterProducerUseCase;
+import com.ufal.smartagro.application.service.farmer.RegisterFarmerUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.Community;
-import com.ufal.smartagro.domain.model.Producer;
+import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.UserRepository;
 import jakarta.validation.Valid;
@@ -32,7 +32,7 @@ import java.util.UUID;
 @RequestMapping("/communities")
 public class CommunityController {
 
-    private final RegisterProducerUseCase registerProducerUseCase;
+    private final RegisterFarmerUseCase registerFarmerUseCase;
     private final FindCommunityByIdUseCase findCommunityByIdUseCase;
     private final FindAllCommunitiesUseCase findAllCommunitiesUseCase;
     private final UpdateCommunityUseCase updateCommunityUseCase;
@@ -40,17 +40,17 @@ public class CommunityController {
     private final UserRepository userRepository;
 
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    @PostMapping("/{id}/producers")
-    public ResponseEntity<ProducerResponseDTO> registerProducer(
+    @PostMapping("/{id}/farmers")
+    public ResponseEntity<FarmerResponseDTO> registerFarmer(
             @PathVariable UUID id,
-            @Valid @RequestBody ProducerRegisterDTO dto,
+            @Valid @RequestBody FarmerRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
 
-        Producer producer = registerProducerUseCase.register(id, dto, loggedUser);
-        ProducerResponseDTO response = Mapper.toProducerResponseDTO(producer);
+        Farmer farmer = registerFarmerUseCase.register(id, dto, loggedUser);
+        FarmerResponseDTO response = Mapper.toFarmerResponseDTO(farmer);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

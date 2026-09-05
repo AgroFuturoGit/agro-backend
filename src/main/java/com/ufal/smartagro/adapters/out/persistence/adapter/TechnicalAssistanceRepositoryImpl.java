@@ -40,15 +40,15 @@ public class TechnicalAssistanceRepositoryImpl implements TechnicalAssistanceRep
     }
 
     @Override
-    public List<TechnicalAssistance> findByProducerId(UUID producerId) {
-        return jpaRepository.findByProducerId(producerId).stream()
+    public List<TechnicalAssistance> findByFarmerId(UUID farmerId) {
+        return jpaRepository.findByFarmerId(farmerId).stream()
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public Optional<TechnicalAssistance> findActiveByTechnicianAndProducer(UUID technicianId, UUID producerId) {
-        return jpaRepository.findByTechnicianIdAndProducerIdAndEndDateIsNull(technicianId, producerId)
+    public Optional<TechnicalAssistance> findActiveByTechnicianAndFarmer(UUID technicianId, UUID farmerId) {
+        return jpaRepository.findByTechnicianIdAndFarmerIdAndEndDateIsNull(technicianId, farmerId)
                 .map(mapper::toDomain);
     }
 

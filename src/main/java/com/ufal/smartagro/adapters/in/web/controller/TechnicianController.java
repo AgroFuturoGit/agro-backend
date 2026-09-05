@@ -7,8 +7,8 @@ import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.technician.*;
 import com.ufal.smartagro.adapters.in.web.dto.technicalassistance.TechnicalAssistanceRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.technicalassistance.TechnicalAssistanceResponseDTO;
-import com.ufal.smartagro.adapters.in.web.dto.producer.ProducerResponseDTO;
-import com.ufal.smartagro.domain.model.Producer;
+import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerResponseDTO;
+import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.Technician;
@@ -38,9 +38,9 @@ public class TechnicianController {
     private final UpdateTechnicianUseCase updateTechnicianUseCase;
     private final DeleteTechnicianUseCase deleteTechnicianUseCase;
     private final UserRepository userRepository;
-    private final AssignProducerToTechnicianUseCase assignProducerToTechnicianUseCase;
-    private final RemoveProducerFromTechnicianUseCase removeProducerFromTechnicianUseCase;
-    private final GetAssignedProducersUseCase getAssignedProducersUseCase;
+    private final AssignFarmerToTechnicianUseCase assignFarmerToTechnicianUseCase;
+    private final RemoveFarmerFromTechnicianUseCase removeFarmerFromTechnicianUseCase;
+    private final GetAssignedFarmersUseCase getAssignedFarmersUseCase;
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
@@ -122,7 +122,7 @@ public class TechnicianController {
         deleteTechnicianUseCase.delete(id, loggedUser);
         return ResponseEntity.noContent().build();
     }
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER') or hasRole('PRODUCER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER') or hasRole('FARMER')")
     @PostMapping("/{technicianId}/assistances")
     public ResponseEntity<TechnicalAssistanceResponseDTO> assignAssistance(
             @PathVariable UUID technicianId,
@@ -131,12 +131,12 @@ public class TechnicianController {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
-        TechnicalAssistance assistance = assignProducerToTechnicianUseCase.assign(dto, loggedUser);
+        TechnicalAssistance assistance = assignFarmerToTechnicianUseCase.assign(dto, loggedUser);
         TechnicalAssistanceResponseDTO response = Mapper.toTechnicalAssistanceResponseDTO(assistance);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER') or hasRole('PRODUCER') or hasRole('TECHNICIAN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER') or hasRole('FARMER') or hasRole('TECHNICIAN')")
     @DeleteMapping("/{technicianId}/assistances/{assistanceId}")
     public ResponseEntity<TechnicalAssistanceResponseDTO> removeAssistance(
             @PathVariable UUID technicianId,
@@ -145,37 +145,37 @@ public class TechnicianController {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
-        TechnicalAssistance assistance = removeProducerFromTechnicianUseCase.remove(assistanceId, loggedUser);
+        TechnicalAssistance assistance = removeFarmerFromTechnicianUseCase.remove(assistanceId, loggedUser);
         TechnicalAssistanceResponseDTO response = Mapper.toTechnicalAssistanceResponseDTO(assistance);
         return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasRole('TECHNICIAN')")
-    @GetMapping("/me/producers")
-    public ResponseEntity<List<ProducerResponseDTO>> getMyProducers(
+    @GetMapping("/me/farmers")
+    public ResponseEntity<List<FarmerResponseDTO>> getMyFarmers(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
         Technician technician = findTechnicianByUserUseCase.findByUserId(loggedUserDetails.getId());
-        List<Producer> producers = getAssignedProducersUseCase.getAssignedProducers(technician.getId(), loggedUser);
-        List<ProducerResponseDTO> response = producers.stream()
-                .map(Mapper::toProducerResponseDTO)
+        List<Farmer> farmers = getAssignedFarmersUseCase.getAssignedFarmers(technician.getId(), loggedUser);
+        List<FarmerResponseDTO> response = farmers.stream()
+                .map(Mapper::toFarmerResponseDTO)
                 .toList();
         return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-    @GetMapping("/{id}/producers")
-    public ResponseEntity<List<ProducerResponseDTO>> getTechnicianProducers(
+    @GetMapping("/{id}/farmers")
+    public ResponseEntity<List<FarmerResponseDTO>> getTechnicianFarmers(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
-        List<Producer> producers = getAssignedProducersUseCase.getAssignedProducers(id, loggedUser);
-        List<ProducerResponseDTO> response = producers.stream()
-                .map(Mapper::toProducerResponseDTO)
+        List<Farmer> farmers = getAssignedFarmersUseCase.getAssignedFarmers(id, loggedUser);
+        List<FarmerResponseDTO> response = farmers.stream()
+                .map(Mapper::toFarmerResponseDTO)
                 .toList();
         return ResponseEntity.ok(response);
     }

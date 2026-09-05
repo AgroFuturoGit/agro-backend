@@ -21,7 +21,7 @@ public class DeleteProductionPlanUseCase {
         ProductionPlan plan = productionPlanRepository.findById(planId)
                 .orElseThrow(() -> new IllegalArgumentException("Plano de produção não encontrado."));
 
-        accessValidator.validateAccess(plan.getProducer(), loggedUser);
+        accessValidator.validateAccess(plan.getFarmer(), loggedUser);
 
         productionPlanRepository.delete(planId);
     }

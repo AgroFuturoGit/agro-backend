@@ -1,11 +1,11 @@
 package com.ufal.smartagro.adapters.in.web.controller;
 
-import com.ufal.smartagro.adapters.in.web.dto.producer.ProducerResponseDTO;
-import com.ufal.smartagro.adapters.in.web.dto.producer.ProducerUpdateDTO;
+import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
-import com.ufal.smartagro.application.service.producer.*;
+import com.ufal.smartagro.application.service.farmer.*;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
-import com.ufal.smartagro.domain.model.Producer;
+import com.ufal.smartagro.domain.model.Farmer;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,68 +18,68 @@ import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/producers")
-public class ProducerController {
+@RequestMapping("/farmers")
+public class FarmerController {
 
-    private final FindProducerByUserUseCase findProducerByUserUseCase;
-    private final FindProducerByIdUseCase findProducerByIdUseCase;
-    private final FindAllProducersUseCase findAllProducersUseCase;
-    private final UpdateProducerUseCase updateProducerUseCase;
-    private final DeleteProducerUseCase deleteProducerUseCase;
+    private final FindFarmerByUserUseCase findFarmerByUserUseCase;
+    private final FindFarmerByIdUseCase findFarmerByIdUseCase;
+    private final FindAllFarmersUseCase findAllFarmersUseCase;
+    private final UpdateFarmerUseCase updateFarmerUseCase;
+    private final DeleteFarmerUseCase deleteFarmerUseCase;
 
-    @PreAuthorize("hasRole('PRODUCER')")
+    @PreAuthorize("hasRole('FARMER')")
     @GetMapping("/me")
-    public ResponseEntity<ProducerResponseDTO> findMyProducerData(
+    public ResponseEntity<FarmerResponseDTO> findMyFarmerData(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        Producer producer = findProducerByUserUseCase.findByUserId(loggedUserDetails.getId());
-        ProducerResponseDTO response = Mapper.toProducerResponseDTO(producer);
+        Farmer farmer = findFarmerByUserUseCase.findByUserId(loggedUserDetails.getId());
+        FarmerResponseDTO response = Mapper.toFarmerResponseDTO(farmer);
         return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<List<ProducerResponseDTO>> findAllProducers(
+    public ResponseEntity<List<FarmerResponseDTO>> findAllFarmers(
             @RequestParam(required = false) UUID communityId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        List<Producer> producers = findAllProducersUseCase.findAll(communityId);
-        List<ProducerResponseDTO> response = producers.stream()
-                .map(Mapper::toProducerResponseDTO)
+        List<Farmer> farmers = findAllFarmersUseCase.findAll(communityId);
+        List<FarmerResponseDTO> response = farmers.stream()
+                .map(Mapper::toFarmerResponseDTO)
                 .toList();
         return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     @GetMapping("/{id}")
-    public ResponseEntity<ProducerResponseDTO> findProducerById(
+    public ResponseEntity<FarmerResponseDTO> findFarmerById(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        Producer producer = findProducerByIdUseCase.findById(id);
-        ProducerResponseDTO response = Mapper.toProducerResponseDTO(producer);
+        Farmer farmer = findFarmerByIdUseCase.findById(id);
+        FarmerResponseDTO response = Mapper.toFarmerResponseDTO(farmer);
         return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<ProducerResponseDTO> updateProducer(
+    public ResponseEntity<FarmerResponseDTO> updateFarmer(
             @PathVariable UUID id,
-            @Valid @RequestBody ProducerUpdateDTO dto,
+            @Valid @RequestBody FarmerUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        Producer producer = updateProducerUseCase.update(id, dto);
-        ProducerResponseDTO response = Mapper.toProducerResponseDTO(producer);
+        Farmer farmer = updateFarmerUseCase.update(id, dto);
+        FarmerResponseDTO response = Mapper.toFarmerResponseDTO(farmer);
         return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProducer(
+    public ResponseEntity<Void> deleteFarmer(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        deleteProducerUseCase.delete(id);
+        deleteFarmerUseCase.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

@@ -25,7 +25,7 @@ public class AssignRoleUseCase {
             throw new AccessDeniedException();
         }
 
-        if (newRole == Role.MANAGER || newRole == Role.PRODUCER || newRole == Role.TECHNICIAN) {
+        if (newRole == Role.MANAGER || newRole == Role.FARMER || newRole == Role.TECHNICIAN) {
             throw new IllegalArgumentException("Para criar ou promover gestores, produtores e técnicos, utilize as rotas específicas de perfil.");
         }
 

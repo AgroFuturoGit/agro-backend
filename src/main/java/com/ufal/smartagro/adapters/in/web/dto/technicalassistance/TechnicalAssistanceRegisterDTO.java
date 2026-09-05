@@ -6,6 +6,6 @@ import java.util.UUID;
 
 public record TechnicalAssistanceRegisterDTO(
         @NotNull(message = "O ID do técnico é obrigatório") UUID technicianId,
-        @NotNull(message = "O ID do produtor é obrigatório") UUID producerId,
+        @NotNull(message = "O ID do agricultor é obrigatório") UUID farmerId,
         @NotNull(message = "A data de início é obrigatória") LocalDateTime startDate
 ) {}

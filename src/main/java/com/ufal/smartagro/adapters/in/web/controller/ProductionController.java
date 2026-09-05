@@ -40,22 +40,22 @@ public class ProductionController {
     private final DeleteProductionExecutionUseCase deleteProductionExecutionUseCase;
     private final UserRepository userRepository;
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'PRODUCER')")
-    @PostMapping("/producers/{producerId}/production-plans")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
+    @PostMapping("/farmers/{farmerId}/production-plans")
     public ResponseEntity<ProductionPlanResponseDTO> createProductionPlan(
-            @PathVariable UUID producerId,
+            @PathVariable UUID farmerId,
             @Valid @RequestBody ProductionPlanRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
 
-        ProductionPlan plan = createProductionPlanUseCase.create(producerId, dto, loggedUser);
+        ProductionPlan plan = createProductionPlanUseCase.create(farmerId, dto, loggedUser);
         ProductionPlanResponseDTO response = Mapper.toProductionPlanResponseDTO(plan);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'PRODUCER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
     @PostMapping("/production-plans/{planId}/executions")
     public ResponseEntity<ProductionExecutionResponseDTO> createProductionExecution(
             @PathVariable UUID planId,
@@ -70,7 +70,7 @@ public class ProductionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'PRODUCER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
     @PutMapping("/production-plans/{planId}")
     public ResponseEntity<ProductionPlanResponseDTO> updateProductionPlan(
             @PathVariable UUID planId,
@@ -85,23 +85,23 @@ public class ProductionController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'PRODUCER')")
-    @GetMapping("/producers/{producerId}/production-plans")
-    public ResponseEntity<List<ProductionPlanResponseDTO>> listProductionPlansByProducer(
-            @PathVariable UUID producerId,
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
+    @GetMapping("/farmers/{farmerId}/production-plans")
+    public ResponseEntity<List<ProductionPlanResponseDTO>> listProductionPlansByFarmer(
+            @PathVariable UUID farmerId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
 
-        List<ProductionPlan> plans = listProductionPlansUseCase.listByProducer(producerId, loggedUser);
+        List<ProductionPlan> plans = listProductionPlansUseCase.listByFarmer(farmerId, loggedUser);
         List<ProductionPlanResponseDTO> response = plans.stream()
                 .map(Mapper::toProductionPlanResponseDTO)
                 .toList();
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'PRODUCER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping("/production-plans/{planId}")
     public ResponseEntity<ProductionPlanResponseDTO> findProductionPlanById(
             @PathVariable UUID planId,
@@ -115,7 +115,7 @@ public class ProductionController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'PRODUCER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
     @DeleteMapping("/production-plans/{planId}")
     public ResponseEntity<Void> deleteProductionPlan(
             @PathVariable UUID planId,
@@ -128,7 +128,7 @@ public class ProductionController {
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'PRODUCER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
     @PutMapping("/production-executions/{executionId}")
     public ResponseEntity<ProductionExecutionResponseDTO> updateProductionExecution(
             @PathVariable UUID executionId,
@@ -143,7 +143,7 @@ public class ProductionController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'PRODUCER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping("/production-plans/{planId}/executions")
     public ResponseEntity<List<ProductionExecutionResponseDTO>> listProductionExecutions(
             @PathVariable UUID planId,
@@ -159,7 +159,7 @@ public class ProductionController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'PRODUCER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping("/production-plans/{planId}/comparison")
     public ResponseEntity<ProductionComparisonDTO> compareProduction(
             @PathVariable UUID planId,
@@ -172,7 +172,7 @@ public class ProductionController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'PRODUCER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping("/production-executions/{executionId}")
     public ResponseEntity<ProductionExecutionResponseDTO> findProductionExecutionById(
             @PathVariable UUID executionId,
@@ -186,7 +186,7 @@ public class ProductionController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'PRODUCER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
     @DeleteMapping("/production-executions/{executionId}")
     public ResponseEntity<Void> deleteProductionExecution(
             @PathVariable UUID executionId,

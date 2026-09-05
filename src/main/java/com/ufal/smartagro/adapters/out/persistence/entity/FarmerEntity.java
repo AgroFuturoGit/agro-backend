@@ -16,10 +16,10 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "producers")
+@Table(name = "farmers")
 @EntityListeners(AuditingEntityListener.class)
 @SQLRestriction("deleted_at IS NULL")
-public class ProducerEntity {
+public class FarmerEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
