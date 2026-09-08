@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
-public class Producer {
+public class Farmer {
     private UUID id;
     private User user;
     private Community community;

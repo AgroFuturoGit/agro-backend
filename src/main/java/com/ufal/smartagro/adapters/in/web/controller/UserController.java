@@ -45,8 +45,8 @@ public class UserController {
             @Valid @RequestBody UserRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        if (dto.role() == com.ufal.smartagro.domain.model.enums.Role.MANAGER || dto.role() == com.ufal.smartagro.domain.model.enums.Role.PRODUCER) {
-            throw new IllegalArgumentException("Para criar gestores ou produtores, utilize as rotas específicas de Organização e Comunidade.");
+        if (dto.role() == com.ufal.smartagro.domain.model.enums.Role.MANAGER || dto.role() == com.ufal.smartagro.domain.model.enums.Role.FARMER) {
+            throw new IllegalArgumentException("Para criar gestores ou agricultores, utilize as rotas específicas de Organização e Comunidade.");
         }
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())

@@ -4,12 +4,12 @@ import com.ufal.smartagro.adapters.in.web.dto.technicalassistance.TechnicalAssis
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Technician;
-import com.ufal.smartagro.domain.model.Producer;
+import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.TechnicalAssistance;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.TechnicianRepository;
-import com.ufal.smartagro.domain.port.out.ProducerRepository;
+import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import com.ufal.smartagro.domain.port.out.TechnicalAssistanceRepository;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,10 +21,10 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class RemoveProducerFromTechnicianUseCase {
+public class RemoveFarmerFromTechnicianUseCase {
 
     private final TechnicianRepository technicianRepository;
-    private final ProducerRepository producerRepository;
+    private final FarmerRepository farmerRepository;
     private final TechnicalAssistanceRepository assistanceRepository;
     private final ManagerRepository managerRepository;
 
@@ -40,15 +40,15 @@ public class RemoveProducerFromTechnicianUseCase {
         } else if (role == Role.MANAGER) {
             var manager = managerRepository.findByUserId(loggedUser.getId())
                     .orElseThrow(() -> new AccessDeniedException("Gestor não encontrado."));
-            var producer = assistance.getProducer();
-            if (producer.getCommunity() == null || producer.getCommunity().getOrganization() == null ||
-                    !producer.getCommunity().getOrganization().getId().equals(manager.getOrganization().getId())) {
-                throw new AccessDeniedException("O gestor só pode encerrar assistência de produtores da sua organização.");
+            var farmer = assistance.getFarmer();
+            if (farmer.getCommunity() == null || farmer.getCommunity().getOrganization() == null ||
+                    !farmer.getCommunity().getOrganization().getId().equals(manager.getOrganization().getId())) {
+                throw new AccessDeniedException("O gestor só pode encerrar assistência de agricultores da sua organização.");
             }
-        } else if (role == Role.PRODUCER) {
-            var producer = assistance.getProducer();
-            if (!producer.getUser().getId().equals(loggedUser.getId())) {
-                throw new AccessDeniedException("Produtor só pode encerrar sua própria assistência.");
+        } else if (role == Role.FARMER) {
+            var farmer = assistance.getFarmer();
+            if (!farmer.getUser().getId().equals(loggedUser.getId())) {
+                throw new AccessDeniedException("Agricultor só pode encerrar sua própria assistência.");
             }
         } else if (role == Role.TECHNICIAN) {
             var technician = assistance.getTechnician();
@@ -63,7 +63,7 @@ public class RemoveProducerFromTechnicianUseCase {
         assistance = new TechnicalAssistance(
                 assistance.getId(),
                 assistance.getTechnician(),
-                assistance.getProducer(),
+                assistance.getFarmer(),
                 assistance.getStartDate(),
                 LocalDateTime.now(),
                 assistance.getCreatedAt(),

@@ -10,7 +10,7 @@ public interface TechnicalAssistanceRepository {
     TechnicalAssistance save(TechnicalAssistance assistance);
     Optional<TechnicalAssistance> findById(UUID id);
     List<TechnicalAssistance> findByTechnicianId(UUID technicianId);
-    List<TechnicalAssistance> findByProducerId(UUID producerId);
-    Optional<TechnicalAssistance> findActiveByTechnicianAndProducer(UUID technicianId, UUID producerId);
+    List<TechnicalAssistance> findByFarmerId(UUID farmerId);
+    Optional<TechnicalAssistance> findActiveByTechnicianAndFarmer(UUID technicianId, UUID farmerId);
     void delete(UUID id);
 }

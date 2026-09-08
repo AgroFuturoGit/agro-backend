@@ -3,12 +3,12 @@ package com.ufal.smartagro.application.service.technician;
 import com.ufal.smartagro.adapters.in.web.dto.technicalassistance.TechnicalAssistanceRegisterDTO;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.Technician;
-import com.ufal.smartagro.domain.model.Producer;
+import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.TechnicalAssistance;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.TechnicianRepository;
-import com.ufal.smartagro.domain.port.out.ProducerRepository;
+import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import com.ufal.smartagro.domain.port.out.TechnicalAssistanceRepository;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,10 +20,10 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class AssignProducerToTechnicianUseCase {
+public class AssignFarmerToTechnicianUseCase {
 
     private final TechnicianRepository technicianRepository;
-    private final ProducerRepository producerRepository;
+    private final FarmerRepository farmerRepository;
     private final TechnicalAssistanceRepository assistanceRepository;
     private final ManagerRepository managerRepository;
 
@@ -34,41 +34,41 @@ public class AssignProducerToTechnicianUseCase {
         if (role == Role.ADMIN) {
             // allowed
         } else if (role == Role.MANAGER) {
-            // Manager must belong to same organization as producer
+            // Manager must belong to same organization as farmer
             var manager = managerRepository.findByUserId(loggedUser.getId())
                     .orElseThrow(() -> new AccessDeniedException("Gestor não encontrado."));
-            var producer = producerRepository.findById(dto.producerId())
-                    .orElseThrow(() -> new IllegalArgumentException("Produtor não encontrado."));
-            if (producer.getCommunity() == null || producer.getCommunity().getOrganization() == null ||
-                    !producer.getCommunity().getOrganization().getId().equals(manager.getOrganization().getId())) {
-                throw new AccessDeniedException("O gestor só pode vincular produtores da sua organização.");
+            var farmer = farmerRepository.findById(dto.farmerId())
+                    .orElseThrow(() -> new IllegalArgumentException("Agricultor não encontrado."));
+            if (farmer.getCommunity() == null || farmer.getCommunity().getOrganization() == null ||
+                    !farmer.getCommunity().getOrganization().getId().equals(manager.getOrganization().getId())) {
+                throw new AccessDeniedException("O gestor só pode vincular agricultores da sua organização.");
             }
-        } else if (role == Role.PRODUCER) {
-            // Producer can only link himself
-            var producer = producerRepository.findById(dto.producerId())
-                    .orElseThrow(() -> new IllegalArgumentException("Produtor não encontrado."));
-            if (!producer.getUser().getId().equals(loggedUser.getId())) {
-                throw new AccessDeniedException("Produtor só pode vincular a si mesmo.");
+        } else if (role == Role.FARMER) {
+            // Farmer can only link himself
+            var farmer = farmerRepository.findById(dto.farmerId())
+                    .orElseThrow(() -> new IllegalArgumentException("Agricultor não encontrado."));
+            if (!farmer.getUser().getId().equals(loggedUser.getId())) {
+                throw new AccessDeniedException("Agricultor só pode vincular a si mesmo.");
             }
         } else {
-            throw new AccessDeniedException("Apenas administradores, gestores ou produtores podem criar assistência técnica.");
+            throw new AccessDeniedException("Apenas administradores, gestores ou agricultores podem criar assistência técnica.");
         }
 
         Technician technician = technicianRepository.findById(dto.technicianId())
                 .orElseThrow(() -> new IllegalArgumentException("Técnico não encontrado."));
-        Producer producer = producerRepository.findById(dto.producerId())
-                .orElseThrow(() -> new IllegalArgumentException("Produtor não encontrado."));
+        Farmer farmer = farmerRepository.findById(dto.farmerId())
+                .orElseThrow(() -> new IllegalArgumentException("Agricultor não encontrado."));
 
         // Check if there is already an active assistance between them
-        boolean existsActive = assistanceRepository.findActiveByTechnicianAndProducer(technician.getId(), producer.getId()).isPresent();
+        boolean existsActive = assistanceRepository.findActiveByTechnicianAndFarmer(technician.getId(), farmer.getId()).isPresent();
         if (existsActive) {
-            throw new IllegalArgumentException("Já existe uma assistência ativa entre este técnico e produtor.");
+            throw new IllegalArgumentException("Já existe uma assistência ativa entre este técnico e agricultor.");
         }
 
         TechnicalAssistance assistance = new TechnicalAssistance(
                 null,
                 technician,
-                producer,
+                farmer,
                 dto.startDate(),
                 null,
                 null,

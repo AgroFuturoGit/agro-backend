@@ -12,12 +12,12 @@ CREATE TABLE technicians (
 CREATE TABLE technical_assistances (
     id UUID PRIMARY KEY,
     technician_id UUID NOT NULL,
-    producer_id UUID NOT NULL,
+    farmer_id UUID NOT NULL,
     start_date TIMESTAMP NOT NULL,
     end_date TIMESTAMP,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
     CONSTRAINT fk_technical_assistance_technician FOREIGN KEY (technician_id) REFERENCES technicians(id),
-    CONSTRAINT fk_technical_assistance_producer FOREIGN KEY (producer_id) REFERENCES producers(id)
+    CONSTRAINT fk_technical_assistance_farmer FOREIGN KEY (farmer_id) REFERENCES farmers(id)
 );

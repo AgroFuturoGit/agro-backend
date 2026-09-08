@@ -1,4 +1,4 @@
-package com.ufal.smartagro.adapters.in.web.dto.producer;
+package com.ufal.smartagro.adapters.in.web.dto.farmer;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 import org.hibernate.validator.constraints.br.CPF;
 import java.time.LocalDate;
 
-public record ProducerRegisterDTO(
+public record FarmerRegisterDTO(
     @NotBlank(message = "O nome completo é obrigatório")
     String fullName,
     @NotBlank(message = "O email é obrigatório")

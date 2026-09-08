@@ -21,7 +21,7 @@ public class FindProductionPlanByIdUseCase {
         ProductionPlan plan = productionPlanRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Plano de produção não encontrado."));
 
-        accessValidator.validateAccess(plan.getProducer(), loggedUser);
+        accessValidator.validateAccess(plan.getFarmer(), loggedUser);
 
         return plan;
     }

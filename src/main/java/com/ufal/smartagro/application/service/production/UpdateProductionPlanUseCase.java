@@ -22,11 +22,11 @@ public class UpdateProductionPlanUseCase {
         ProductionPlan existingPlan = productionPlanRepository.findById(planId)
                 .orElseThrow(() -> new IllegalArgumentException("Plano de produção não encontrado."));
 
-        accessValidator.validateAccess(existingPlan.getProducer(), loggedUser);
+        accessValidator.validateAccess(existingPlan.getFarmer(), loggedUser);
 
         ProductionPlan updatedPlan = new ProductionPlan(
                 existingPlan.getId(),
-                existingPlan.getProducer(),
+                existingPlan.getFarmer(),
                 existingPlan.getHarvest(),
                 existingPlan.getCrop(),
                 dto.plantedArea() != null ? dto.plantedArea() : existingPlan.getPlantedArea(),
