@@ -10,6 +10,7 @@ public record ProductionExecutionResponseDTO(
         UUID productionPlanId,
         BigDecimal actualYield,
         LocalDate harvestDate,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
 }

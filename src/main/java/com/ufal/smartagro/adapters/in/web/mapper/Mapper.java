@@ -180,7 +180,8 @@ public class Mapper {
                 plan.getExpectedYield(),
                 plan.getPlannedPlantingDate(),
                 plan.getPlannedCalendar(),
-                plan.getCreatedAt()
+                plan.getCreatedAt(),
+                plan.getUpdatedAt()
         );
     }
 
@@ -191,7 +192,8 @@ public class Mapper {
                 exec.getProductionPlan() != null ? exec.getProductionPlan().getId() : null,
                 exec.getActualYield(),
                 exec.getHarvestDate(),
-                exec.getCreatedAt()
+                exec.getCreatedAt(),
+                exec.getUpdatedAt()
         );
     }
 
