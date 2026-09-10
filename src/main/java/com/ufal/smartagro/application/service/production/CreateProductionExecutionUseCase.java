@@ -32,6 +32,8 @@ public class CreateProductionExecutionUseCase {
                 plan,
                 dto.actualYield(),
                 dto.harvestDate(),
+                dto.latitude(),
+                dto.longitude(),
                 null,
                 null,
                 null

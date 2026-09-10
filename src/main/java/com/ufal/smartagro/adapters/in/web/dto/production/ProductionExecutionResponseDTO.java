@@ -10,6 +10,8 @@ public record ProductionExecutionResponseDTO(
         UUID productionPlanId,
         BigDecimal actualYield,
         LocalDate harvestDate,
+        BigDecimal latitude,
+        BigDecimal longitude,
         LocalDateTime createdAt
 ) {
 }
