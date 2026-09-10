@@ -35,6 +35,12 @@ public class ProductionExecutionEntity {
     @Column(name = "actual_yield", nullable = false, precision = 10, scale = 2)
     private BigDecimal actualYield;
 
+    @Column(precision = 9, scale = 6)
+    private BigDecimal latitude;
+
+    @Column(precision = 9, scale = 6)
+    private BigDecimal longitude;
+
     @Column(name = "harvest_date", nullable = false)
     private LocalDate harvestDate;
 

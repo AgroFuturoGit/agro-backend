@@ -31,6 +31,10 @@ public class UpdateProductionExecutionUseCase {
                 existingExecution.getProductionPlan(),
                 dto.actualYield() != null ? dto.actualYield() : existingExecution.getActualYield(),
                 dto.harvestDate() != null ? dto.harvestDate() : existingExecution.getHarvestDate(),
+                // Coordenada só é sobrescrita quando a edição traz uma nova: um
+                // formulário salvo sem GPS não pode apagar a posição já registrada.
+                dto.latitude() != null ? dto.latitude() : existingExecution.getLatitude(),
+                dto.longitude() != null ? dto.longitude() : existingExecution.getLongitude(),
                 existingExecution.getCreatedAt(),
                 null,
                 existingExecution.getDeletedAt()
