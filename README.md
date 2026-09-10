@@ -121,6 +121,21 @@ Frontend em `http://localhost:3000`, falando com a API em `http://localhost:8080
 java -jar target/*.jar  # rodar o jar empacotado
 ```
 
+## 📖 Documentação da API (Swagger / OpenAPI)
+
+Com a aplicação em execução, a documentação interativa e os contratos da API podem ser acessados em:
+
+- **Swagger UI (Interface Interativa):** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- **OpenAPI Docs (Especificação JSON):** [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+
+### Autenticação no Swagger UI:
+1. Execute a requisição no endpoint `POST /auth/login` informando e-mail e senha para obter o token JWT.
+2. Clique no botão **Authorize** (ícone de cadeado no topo direito da interface do Swagger).
+3. No campo **Value**, insira o token JWT retornado.
+4. Clique em **Authorize** e feche a janela. Todos os endpoints protegidos utilizarão o token automaticamente.
+
+---
+
 ## 🌿 Branches
 
 | Branch | Descrição |

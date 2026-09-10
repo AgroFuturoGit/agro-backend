@@ -14,6 +14,11 @@ import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.UserRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Culturas (Crops)", description = "Gerenciamento do catálogo de culturas agrícolas")
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/crops")
@@ -37,6 +43,12 @@ public class CropController {
     private final CropDeleteUseCase cropDeleteUseCase;
     private final UserRepository userRepository;
 
+    @Operation(summary = "Cadastrar cultura", description = "Registra uma nova cultura agrícola no sistema.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Cultura cadastrada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado")
+    })
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
     @PostMapping("/register")
     public ResponseEntity<CropResponseDTO> register(@Valid @RequestBody CropRegisterDTO cropRegisterDTO,
@@ -54,6 +66,13 @@ public class CropController {
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
     }
 
+    @Operation(summary = "Atualizar cultura", description = "Atualiza parcialmente os dados de uma cultura existente.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Cultura atualizada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Cultura não encontrada")
+    })
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
     @PatchMapping("/{id}")
     public ResponseEntity<CropResponseDTO> update(@PathVariable UUID id,
@@ -71,6 +90,12 @@ public class CropController {
         return ResponseEntity.ok(responseDTO);
     }
 
+    @Operation(summary = "Buscar cultura por ID", description = "Recupera os detalhes de uma cultura pelo seu ID.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Cultura encontrada"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Cultura não encontrada")
+    })
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping("/{id}")
     public ResponseEntity<CropResponseDTO> findById(@PathVariable UUID id, @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
@@ -81,6 +106,11 @@ public class CropController {
         return ResponseEntity.ok(responseDTO);
     }
 
+    @Operation(summary = "Listar todas as culturas", description = "Retorna a lista com todas as culturas agrícolas cadastradas.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado")
+    })
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping
     public ResponseEntity<List<CropResponseDTO>> findAll(@AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
@@ -93,6 +123,12 @@ public class CropController {
         return ResponseEntity.ok(responseDTOs);
     }
 
+    @Operation(summary = "Excluir cultura", description = "Remove uma cultura do catálogo.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Cultura excluída com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Cultura não encontrada")
+    })
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
