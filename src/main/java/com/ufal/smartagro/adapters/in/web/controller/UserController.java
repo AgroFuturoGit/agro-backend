@@ -14,6 +14,11 @@ import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.UserRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Usuários", description = "Gerenciamento de usuários da plataforma")
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/users")
@@ -38,6 +44,12 @@ public class UserController {
     private final FindAllUsersUseCase findAllUsersUseCase;
     private final UserRepository userRepository;
 
+    @Operation(summary = "Registrar usuário (deprecado)", description = "Cria um novo usuário na base de dados. Deprecado em favor de fluxos específicos.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Usuário registrado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado")
+    })
     @Deprecated(since = "2.0", forRemoval = true)
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/register")
@@ -56,6 +68,12 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @Operation(summary = "Excluir usuário", description = "Remove logicamente ou fisicamente um usuário do sistema pelo ID.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Usuário excluído com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+    })
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
@@ -69,6 +87,12 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Atualizar dados próprios", description = "Permite que o usuário autenticado atualize seus próprios dados.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuário atualizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "401", description = "Não autorizado")
+    })
     @PatchMapping
     public ResponseEntity<UserResponseDTO> update(
             @Valid @RequestBody UserUpdateDTO dto,
@@ -81,6 +105,13 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Atualizar usuário (admin)", description = "Permite que administradores atualizem dados de outros usuários.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuário atualizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+    })
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}")
     public ResponseEntity<UserResponseDTO> adminUpdate(
@@ -95,6 +126,12 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Buscar usuário por ID", description = "Recupera os detalhes de um usuário específico.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Usuário encontrado"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
+    })
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDTO> findById(
@@ -108,6 +145,11 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Listar todos os usuários", description = "Retorna a lista de todos os usuários cadastrados no sistema.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado")
+    })
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @GetMapping
     public ResponseEntity<List<UserResponseDTO>> findAll(
