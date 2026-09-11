@@ -30,8 +30,8 @@ public class ProductionPlanRepositoryImpl implements ProductionPlanRepository {
     }
 
     @Override
-    public java.util.List<ProductionPlan> findAllByProducerId(UUID producerId) {
-        return jpaRepository.findAllByProducerId(producerId).stream()
+    public java.util.List<ProductionPlan> findAllByFarmerId(UUID farmerId) {
+        return jpaRepository.findAllByFarmerId(farmerId).stream()
                 .map(productionPlanMapper::toDomain)
                 .toList();
     }

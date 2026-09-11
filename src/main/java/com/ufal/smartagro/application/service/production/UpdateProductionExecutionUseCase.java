@@ -23,7 +23,7 @@ public class UpdateProductionExecutionUseCase {
                 .orElseThrow(() -> new IllegalArgumentException("Execução de produção não encontrada."));
 
         if (existingExecution.getProductionPlan() != null) {
-            accessValidator.validateAccess(existingExecution.getProductionPlan().getProducer(), loggedUser);
+            accessValidator.validateAccess(existingExecution.getProductionPlan().getFarmer(), loggedUser);
         }
 
         ProductionExecution updatedExecution = new ProductionExecution(

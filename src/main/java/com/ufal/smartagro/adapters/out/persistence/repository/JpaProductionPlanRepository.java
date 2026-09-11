@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.UUID;
 
 public interface JpaProductionPlanRepository extends JpaRepository<ProductionPlanEntity, UUID> {
-    java.util.List<ProductionPlanEntity> findAllByProducerId(UUID producerId);
+    java.util.List<ProductionPlanEntity> findAllByFarmerId(UUID farmerId);
 
     @Modifying
     @Query("UPDATE ProductionPlanEntity p SET p.deletedAt = CURRENT_TIMESTAMP WHERE p.id = :id")

@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ProductionPlanMapper {
 
-    private final ProducerMapper producerMapper;
+    private final FarmerMapper farmerMapper;
     private final HarvestMapper harvestMapper;
     private final CropMapper cropMapper;
 
@@ -18,7 +18,7 @@ public class ProductionPlanMapper {
         if (entity == null) return null;
         return new ProductionPlan(
                 entity.getId(),
-                producerMapper.toDomain(entity.getProducer()),
+                farmerMapper.toDomain(entity.getFarmer()),
                 harvestMapper.toDomain(entity.getHarvest()),
                 cropMapper.toDomain(entity.getCrop()),
                 entity.getPlantedArea(),
@@ -35,7 +35,7 @@ public class ProductionPlanMapper {
         if (domain == null) return null;
         ProductionPlanEntity entity = new ProductionPlanEntity();
         entity.setId(domain.getId());
-        entity.setProducer(producerMapper.toEntity(domain.getProducer()));
+        entity.setFarmer(farmerMapper.toEntity(domain.getFarmer()));
         entity.setHarvest(harvestMapper.toEntity(domain.getHarvest()));
         entity.setCrop(cropMapper.toEntity(domain.getCrop()));
         entity.setPlantedArea(domain.getPlantedArea());

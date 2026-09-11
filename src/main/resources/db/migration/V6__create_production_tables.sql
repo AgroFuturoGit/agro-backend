@@ -1,6 +1,6 @@
 CREATE TABLE production_plans (
     id UUID PRIMARY KEY,
-    producer_id UUID NOT NULL,
+    farmer_id UUID NOT NULL,
     harvest_id UUID NOT NULL,
     crop_id UUID NOT NULL,
     planted_area NUMERIC(10, 2) NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE production_plans (
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
-    CONSTRAINT fk_production_plan_producer FOREIGN KEY (producer_id) REFERENCES producers(id),
+    CONSTRAINT fk_production_plan_farmer FOREIGN KEY (farmer_id) REFERENCES farmers(id),
     CONSTRAINT fk_production_plan_harvest FOREIGN KEY (harvest_id) REFERENCES harvests(id),
     CONSTRAINT fk_production_plan_crop FOREIGN KEY (crop_id) REFERENCES crop(id)
 );

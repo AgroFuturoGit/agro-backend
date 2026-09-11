@@ -20,7 +20,7 @@ public class HarvestFindAllUseCase {
         if (loggedUser.getRole() != Role.ADMIN
                 && loggedUser.getRole() != Role.TECHNICIAN
                 && loggedUser.getRole() != Role.MANAGER
-                && loggedUser.getRole() != Role.PRODUCER) {
+                && loggedUser.getRole() != Role.FARMER) {
             throw new AccessDeniedException("Usuário não tem permissão para visualizar as safras.");
         }
         return harvestRepository.findAll();

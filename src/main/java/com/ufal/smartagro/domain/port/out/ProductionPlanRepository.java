@@ -8,6 +8,6 @@ import java.util.UUID;
 public interface ProductionPlanRepository {
     ProductionPlan save(ProductionPlan productionPlan);
     Optional<ProductionPlan> findById(UUID id);
-    java.util.List<ProductionPlan> findAllByProducerId(UUID producerId);
+    java.util.List<ProductionPlan> findAllByFarmerId(UUID farmerId);
     void delete(UUID id);
 }

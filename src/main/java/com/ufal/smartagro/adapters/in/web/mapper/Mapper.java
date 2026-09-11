@@ -14,15 +14,19 @@ import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.manager.ManagerResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.community.CommunityResponseDTO;
-import com.ufal.smartagro.adapters.in.web.dto.producer.ProducerResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.technician.TechnicianResponseDTO;
 import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.Organization;
 import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Community;
-import com.ufal.smartagro.domain.model.Producer;
+import com.ufal.smartagro.domain.model.Farmer;
+import com.ufal.smartagro.domain.model.Technician;
+import com.ufal.smartagro.domain.model.TechnicalAssistance;
 import com.ufal.smartagro.adapters.out.persistence.entity.UserEntity;
+import com.ufal.smartagro.adapters.in.web.dto.technicalassistance.TechnicalAssistanceResponseDTO;
 
 public class Mapper {
 
@@ -153,23 +157,23 @@ public class Mapper {
         );
     }
 
-    public static ProducerResponseDTO toProducerResponseDTO(Producer producer) {
-        if (producer == null) return null;
-        return new ProducerResponseDTO(
-                producer.getId(),
-                toUserResponseDTO(producer.getUser()),
-                toCommunityResponseDTO(producer.getCommunity()),
-                producer.getAliasName(),
-                producer.getIsCompliant(),
-                producer.getCreatedAt(),
-                producer.getUpdatedAt()
+    public static FarmerResponseDTO toFarmerResponseDTO(Farmer farmer) {
+        if (farmer == null) return null;
+        return new FarmerResponseDTO(
+                farmer.getId(),
+                toUserResponseDTO(farmer.getUser()),
+                toCommunityResponseDTO(farmer.getCommunity()),
+                farmer.getAliasName(),
+                farmer.getIsCompliant(),
+                farmer.getCreatedAt(),
+                farmer.getUpdatedAt()
         );
     }
     public static ProductionPlanResponseDTO toProductionPlanResponseDTO(com.ufal.smartagro.domain.model.ProductionPlan plan) {
         if (plan == null) return null;
         return new ProductionPlanResponseDTO(
                 plan.getId(),
-                toProducerResponseDTO(plan.getProducer()),
+                toFarmerResponseDTO(plan.getFarmer()),
                 toHarvestResponseDTO(plan.getHarvest()),
                 toCropResponseDTO(plan.getCrop()),
                 plan.getPlantedArea(),
@@ -188,6 +192,28 @@ public class Mapper {
                 exec.getActualYield(),
                 exec.getHarvestDate(),
                 exec.getCreatedAt()
+        );
+    }
+
+    public static TechnicianResponseDTO toTechnicianResponseDTO(Technician technician) {
+        if (technician == null) return null;
+        return new TechnicianResponseDTO(
+                technician.getId(),
+                toUserResponseDTO(technician.getUser()),
+                technician.getProfessionalId(),
+                technician.getSpecialty(),
+                technician.getCreatedAt(),
+                technician.getUpdatedAt()
+        );
+    }
+    public static TechnicalAssistanceResponseDTO toTechnicalAssistanceResponseDTO(TechnicalAssistance assistance) {
+        if (assistance == null) return null;
+        return new TechnicalAssistanceResponseDTO(
+                assistance.getId(),
+                assistance.getTechnician().getId(),
+                assistance.getFarmer().getId(),
+                assistance.getStartDate(),
+                assistance.getEndDate()
         );
     }
 }

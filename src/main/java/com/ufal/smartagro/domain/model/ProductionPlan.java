@@ -13,7 +13,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ProductionPlan {
     private UUID id;
-    private Producer producer;
+    private Farmer farmer;
     private Harvest harvest;
     private Crop crop;
     private BigDecimal plantedArea;

@@ -4,7 +4,7 @@ public enum Role {
     ADMIN("Administrador do sistema"),
     MANAGER("Gestor de cooperativa/associação"),
     TECHNICIAN("Técnico agrícola"),
-    PRODUCER("Agricultor/Produtor rural");
+    FARMER("Agricultor/Produtor rural");
 
     private final String description;
 

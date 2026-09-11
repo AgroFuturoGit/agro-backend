@@ -22,7 +22,7 @@ public class DeleteProductionExecutionUseCase {
                 .orElseThrow(() -> new IllegalArgumentException("Execução de produção não encontrada."));
 
         if (execution.getProductionPlan() != null) {
-            accessValidator.validateAccess(execution.getProductionPlan().getProducer(), loggedUser);
+            accessValidator.validateAccess(execution.getProductionPlan().getFarmer(), loggedUser);
         }
 
         productionExecutionRepository.delete(executionId);

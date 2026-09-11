@@ -10,6 +10,11 @@ import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.UserRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Produção Agrícola", description = "Planejamento e execução de safras e acompanhamento produtivo")
 @RequiredArgsConstructor
 @RestController
 @RequestMapping
@@ -40,22 +46,36 @@ public class ProductionController {
     private final DeleteProductionExecutionUseCase deleteProductionExecutionUseCase;
     private final UserRepository userRepository;
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'PRODUCER')")
-    @PostMapping("/producers/{producerId}/production-plans")
+    @Operation(summary = "Criar plano de produção", description = "Cria um plano de produção agrícola para determinado agricultor.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Plano de produção criado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Agricultor não encontrado")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
+    @PostMapping("/farmers/{farmerId}/production-plans")
     public ResponseEntity<ProductionPlanResponseDTO> createProductionPlan(
-            @PathVariable UUID producerId,
+            @PathVariable UUID farmerId,
             @Valid @RequestBody ProductionPlanRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
 
-        ProductionPlan plan = createProductionPlanUseCase.create(producerId, dto, loggedUser);
+        ProductionPlan plan = createProductionPlanUseCase.create(farmerId, dto, loggedUser);
         ProductionPlanResponseDTO response = Mapper.toProductionPlanResponseDTO(plan);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'PRODUCER')")
+    @Operation(summary = "Registrar execução de produção", description = "Registra um evento de execução referente a um plano de produção.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Execução registrada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Plano de produção não encontrado")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
     @PostMapping("/production-plans/{planId}/executions")
     public ResponseEntity<ProductionExecutionResponseDTO> createProductionExecution(
             @PathVariable UUID planId,
@@ -70,7 +90,14 @@ public class ProductionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'PRODUCER')")
+    @Operation(summary = "Atualizar plano de produção", description = "Atualiza os dados de um plano de produção existente.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Plano de produção atualizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Plano de produção não encontrado")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
     @PutMapping("/production-plans/{planId}")
     public ResponseEntity<ProductionPlanResponseDTO> updateProductionPlan(
             @PathVariable UUID planId,
@@ -85,23 +112,35 @@ public class ProductionController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'PRODUCER')")
-    @GetMapping("/producers/{producerId}/production-plans")
-    public ResponseEntity<List<ProductionPlanResponseDTO>> listProductionPlansByProducer(
-            @PathVariable UUID producerId,
+    @Operation(summary = "Listar planos de produção do agricultor", description = "Retorna todos os planos de produção vinculados a um agricultor.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Agricultor não encontrado")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
+    @GetMapping("/farmers/{farmerId}/production-plans")
+    public ResponseEntity<List<ProductionPlanResponseDTO>> listProductionPlansByFarmer(
+            @PathVariable UUID farmerId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
 
-        List<ProductionPlan> plans = listProductionPlansUseCase.listByProducer(producerId, loggedUser);
+        List<ProductionPlan> plans = listProductionPlansUseCase.listByFarmer(farmerId, loggedUser);
         List<ProductionPlanResponseDTO> response = plans.stream()
                 .map(Mapper::toProductionPlanResponseDTO)
                 .toList();
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'PRODUCER')")
+    @Operation(summary = "Buscar plano de produção por ID", description = "Recupera os detalhes de um plano de produção específico.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Plano de produção encontrado"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Plano de produção não encontrado")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping("/production-plans/{planId}")
     public ResponseEntity<ProductionPlanResponseDTO> findProductionPlanById(
             @PathVariable UUID planId,
@@ -115,7 +154,13 @@ public class ProductionController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'PRODUCER')")
+    @Operation(summary = "Excluir plano de produção", description = "Remove um plano de produção do sistema.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Plano de produção excluído com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Plano de produção não encontrado")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
     @DeleteMapping("/production-plans/{planId}")
     public ResponseEntity<Void> deleteProductionPlan(
             @PathVariable UUID planId,
@@ -128,7 +173,14 @@ public class ProductionController {
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'PRODUCER')")
+    @Operation(summary = "Atualizar execução de produção", description = "Atualiza os dados de uma execução de produção já registrada.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Execução atualizada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Execução não encontrada")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
     @PutMapping("/production-executions/{executionId}")
     public ResponseEntity<ProductionExecutionResponseDTO> updateProductionExecution(
             @PathVariable UUID executionId,
@@ -143,7 +195,13 @@ public class ProductionController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'PRODUCER')")
+    @Operation(summary = "Listar execuções de um plano", description = "Retorna o histórico de execuções registradas para determinado plano.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Plano não encontrado")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping("/production-plans/{planId}/executions")
     public ResponseEntity<List<ProductionExecutionResponseDTO>> listProductionExecutions(
             @PathVariable UUID planId,
@@ -159,7 +217,13 @@ public class ProductionController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'PRODUCER')")
+    @Operation(summary = "Comparar planejado vs executado", description = "Gera um comparativo de métricas e produtividade entre o plano e as execuções realizadas.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Comparativo gerado com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Plano não encontrado")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping("/production-plans/{planId}/comparison")
     public ResponseEntity<ProductionComparisonDTO> compareProduction(
             @PathVariable UUID planId,
@@ -172,7 +236,13 @@ public class ProductionController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'PRODUCER')")
+    @Operation(summary = "Buscar execução de produção por ID", description = "Recupera os detalhes de uma execução específica.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Execução encontrada"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Execução não encontrada")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping("/production-executions/{executionId}")
     public ResponseEntity<ProductionExecutionResponseDTO> findProductionExecutionById(
             @PathVariable UUID executionId,
@@ -186,7 +256,13 @@ public class ProductionController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'PRODUCER')")
+    @Operation(summary = "Excluir execução de produção", description = "Remove um registro de execução de produção.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Execução excluída com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Execução não encontrada")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
     @DeleteMapping("/production-executions/{executionId}")
     public ResponseEntity<Void> deleteProductionExecution(
             @PathVariable UUID executionId,
