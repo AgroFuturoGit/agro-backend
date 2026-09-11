@@ -16,6 +16,11 @@ import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.UserRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,6 +32,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Comunidades", description = "Gerenciamento de comunidades agrícolas")
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/communities")
@@ -39,6 +45,13 @@ public class CommunityController {
     private final DeleteCommunityUseCase deleteCommunityUseCase;
     private final UserRepository userRepository;
 
+    @Operation(summary = "Cadastrar agricultor na comunidade", description = "Registra um novo agricultor e o vincula à comunidade informada.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Agricultor cadastrado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Comunidade não encontrada")
+    })
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @PostMapping("/{id}/farmers")
     public ResponseEntity<FarmerResponseDTO> registerFarmer(
@@ -54,6 +67,11 @@ public class CommunityController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @Operation(summary = "Listar comunidades", description = "Retorna todas as comunidades, com opção de filtro por ID de organização (orgId).", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado")
+    })
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<CommunityResponseDTO>> findAllCommunities(
@@ -67,6 +85,12 @@ public class CommunityController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Buscar comunidade por ID", description = "Retorna os detalhes de uma comunidade específica.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Comunidade encontrada"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Comunidade não encontrada")
+    })
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<CommunityResponseDTO> findCommunityById(
@@ -78,6 +102,13 @@ public class CommunityController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Atualizar comunidade", description = "Atualiza as informações de uma comunidade.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Comunidade atualizada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Comunidade não encontrada")
+    })
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<CommunityResponseDTO> updateCommunity(
@@ -90,6 +121,12 @@ public class CommunityController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Excluir comunidade", description = "Remove uma comunidade do sistema.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Comunidade excluída com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Comunidade não encontrada")
+    })
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCommunity(

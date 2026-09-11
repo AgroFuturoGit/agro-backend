@@ -35,6 +35,8 @@ public class SecurityConfig {
                     .requestMatchers("/auth/login").permitAll()
                     // Actuator roda na porta 9090 (não exposta externamente no compose)
                     .requestMatchers("/actuator/**").permitAll()
+                    // Swagger / OpenAPI
+                    .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                     .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
