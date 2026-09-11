@@ -19,6 +19,7 @@ public record ProductionPlanResponseDTO(
         BigDecimal expectedYield,
         LocalDate plannedPlantingDate,
         Map<String, Object> plannedCalendar,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
 }
