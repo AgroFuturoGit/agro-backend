@@ -11,10 +11,24 @@
 -- talhão exige.
 ALTER TABLE production_executions
     ADD COLUMN latitude NUMERIC(9, 6),
-    ADD COLUMN longitude NUMERIC(9, 6);
+    ADD COLUMN longitude NUMERIC(9, 6),
+    -- Raio de erro da leitura, em metros, como o próprio GPS o informa.
+    -- Sem ele, uma leitura de 5 m e outra de 2 km entram no banco
+    -- indistinguíveis, e a segunda é inútil para localizar um talhão.
+    ADD COLUMN location_accuracy NUMERIC(8, 2),
+    -- Quando o GPS obteve a posição, que não é quando o apontamento foi
+    -- salvo nem a data da colheita. Um registro feito à noite, em casa,
+    -- sobre uma colheita da manhã carrega coordenada da casa: comparar este
+    -- carimbo com `harvest_date` é o que permite desconfiar do dado.
+    ADD COLUMN location_recorded_at TIMESTAMP;
 
 ALTER TABLE production_executions
     ADD CONSTRAINT chk_execution_latitude
         CHECK (latitude IS NULL OR latitude BETWEEN -90 AND 90),
     ADD CONSTRAINT chk_execution_longitude
-        CHECK (longitude IS NULL OR longitude BETWEEN -180 AND 180);
+        CHECK (longitude IS NULL OR longitude BETWEEN -180 AND 180),
+    ADD CONSTRAINT chk_execution_location_accuracy
+        CHECK (location_accuracy IS NULL OR location_accuracy >= 0),
+    -- Coordenada é um par: meia posição não localiza nada.
+    ADD CONSTRAINT chk_execution_location_pair
+        CHECK ((latitude IS NULL) = (longitude IS NULL));

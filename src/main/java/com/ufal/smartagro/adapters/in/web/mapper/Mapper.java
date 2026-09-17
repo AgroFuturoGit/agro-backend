@@ -193,6 +193,8 @@ public class Mapper {
                 exec.getHarvestDate(),
                 exec.getLatitude(),
                 exec.getLongitude(),
+                exec.getLocationAccuracy(),
+                exec.getLocationRecordedAt(),
                 exec.getCreatedAt()
         );
     }

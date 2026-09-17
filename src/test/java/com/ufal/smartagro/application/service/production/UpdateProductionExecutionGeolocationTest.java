@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,6 +39,11 @@ class UpdateProductionExecutionGeolocationTest {
     private static final UUID ID = UUID.randomUUID();
     private static final BigDecimal LAT_ORIGINAL = new BigDecimal("-9.752100");
     private static final BigDecimal LON_ORIGINAL = new BigDecimal("-36.661200");
+    private static final BigDecimal ACCURACY_ORIGINAL = new BigDecimal("8.00");
+    private static final LocalDateTime CAPTURA_ORIGINAL =
+            LocalDateTime.of(2026, 8, 1, 9, 30);
+    private static final LocalDateTime NOVA_CAPTURA =
+            LocalDateTime.of(2026, 9, 17, 14, 0);
 
     @BeforeEach
     void setUp() {
@@ -53,7 +59,8 @@ class UpdateProductionExecutionGeolocationTest {
     private ProductionExecution existente(BigDecimal latitude, BigDecimal longitude) {
         return new ProductionExecution(
                 ID, null, new BigDecimal("30.00"), LocalDate.of(2026, 8, 1),
-                latitude, longitude, null, null, null
+                latitude, longitude, ACCURACY_ORIGINAL, CAPTURA_ORIGINAL,
+                null, null, null
         );
     }
 
@@ -77,11 +84,13 @@ class UpdateProductionExecutionGeolocationTest {
     void preservaCoordenadaQuandoEdicaoNaoTrazGps() {
         ProductionExecution resultado = atualizar(
                 existente(LAT_ORIGINAL, LON_ORIGINAL),
-                new ProductionExecutionUpdateDTO(new BigDecimal("45.00"), null, null, null)
+                new ProductionExecutionUpdateDTO(new BigDecimal("45.00"), null, null, null, null, null, null)
         );
 
         assertThat(resultado.getLatitude()).isEqualByComparingTo(LAT_ORIGINAL);
         assertThat(resultado.getLongitude()).isEqualByComparingTo(LON_ORIGINAL);
+        assertThat(resultado.getLocationAccuracy()).isEqualByComparingTo(ACCURACY_ORIGINAL);
+        assertThat(resultado.getLocationRecordedAt()).isEqualTo(CAPTURA_ORIGINAL);
         assertThat(resultado.getActualYield()).isEqualByComparingTo("45.00");
     }
 
@@ -93,11 +102,42 @@ class UpdateProductionExecutionGeolocationTest {
 
         ProductionExecution resultado = atualizar(
                 existente(LAT_ORIGINAL, LON_ORIGINAL),
-                new ProductionExecutionUpdateDTO(null, null, novaLat, novaLon)
+                new ProductionExecutionUpdateDTO(null, null, novaLat, novaLon, new BigDecimal("5.00"), NOVA_CAPTURA, null)
         );
 
         assertThat(resultado.getLatitude()).isEqualByComparingTo(novaLat);
         assertThat(resultado.getLongitude()).isEqualByComparingTo(novaLon);
+        // A recaptura substitui a leitura inteira: manter a precisão e o carimbo
+        // antigos descreveria a nova posição com a confiança da anterior.
+        assertThat(resultado.getLocationAccuracy()).isEqualByComparingTo("5.00");
+        assertThat(resultado.getLocationRecordedAt()).isEqualTo(NOVA_CAPTURA);
+    }
+
+    @Test
+    @DisplayName("clearLocation apaga a posição inteira, e não só o par de coordenadas")
+    void apagaLocalizacaoQuandoPedido() {
+        ProductionExecution resultado = atualizar(
+                existente(LAT_ORIGINAL, LON_ORIGINAL),
+                new ProductionExecutionUpdateDTO(null, null, null, null, null, null, true)
+        );
+
+        assertThat(resultado.getLatitude()).isNull();
+        assertThat(resultado.getLongitude()).isNull();
+        assertThat(resultado.getLocationAccuracy()).isNull();
+        assertThat(resultado.getLocationRecordedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("clearLocation não interfere nos demais campos da edição")
+    void apagarLocalizacaoPreservaOResto() {
+        ProductionExecution resultado = atualizar(
+                existente(LAT_ORIGINAL, LON_ORIGINAL),
+                new ProductionExecutionUpdateDTO(
+                        new BigDecimal("50.00"), null, null, null, null, null, true)
+        );
+
+        assertThat(resultado.getActualYield()).isEqualByComparingTo("50.00");
+        assertThat(resultado.getLatitude()).isNull();
     }
 
     @Test
@@ -105,7 +145,7 @@ class UpdateProductionExecutionGeolocationTest {
     void mantemAusenciaDeCoordenada() {
         ProductionExecution resultado = atualizar(
                 existente(null, null),
-                new ProductionExecutionUpdateDTO(new BigDecimal("10.00"), null, null, null)
+                new ProductionExecutionUpdateDTO(new BigDecimal("10.00"), null, null, null, null, null, null)
         );
 
         assertThat(resultado.getLatitude()).isNull();

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public record ProductionExecutionRegisterDTO(
         @NotNull(message = "A quantidade real produzida é obrigatória.")
@@ -25,6 +26,13 @@ public record ProductionExecutionRegisterDTO(
 
         @DecimalMin(value = "-180.0", message = "Longitude inválida.")
         @DecimalMax(value = "180.0", message = "Longitude inválida.")
-        BigDecimal longitude
+        BigDecimal longitude,
+
+        /** Raio de erro da leitura, em metros, como informado pelo GPS. */
+        @DecimalMin(value = "0.0", message = "A precisão não pode ser negativa.")
+        BigDecimal locationAccuracy,
+
+        /** Quando o GPS obteve a posição. */
+        LocalDateTime locationRecordedAt
 ) {
 }

@@ -34,6 +34,8 @@ public class CreateProductionExecutionUseCase {
                 dto.harvestDate(),
                 dto.latitude(),
                 dto.longitude(),
+                dto.locationAccuracy(),
+                dto.locationRecordedAt(),
                 null,
                 null,
                 null
