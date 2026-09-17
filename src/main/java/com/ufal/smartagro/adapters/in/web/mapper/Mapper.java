@@ -191,6 +191,10 @@ public class Mapper {
                 exec.getProductionPlan() != null ? exec.getProductionPlan().getId() : null,
                 exec.getActualYield(),
                 exec.getHarvestDate(),
+                exec.getLatitude(),
+                exec.getLongitude(),
+                exec.getLocationAccuracy(),
+                exec.getLocationRecordedAt(),
                 exec.getCreatedAt()
         );
     }
