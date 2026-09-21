@@ -31,7 +31,7 @@ public class CreateProductionPlanUseCase {
         Farmer farmer = farmerRepository.findById(farmerId)
                 .orElseThrow(() -> new IllegalArgumentException("Agricultor não encontrado."));
 
-        accessValidator.validateAccess(farmer, loggedUser);
+        accessValidator.validateWriteAccess(farmer, loggedUser);
 
         Harvest harvest = harvestRepository.findById(dto.harvestId())
                 .orElseThrow(() -> new IllegalArgumentException("Safra não encontrada."));
