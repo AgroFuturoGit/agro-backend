@@ -1,7 +1,9 @@
 package com.ufal.smartagro.adapters.in.web.exception.handler;
 
 import com.ufal.smartagro.adapters.in.web.exception.dto.ApiError;
+import com.ufal.smartagro.adapters.in.web.exception.dto.ConflictApiError;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.ConcurrentUpdateException;
 import com.ufal.smartagro.domain.exception.CpfAlreadyExistsException;
 import com.ufal.smartagro.domain.exception.EmailAlreadyExistsException;
 import com.ufal.smartagro.domain.exception.HarvestAlreadyExistsException;
@@ -107,6 +109,22 @@ public class GlobalExceptionHandler {
                 ex.getMessage(),
                 httpServletRequest.getRequestURI(),
                 LocalDateTime.now()
+        ));
+    }
+
+    /**
+     * Alteração concorrente: devolve 409 com a versão que está no servidor, para
+     * que o cliente reconcilie sem uma segunda requisição.
+     */
+    @ExceptionHandler(ConcurrentUpdateException.class)
+    public ResponseEntity<ConflictApiError> handleConcurrentUpdate(
+            ConcurrentUpdateException ex, HttpServletRequest httpServletRequest){
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ConflictApiError(
+                HttpStatus.CONFLICT.value(),
+                ex.getMessage(),
+                httpServletRequest.getRequestURI(),
+                LocalDateTime.now(),
+                ex.getCurrent()
         ));
     }
 
