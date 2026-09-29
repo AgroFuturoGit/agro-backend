@@ -6,12 +6,16 @@ import com.ufal.smartagro.application.service.user.UserRegisterUseCase;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Farmer;
+import com.ufal.smartagro.domain.model.Manager;
+import com.ufal.smartagro.domain.model.Organization;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CommunityRepository;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
-import org.junit.jupiter.api.BeforeEach;
+import com.ufal.smartagro.domain.port.out.ManagerRepository;
+import com.ufal.smartagro.testsupport.UserTestFactory;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -21,21 +25,24 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class RegisterFarmerUseCaseTest {
+
+    private static final String ACCESS_DENIED_MESSAGE =
+            "Acesso negado. Somente administradores podem realizar esta ação.";
+    private static final String MANAGER_TENANT_DENIED =
+            "O gestor só tem acesso aos agricultores da sua própria organização.";
 
     @Mock
     private FarmerRepository farmerRepository;
@@ -44,106 +51,161 @@ class RegisterFarmerUseCaseTest {
     private CommunityRepository communityRepository;
 
     @Mock
+    private ManagerRepository managerRepository;
+
+    @Mock
     private UserRegisterUseCase userRegisterUseCase;
 
     @InjectMocks
     private RegisterFarmerUseCase registerFarmerUseCase;
 
-    private UUID communityId;
-    private Community community;
-    private FarmerRegisterDTO registerDto;
-    private User savedUser;
+    @Nested
+    @DisplayName("Happy path — ADMIN e MANAGER da própria organização")
+    class HappyPath {
 
-    @BeforeEach
-    void setUp() {
-        communityId = UUID.randomUUID();
-        community = new Community(communityId, "Comunidade Norte", null, null, null, null);
-        registerDto = new FarmerRegisterDTO(
-                "João da Silva",
-                "joao@smartagro.test",
-                "senha1234",
-                "52998224725",
-                LocalDate.of(1985, 3, 12),
-                "João"
-        );
-        savedUser = new User(
-                UUID.randomUUID(),
-                registerDto.fullName(),
-                registerDto.email(),
-                "encoded-password",
-                registerDto.cpf(),
-                registerDto.dateOfBirth(),
-                Role.FARMER
-        );
+        @Test
+        @DisplayName("Given ADMIN When register em qualquer community Then persiste Farmer")
+        void givenAdmin_whenRegister_thenPersistsFarmer() {
+            User admin = UserTestFactory.user().admin().build();
+            Community community = UserTestFactory.community().build();
+            FarmerRegisterDTO dto = UserTestFactory.farmerRegisterDto().build();
+            stubSuccessfulPersist(community, dto);
+
+            Farmer result = registerFarmerUseCase.register(community.getId(), dto, admin);
+
+            assertThat(result.getCommunity()).isEqualTo(community);
+            assertThat(result.getIsCompliant()).isTrue();
+            verifyCapturedFarmerRoleAndCommunity(dto, community);
+            verifyNoInteractions(managerRepository);
+        }
+
+        @Test
+        @DisplayName("Given MANAGER When community da própria org Then persiste Farmer")
+        void givenManager_whenCommunityOfOwnOrganization_thenPersistsFarmer() {
+            Organization organization = UserTestFactory.organization().build();
+            User managerUser = UserTestFactory.user().manager().build();
+            Manager manager = UserTestFactory.managerProfile().user(managerUser).organization(organization).build();
+            Community community = UserTestFactory.community().organization(organization).build();
+            FarmerRegisterDTO dto = UserTestFactory.farmerRegisterDto().build();
+            stubSuccessfulPersist(community, dto);
+            when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
+
+            Farmer result = registerFarmerUseCase.register(community.getId(), dto, managerUser);
+
+            assertThat(result.getCommunity().getOrganization().getId()).isEqualTo(organization.getId());
+            verifyCapturedFarmerRoleAndCommunity(dto, community);
+        }
     }
 
-    @Test
-    @DisplayName("deve cadastrar produtor quando o usuário logado é ADMIN")
-    void shouldRegisterFarmerWhenLoggedUserIsAdmin() {
-        // ARRANGE (Organizar/Preparar)
-        User admin = loggedUser(Role.ADMIN);
-        Farmer persisted = new Farmer(
-                UUID.randomUUID(),
-                savedUser,
-                community,
-                registerDto.aliasName(),
-                true,
-                null,
-                null,
-                null
-        );
+    @Nested
+    @DisplayName("RBAC — TECHNICIAN e FARMER (PRODUCER) não cadastram")
+    class RbacBlocking {
 
-        //Quando o sistema procurar a comunidade pelo communityId, finja que encontrou a comunidade.
-        when(communityRepository.findById(communityId)).thenReturn(Optional.of(community));
+        @ParameterizedTest(name = "Given Role.{0} When register Then AccessDeniedException")
+        @EnumSource(value = Role.class, names = {"TECHNICIAN", "FARMER"})
+        void givenTechnicianOrFarmer_whenRegister_thenAccessDenied(Role actorRole) {
+            User loggedUser = UserTestFactory.user().role(actorRole).build();
+            FarmerRegisterDTO dto = UserTestFactory.farmerRegisterDto().build();
+            UUID communityId = UUID.randomUUID();
 
-        //Quando o registerFarmerUseCase tentar criar o usuário base, não execute o cadastro real. Simplesmente devolva savedUser.
+            assertThatThrownBy(() -> registerFarmerUseCase.register(communityId, dto, loggedUser))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessage(ACCESS_DENIED_MESSAGE);
+
+            verifyNoInteractions(communityRepository, managerRepository, userRegisterUseCase, farmerRepository);
+        }
+    }
+
+    @Nested
+    @DisplayName("Isolamento de tenant — MANAGER só na própria Organization")
+    class TenantIsolation {
+
+        @Test
+        @DisplayName("Given MANAGER When community de outra org Then AccessDeniedException sem save")
+        void givenManager_whenCommunityBelongsToAnotherOrganization_thenAccessDenied() {
+            Organization managerOrg = UserTestFactory.organization().name("Org do Gestor").build();
+            Organization otherOrg = UserTestFactory.organization().name("Org Alheia").build();
+            User managerUser = UserTestFactory.user().manager().build();
+            Manager manager = UserTestFactory.managerProfile().user(managerUser).organization(managerOrg).build();
+            Community foreignCommunity = UserTestFactory.community().organization(otherOrg).build();
+            FarmerRegisterDTO dto = UserTestFactory.farmerRegisterDto().build();
+
+            when(communityRepository.findById(foreignCommunity.getId())).thenReturn(Optional.of(foreignCommunity));
+            when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
+
+            assertThatThrownBy(() -> registerFarmerUseCase.register(foreignCommunity.getId(), dto, managerUser))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessage(MANAGER_TENANT_DENIED);
+
+            verifyNoInteractions(userRegisterUseCase);
+            verify(farmerRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Given MANAGER When perfil de gestor não existe Then AccessDeniedException")
+        void givenManager_whenManagerProfileMissing_thenAccessDenied() {
+            User managerUser = UserTestFactory.user().manager().build();
+            Community community = UserTestFactory.community().build();
+            FarmerRegisterDTO dto = UserTestFactory.farmerRegisterDto().build();
+            when(communityRepository.findById(community.getId())).thenReturn(Optional.of(community));
+            when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> registerFarmerUseCase.register(community.getId(), dto, managerUser))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessage("Gestor não encontrado.");
+
+            verify(farmerRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("Exceções de domínio e dados")
+    class DomainExceptions {
+
+        @Test
+        @DisplayName("Given comunidade inexistente When register Then IllegalArgumentException")
+        void givenMissingCommunity_whenRegister_thenIllegalArgument() {
+            User admin = UserTestFactory.user().admin().build();
+            FarmerRegisterDTO dto = UserTestFactory.farmerRegisterDto().build();
+            UUID missingId = UUID.randomUUID();
+            when(communityRepository.findById(missingId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> registerFarmerUseCase.register(missingId, dto, admin))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Comunidade não encontrada");
+
+            verifyNoInteractions(userRegisterUseCase);
+            verify(farmerRepository, never()).save(any());
+        }
+    }
+
+    private void stubSuccessfulPersist(Community community, FarmerRegisterDTO dto) {
+        User savedUser = UserTestFactory.user().farmer()
+                .fullName(dto.fullName())
+                .email(dto.email())
+                .cpf(dto.cpf())
+                .dateOfBirth(dto.dateOfBirth())
+                .build();
+        Farmer persisted = UserTestFactory.farmerProfile()
+                .user(savedUser)
+                .community(community)
+                .aliasName(dto.aliasName())
+                .build();
+        when(communityRepository.findById(community.getId())).thenReturn(Optional.of(community));
         when(userRegisterUseCase.createBaseUser(any(UserRegisterDTO.class))).thenReturn(savedUser);
-
-        //Quando o código tentar salvar um Farmer, finja que o banco salvou e devolva persisted.
         when(farmerRepository.save(any(Farmer.class))).thenReturn(persisted);
+    }
 
-        // ACT (Agir/Executar)
-        //Executamos a função register para tetar se ela esta funcionando corretamente
-        Farmer result = registerFarmerUseCase.register(communityId, registerDto, admin);
-
-        // ASSERT (Afirmar/Verificar)
-        //Verificando se o resultado foi o correto
-        assertNotNull(result.getId());
-        assertEquals(savedUser, result.getUser());
-        assertEquals(community, result.getCommunity());
-        assertEquals("João", result.getAliasName());
-        assertTrue(result.getIsCompliant());
-
-        //Testando se os metodos foram chamados corretamente
+    private void verifyCapturedFarmerRoleAndCommunity(FarmerRegisterDTO dto, Community community) {
         ArgumentCaptor<UserRegisterDTO> userDtoCaptor = ArgumentCaptor.forClass(UserRegisterDTO.class);
         verify(userRegisterUseCase).createBaseUser(userDtoCaptor.capture());
-        UserRegisterDTO capturedUserDto = userDtoCaptor.getValue();
-        assertEquals(registerDto.fullName(), capturedUserDto.fullName());
-        assertEquals(registerDto.email(), capturedUserDto.email());
-        assertEquals(registerDto.password(), capturedUserDto.password());
-        assertEquals(registerDto.cpf(), capturedUserDto.cpf());
-        assertEquals(registerDto.dateOfBirth(), capturedUserDto.dateOfBirth());
-        assertEquals(Role.FARMER, capturedUserDto.role());
+        assertThat(userDtoCaptor.getValue().role()).isEqualTo(Role.FARMER);
+        assertThat(userDtoCaptor.getValue().email()).isEqualTo(dto.email());
 
-        //Testando qual objeto farmer foi enviado para o repositorio
         ArgumentCaptor<Farmer> farmerCaptor = ArgumentCaptor.forClass(Farmer.class);
         verify(farmerRepository).save(farmerCaptor.capture());
-        Farmer capturedFarmer = farmerCaptor.getValue();
-        assertEquals(savedUser, capturedFarmer.getUser());
-        assertEquals(community, capturedFarmer.getCommunity());
-        assertEquals(registerDto.aliasName(), capturedFarmer.getAliasName());
-        assertTrue(capturedFarmer.getIsCompliant());
-    }
-
-    private User loggedUser(Role role) {
-        return new User(
-                UUID.randomUUID(),
-                "Usuário Logado",
-                "logged@smartagro.test",
-                "encoded",
-                "39053344705",
-                LocalDate.of(1980, 1, 1),
-                role
-        );
+        assertThat(farmerCaptor.getValue().getId()).isNull();
+        assertThat(farmerCaptor.getValue().getCommunity()).isEqualTo(community);
+        assertThat(farmerCaptor.getValue().getIsCompliant()).isTrue();
     }
 }

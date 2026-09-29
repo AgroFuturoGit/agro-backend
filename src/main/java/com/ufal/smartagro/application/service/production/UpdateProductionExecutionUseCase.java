@@ -27,7 +27,7 @@ public class UpdateProductionExecutionUseCase {
                 .orElseThrow(() -> new IllegalArgumentException("Execução de produção não encontrada."));
 
         if (existingExecution.getProductionPlan() != null) {
-            accessValidator.validateAccess(existingExecution.getProductionPlan().getFarmer(), loggedUser);
+            accessValidator.validateWriteAccess(existingExecution.getProductionPlan().getFarmer(), loggedUser);
         }
 
         Localizacao localizacao = resolverLocalizacao(dto, existingExecution);

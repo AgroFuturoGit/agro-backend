@@ -1,11 +1,14 @@
 package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
-import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Farmer;
+import com.ufal.smartagro.domain.model.Manager;
+import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
+import com.ufal.smartagro.domain.port.out.TechnicalAssistanceRepository;
+import com.ufal.smartagro.domain.port.out.TechnicianRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +18,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ProductionAccessValidator {
 
+    static final String TECHNICIAN_WRITE_DENIED =
+            "O técnico só pode alterar produção de agricultores sob sua assistência.";
+
     private final ManagerRepository managerRepository;
+    private final TechnicianRepository technicianRepository;
+    private final TechnicalAssistanceRepository technicalAssistanceRepository;
 
     public void validateAccess(Farmer farmer, User loggedUser) {
         if (farmer == null) return;
@@ -37,5 +45,23 @@ public class ProductionAccessValidator {
                 throw new AccessDeniedException("O gestor só tem acesso aos agricultores da sua própria organização.");
             }
         }
+    }
+
+    public void validateWriteAccess(Farmer farmer, User loggedUser) {
+        validateAccess(farmer, loggedUser);
+
+        if (loggedUser.getRole() != Role.TECHNICIAN) {
+            return;
+        }
+
+        Technician technician = technicianRepository.findByUserId(loggedUser.getId())
+                .orElseThrow(() -> new AccessDeniedException("Técnico não encontrado."));
+
+        if (farmer == null || farmer.getId() == null) {
+            throw new AccessDeniedException(TECHNICIAN_WRITE_DENIED);
+        }
+
+        technicalAssistanceRepository.findActiveByTechnicianAndFarmer(technician.getId(), farmer.getId())
+                .orElseThrow(() -> new AccessDeniedException(TECHNICIAN_WRITE_DENIED));
     }
 }

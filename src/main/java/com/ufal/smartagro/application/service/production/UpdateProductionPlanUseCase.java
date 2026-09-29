@@ -24,7 +24,7 @@ public class UpdateProductionPlanUseCase {
         ProductionPlan existingPlan = productionPlanRepository.findById(planId)
                 .orElseThrow(() -> new IllegalArgumentException("Plano de produção não encontrado."));
 
-        accessValidator.validateAccess(existingPlan.getFarmer(), loggedUser);
+        accessValidator.validateWriteAccess(existingPlan.getFarmer(), loggedUser);
 
         versionGuard.ensureUpToDate(
                 dto.baseUpdatedAt(),
