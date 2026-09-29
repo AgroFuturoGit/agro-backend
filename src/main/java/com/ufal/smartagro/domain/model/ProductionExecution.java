@@ -15,6 +15,13 @@ public class ProductionExecution {
     private ProductionPlan productionPlan;
     private BigDecimal actualYield;
     private LocalDate harvestDate;
+    /** Onde o apontamento foi feito. Ausente quando o GPS não respondeu. */
+    private BigDecimal latitude;
+    private BigDecimal longitude;
+    /** Raio de erro da leitura, em metros. */
+    private BigDecimal locationAccuracy;
+    /** Quando o GPS obteve a posição — não quando o apontamento foi salvo. */
+    private LocalDateTime locationRecordedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
