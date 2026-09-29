@@ -180,7 +180,8 @@ public class Mapper {
                 plan.getExpectedYield(),
                 plan.getPlannedPlantingDate(),
                 plan.getPlannedCalendar(),
-                plan.getCreatedAt()
+                plan.getCreatedAt(),
+                plan.getUpdatedAt()
         );
     }
 
@@ -195,7 +196,8 @@ public class Mapper {
                 exec.getLongitude(),
                 exec.getLocationAccuracy(),
                 exec.getLocationRecordedAt(),
-                exec.getCreatedAt()
+                exec.getCreatedAt(),
+                exec.getUpdatedAt()
         );
     }
 

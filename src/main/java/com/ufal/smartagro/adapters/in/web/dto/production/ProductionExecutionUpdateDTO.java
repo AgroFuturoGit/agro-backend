@@ -30,6 +30,13 @@ public record ProductionExecutionUpdateDTO(
          * significa "não mexer", então sem este sinal não haveria como apagar
          * uma posição já gravada.
          */
-        Boolean clearLocation
+        Boolean clearLocation,
+
+        /**
+         * Versão do apontamento que o cliente tinha em mãos ao editar. Quando
+         * enviada, o servidor recusa a escrita com 409 caso já tenha avançado
+         * além dela. Omitir mantém o comportamento de sobrescrita direta.
+         */
+        LocalDateTime baseUpdatedAt
 ) {
 }

@@ -14,6 +14,7 @@ public record ProductionExecutionResponseDTO(
         BigDecimal longitude,
         BigDecimal locationAccuracy,
         LocalDateTime locationRecordedAt,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
 }

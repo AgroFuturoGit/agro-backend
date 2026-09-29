@@ -1,6 +1,7 @@
 package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionPlanUpdateDTO;
+import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.ProductionPlanRepository;
@@ -16,6 +17,7 @@ public class UpdateProductionPlanUseCase {
 
     private final ProductionPlanRepository productionPlanRepository;
     private final ProductionAccessValidator accessValidator;
+    private final ProductionVersionGuard versionGuard;
 
     @Transactional
     public ProductionPlan update(UUID planId, ProductionPlanUpdateDTO dto, User loggedUser) {
@@ -23,6 +25,14 @@ public class UpdateProductionPlanUseCase {
                 .orElseThrow(() -> new IllegalArgumentException("Plano de produção não encontrado."));
 
         accessValidator.validateAccess(existingPlan.getFarmer(), loggedUser);
+
+        versionGuard.ensureUpToDate(
+                dto.baseUpdatedAt(),
+                existingPlan.getUpdatedAt(),
+                existingPlan.getCreatedAt(),
+                Mapper.toProductionPlanResponseDTO(existingPlan),
+                "O plano de produção foi alterado por outro usuário depois que esta edição começou."
+        );
 
         ProductionPlan updatedPlan = new ProductionPlan(
                 existingPlan.getId(),

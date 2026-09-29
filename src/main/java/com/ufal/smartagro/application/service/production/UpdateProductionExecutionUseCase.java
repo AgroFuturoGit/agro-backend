@@ -1,6 +1,7 @@
 package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionExecutionUpdateDTO;
+import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.ProductionExecutionRepository;
@@ -18,6 +19,7 @@ public class UpdateProductionExecutionUseCase {
 
     private final ProductionExecutionRepository productionExecutionRepository;
     private final ProductionAccessValidator accessValidator;
+    private final ProductionVersionGuard versionGuard;
 
     @Transactional
     public ProductionExecution update(UUID executionId, ProductionExecutionUpdateDTO dto, User loggedUser) {
@@ -29,6 +31,14 @@ public class UpdateProductionExecutionUseCase {
         }
 
         Localizacao localizacao = resolverLocalizacao(dto, existingExecution);
+
+        versionGuard.ensureUpToDate(
+                dto.baseUpdatedAt(),
+                existingExecution.getUpdatedAt(),
+                existingExecution.getCreatedAt(),
+                Mapper.toProductionExecutionResponseDTO(existingExecution),
+                "O apontamento foi alterado por outro usuário depois que esta edição começou."
+        );
 
         ProductionExecution updatedExecution = new ProductionExecution(
                 existingExecution.getId(),
