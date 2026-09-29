@@ -62,6 +62,8 @@ class ProductionWriteUseCaseRbacTest {
     private HarvestRepository harvestRepository;
     @Mock
     private CropRepository cropRepository;
+    @Mock
+    private ProductionVersionGuard versionGuard;
 
     private CreateProductionPlanUseCase createPlan;
     private UpdateProductionPlanUseCase updatePlan;
@@ -76,11 +78,11 @@ class ProductionWriteUseCaseRbacTest {
                 managerRepository, technicianRepository, technicalAssistanceRepository);
         createPlan = new CreateProductionPlanUseCase(
                 productionPlanRepository, farmerRepository, harvestRepository, cropRepository, validator);
-        updatePlan = new UpdateProductionPlanUseCase(productionPlanRepository, validator);
+        updatePlan = new UpdateProductionPlanUseCase(productionPlanRepository, validator, versionGuard);
         deletePlan = new DeleteProductionPlanUseCase(productionPlanRepository, validator);
         createExecution = new CreateProductionExecutionUseCase(
                 productionExecutionRepository, productionPlanRepository, validator);
-        updateExecution = new UpdateProductionExecutionUseCase(productionExecutionRepository, validator);
+        updateExecution = new UpdateProductionExecutionUseCase(productionExecutionRepository, validator, versionGuard);
         deleteExecution = new DeleteProductionExecutionUseCase(productionExecutionRepository, validator);
     }
 
@@ -322,15 +324,15 @@ class ProductionWriteUseCaseRbacTest {
     }
 
     private ProductionPlanUpdateDTO planUpdateDto() {
-        return new ProductionPlanUpdateDTO(new BigDecimal("15.00"), null, null, null);
+        return new ProductionPlanUpdateDTO(new BigDecimal("15.00"), null, null, null, null);
     }
 
     private ProductionExecutionRegisterDTO executionRegisterDto() {
-        return new ProductionExecutionRegisterDTO(new BigDecimal("50.00"), LocalDate.of(2026, 6, 1));
+        return new ProductionExecutionRegisterDTO(new BigDecimal("50.00"), LocalDate.of(2026, 6, 1), null, null, null, null);
     }
 
     private ProductionExecutionUpdateDTO executionUpdateDto() {
-        return new ProductionExecutionUpdateDTO(new BigDecimal("55.00"), null);
+        return new ProductionExecutionUpdateDTO(new BigDecimal("55.00"), null, null, null, null, null, null, null);
     }
 
     private ProductionExecution executionOf(ProductionPlan plan) {
@@ -339,6 +341,10 @@ class ProductionWriteUseCaseRbacTest {
                 plan,
                 new BigDecimal("40.00"),
                 LocalDate.of(2026, 6, 1),
+                null,
+                null,
+                null,
+                null,
                 null,
                 null,
                 null

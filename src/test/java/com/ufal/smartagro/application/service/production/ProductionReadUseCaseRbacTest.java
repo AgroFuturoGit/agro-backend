@@ -159,6 +159,10 @@ class ProductionReadUseCaseRbacTest {
                 LocalDate.of(2026, 6, 1),
                 null,
                 null,
+                null,
+                null,
+                null,
+                null,
                 null
         );
     }
