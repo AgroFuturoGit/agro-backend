@@ -2,6 +2,7 @@ package com.ufal.smartagro.application.service.technician;
 
 import com.ufal.smartagro.adapters.in.web.dto.technician.TechnicianUpdateDTO;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;
@@ -20,8 +21,13 @@ public class UpdateTechnicianUseCase {
 
     @Transactional
     public Technician update(UUID id, TechnicianUpdateDTO dto, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Apenas administradores ou o próprio técnico podem atualizar este perfil.");
+        }
+
         Technician existing = technicianRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Técnico não encontrado."));
+                .filter(t -> t.getDeletedAt() == null)
+                .orElseThrow(() -> new EntityNotFoundException("Técnico não encontrado."));
 
         if (loggedUser.getRole() == Role.TECHNICIAN) {
             if (existing.getUser() == null || !existing.getUser().getId().equals(loggedUser.getId())) {

@@ -182,8 +182,8 @@ class ProductionWriteUseCaseRbacTest {
             Farmer farmer = UserTestFactory.farmerProfile().build();
             stubCreatePlanDependencies(farmer);
             when(technicianRepository.findByUserId(techUser.getId())).thenReturn(Optional.of(technician));
-            when(technicalAssistanceRepository.findActiveByTechnicianAndFarmer(technician.getId(), farmer.getId()))
-                    .thenReturn(Optional.of(UserTestFactory.technicalAssistance().technician(technician).farmer(farmer).build()));
+            when(technicalAssistanceRepository.findActiveByTechnicianAndCommunity(technician.getId(), farmer.getCommunity().getId()))
+                    .thenReturn(Optional.of(UserTestFactory.technicalAssistance().technician(technician).community(farmer.getCommunity()).build()));
             when(productionPlanRepository.save(any(ProductionPlan.class)))
                     .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -200,7 +200,7 @@ class ProductionWriteUseCaseRbacTest {
             Farmer farmer = UserTestFactory.farmerProfile().build();
             when(farmerRepository.findById(farmer.getId())).thenReturn(Optional.of(farmer));
             when(technicianRepository.findByUserId(techUser.getId())).thenReturn(Optional.of(technician));
-            when(technicalAssistanceRepository.findActiveByTechnicianAndFarmer(technician.getId(), farmer.getId()))
+            when(technicalAssistanceRepository.findActiveByTechnicianAndCommunity(technician.getId(), farmer.getCommunity().getId()))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> createPlan.create(farmer.getId(), planRegisterDto(), techUser))
@@ -308,7 +308,7 @@ class ProductionWriteUseCaseRbacTest {
 
     private void stubTechnicianWithoutAssistance(User techUser, Technician technician, Farmer farmer) {
         when(technicianRepository.findByUserId(techUser.getId())).thenReturn(Optional.of(technician));
-        when(technicalAssistanceRepository.findActiveByTechnicianAndFarmer(technician.getId(), farmer.getId()))
+        when(technicalAssistanceRepository.findActiveByTechnicianAndCommunity(technician.getId(), farmer.getCommunity().getId()))
                 .thenReturn(Optional.empty());
     }
 

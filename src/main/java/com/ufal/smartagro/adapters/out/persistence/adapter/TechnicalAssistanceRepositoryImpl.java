@@ -40,18 +40,19 @@ public class TechnicalAssistanceRepositoryImpl implements TechnicalAssistanceRep
     }
 
     @Override
-    public List<TechnicalAssistance> findByFarmerId(UUID farmerId) {
-        return jpaRepository.findByFarmerId(farmerId).stream()
+    public List<TechnicalAssistance> findByCommunityId(UUID communityId) {
+        return jpaRepository.findByCommunityId(communityId).stream()
                 .map(mapper::toDomain)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public Optional<TechnicalAssistance> findActiveByTechnicianAndFarmer(UUID technicianId, UUID farmerId) {
-        return jpaRepository.findByTechnicianIdAndFarmerIdAndEndDateIsNull(technicianId, farmerId)
+    public Optional<TechnicalAssistance> findActiveByTechnicianAndCommunity(UUID technicianId, UUID communityId) {
+        return jpaRepository.findByTechnicianIdAndCommunityIdAndEndDateIsNull(technicianId, communityId)
                 .map(mapper::toDomain);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     @Override
     public void delete(UUID id) {
         jpaRepository.softDeleteById(id);

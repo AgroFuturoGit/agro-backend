@@ -246,8 +246,8 @@ class ProductionAccessValidatorTest {
             Technician technician = UserTestFactory.technicianProfile().user(techUser).build();
             Farmer farmer = UserTestFactory.farmerProfile().build();
             when(technicianRepository.findByUserId(techUser.getId())).thenReturn(Optional.of(technician));
-            when(technicalAssistanceRepository.findActiveByTechnicianAndFarmer(technician.getId(), farmer.getId()))
-                    .thenReturn(Optional.of(UserTestFactory.technicalAssistance().technician(technician).farmer(farmer).build()));
+            when(technicalAssistanceRepository.findActiveByTechnicianAndCommunity(technician.getId(), farmer.getCommunity().getId()))
+                    .thenReturn(Optional.of(UserTestFactory.technicalAssistance().technician(technician).community(farmer.getCommunity()).build()));
 
             assertThatCode(() -> productionAccessValidator.validateWriteAccess(farmer, techUser))
                     .doesNotThrowAnyException();
@@ -260,7 +260,7 @@ class ProductionAccessValidatorTest {
             Technician technician = UserTestFactory.technicianProfile().user(techUser).build();
             Farmer farmer = UserTestFactory.farmerProfile().build();
             when(technicianRepository.findByUserId(techUser.getId())).thenReturn(Optional.of(technician));
-            when(technicalAssistanceRepository.findActiveByTechnicianAndFarmer(technician.getId(), farmer.getId()))
+            when(technicalAssistanceRepository.findActiveByTechnicianAndCommunity(technician.getId(), farmer.getCommunity().getId()))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> productionAccessValidator.validateWriteAccess(farmer, techUser))

@@ -30,8 +30,8 @@ public class TechnicalAssistanceEntity {
     private TechnicianEntity technician;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "farmer_id", nullable = false)
-    private FarmerEntity farmer;
+    @JoinColumn(name = "community_id", nullable = false)
+    private CommunityEntity community;
 
     @Column(name = "start_date", nullable = false)
     private LocalDateTime startDate;

@@ -22,8 +22,14 @@ public class FindAllTechniciansUseCase {
 
     @Transactional(readOnly = true)
     public List<Technician> findAll(User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Apenas administradores e gestores podem listar técnicos.");
+        }
+
         if (loggedUser.getRole() == Role.ADMIN) {
-            return technicianRepository.findAll();
+            return technicianRepository.findAll().stream()
+                    .filter(t -> t.getDeletedAt() == null)
+                    .toList();
         } else if (loggedUser.getRole() == Role.MANAGER) {
             Manager manager = managerRepository.findByUserId(loggedUser.getId())
                     .orElseThrow(() -> new AccessDeniedException("Gestor não encontrado."));

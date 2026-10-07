@@ -216,8 +216,8 @@ public class Mapper {
         if (assistance == null) return null;
         return new TechnicalAssistanceResponseDTO(
                 assistance.getId(),
-                assistance.getTechnician().getId(),
-                assistance.getFarmer().getId(),
+                assistance.getTechnician() != null ? assistance.getTechnician().getId() : null,
+                assistance.getCommunity() != null ? assistance.getCommunity().getId() : null,
                 assistance.getStartDate(),
                 assistance.getEndDate()
         );

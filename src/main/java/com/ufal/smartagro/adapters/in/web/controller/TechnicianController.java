@@ -8,6 +8,8 @@ import com.ufal.smartagro.application.service.technician.*;
 import com.ufal.smartagro.adapters.in.web.dto.technicalassistance.TechnicalAssistanceRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.technicalassistance.TechnicalAssistanceResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.community.CommunityResponseDTO;
+import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
@@ -31,7 +33,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-@Tag(name = "Técnicos & Assistência Técnica", description = "Gerenciamento de técnicos agrícolas e atendimentos a agricultores")
+@Tag(name = "Técnicos & Assistência Técnica", description = "Gerenciamento de técnicos agrícolas e atendimentos a comunidades")
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/technicians")
@@ -44,8 +46,9 @@ public class TechnicianController {
     private final UpdateTechnicianUseCase updateTechnicianUseCase;
     private final DeleteTechnicianUseCase deleteTechnicianUseCase;
     private final UserRepository userRepository;
-    private final AssignFarmerToTechnicianUseCase assignFarmerToTechnicianUseCase;
-    private final RemoveFarmerFromTechnicianUseCase removeFarmerFromTechnicianUseCase;
+    private final AssignCommunityToTechnicianUseCase assignCommunityToTechnicianUseCase;
+    private final RemoveCommunityFromTechnicianUseCase removeCommunityFromTechnicianUseCase;
+    private final GetAssignedCommunitiesUseCase getAssignedCommunitiesUseCase;
     private final GetAssignedFarmersUseCase getAssignedFarmersUseCase;
 
     @Operation(summary = "Cadastrar técnico", description = "Registra um novo técnico agrícola no sistema.", security = @SecurityRequirement(name = "bearerAuth"))
@@ -80,7 +83,9 @@ public class TechnicianController {
     public ResponseEntity<TechnicianResponseDTO> findMyTechnicianData(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        Technician technician = findTechnicianByUserUseCase.findByUserId(loggedUserDetails.getId());
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+        Technician technician = findTechnicianByUserUseCase.findByUser(loggedUser);
         TechnicianResponseDTO response = Mapper.toTechnicianResponseDTO(technician);
         return ResponseEntity.ok(response);
     }
@@ -166,14 +171,14 @@ public class TechnicianController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Registrar assistência técnica", description = "Vincula um atendimento de assistência técnica entre um técnico e um agricultor.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Registrar assistência técnica", description = "Vincula um atendimento de assistência técnica entre um técnico e uma comunidade.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Assistência registrada com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
-            @ApiResponse(responseCode = "404", description = "Técnico ou agricultor não encontrado")
+            @ApiResponse(responseCode = "404", description = "Técnico ou comunidade não encontrada")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER') or hasRole('FARMER')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
     @PostMapping("/{technicianId}/assistances")
     public ResponseEntity<TechnicalAssistanceResponseDTO> assignAssistance(
             @PathVariable UUID technicianId,
@@ -182,7 +187,8 @@ public class TechnicianController {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
-        TechnicalAssistance assistance = assignFarmerToTechnicianUseCase.assign(dto, loggedUser);
+
+        TechnicalAssistance assistance = assignCommunityToTechnicianUseCase.assign(technicianId, dto, loggedUser);
         TechnicalAssistanceResponseDTO response = Mapper.toTechnicalAssistanceResponseDTO(assistance);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -193,7 +199,7 @@ public class TechnicianController {
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
             @ApiResponse(responseCode = "404", description = "Assistência técnica não encontrada")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER') or hasRole('FARMER') or hasRole('TECHNICIAN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER') or hasRole('TECHNICIAN')")
     @DeleteMapping("/{technicianId}/assistances/{assistanceId}")
     public ResponseEntity<TechnicalAssistanceResponseDTO> removeAssistance(
             @PathVariable UUID technicianId,
@@ -202,8 +208,49 @@ public class TechnicianController {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
-        TechnicalAssistance assistance = removeFarmerFromTechnicianUseCase.remove(assistanceId, loggedUser);
+        TechnicalAssistance assistance = removeCommunityFromTechnicianUseCase.remove(technicianId, assistanceId, loggedUser);
         TechnicalAssistanceResponseDTO response = Mapper.toTechnicalAssistanceResponseDTO(assistance);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Listar comunidades assistidas pelo técnico logado", description = "Retorna as comunidades vinculadas ao técnico autenticado.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado (requer perfil TECHNICIAN)")
+    })
+    @PreAuthorize("hasRole('TECHNICIAN')")
+    @GetMapping("/me/communities")
+    public ResponseEntity<List<CommunityResponseDTO>> getMyCommunities(
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+        List<Community> communities = getAssignedCommunitiesUseCase.getAssignedCommunities(loggedUser);
+        List<CommunityResponseDTO> response = communities.stream()
+                .map(Mapper::toCommunityResponseDTO)
+                .toList();
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Listar comunidades de determinado técnico", description = "Permite a gestores e administradores visualizar as comunidades vinculadas a um técnico específico.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Técnico não encontrado")
+    })
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+    @GetMapping("/{id}/communities")
+    public ResponseEntity<List<CommunityResponseDTO>> getTechnicianCommunities(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+        List<Community> communities = getAssignedCommunitiesUseCase.getAssignedCommunities(id, loggedUser);
+        List<CommunityResponseDTO> response = communities.stream()
+                .map(Mapper::toCommunityResponseDTO)
+                .toList();
         return ResponseEntity.ok(response);
     }
 
@@ -220,8 +267,7 @@ public class TechnicianController {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
-        Technician technician = findTechnicianByUserUseCase.findByUserId(loggedUserDetails.getId());
-        List<Farmer> farmers = getAssignedFarmersUseCase.getAssignedFarmers(technician.getId(), loggedUser);
+        List<Farmer> farmers = getAssignedFarmersUseCase.getAssignedFarmers(loggedUser);
         List<FarmerResponseDTO> response = farmers.stream()
                 .map(Mapper::toFarmerResponseDTO)
                 .toList();

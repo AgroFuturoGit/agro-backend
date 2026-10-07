@@ -21,7 +21,7 @@ public class RegisterTechnicianUseCase {
 
     @Transactional
     public Technician register(TechnicianRegisterDTO dto, User loggedUser) {
-        if (loggedUser.getRole() != Role.ADMIN) {
+        if (loggedUser == null || loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException();
         }
 

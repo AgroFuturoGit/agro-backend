@@ -398,7 +398,7 @@ public final class  UserTestFactory {
     public static final class TechnicalAssistanceBuilder {
         private UUID id = UUID.randomUUID();
         private Technician technician = UserTestFactory.technicianProfile().build();
-        private Farmer farmer = UserTestFactory.farmerProfile().build();
+        private Community community = UserTestFactory.community().build();
         private LocalDateTime startDate = LocalDateTime.of(2026, 1, 10, 8, 0);
         private LocalDateTime endDate = null;
 
@@ -407,8 +407,13 @@ public final class  UserTestFactory {
             return this;
         }
 
+        public TechnicalAssistanceBuilder community(Community community) {
+            this.community = community;
+            return this;
+        }
+
         public TechnicalAssistanceBuilder farmer(Farmer farmer) {
-            this.farmer = farmer;
+            this.community = farmer != null ? farmer.getCommunity() : null;
             return this;
         }
 
@@ -418,7 +423,7 @@ public final class  UserTestFactory {
         }
 
         public TechnicalAssistance build() {
-            return new TechnicalAssistance(id, technician, farmer, startDate, endDate, null, null, null);
+            return new TechnicalAssistance(id, technician, community, startDate, endDate, null, null, null);
         }
     }
 
