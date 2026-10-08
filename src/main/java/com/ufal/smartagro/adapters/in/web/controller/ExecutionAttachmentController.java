@@ -64,13 +64,13 @@ public class ExecutionAttachmentController {
 
         User loggedUser = loadUser(loggedUserDetails);
 
-        var incoming = new NewAttachment(
+        var incoming = new NewExecutionAttachment(
                 clientId,
                 file.getOriginalFilename(),
                 file.getContentType(),
                 file.getBytes());
 
-        UploadResult result = uploadUseCase.upload(executionId, incoming, loggedUser);
+        AttachmentUploadResult result = uploadUseCase.upload(executionId, incoming, loggedUser);
 
         return ResponseEntity
                 .status(result.created() ? HttpStatus.CREATED : HttpStatus.OK)

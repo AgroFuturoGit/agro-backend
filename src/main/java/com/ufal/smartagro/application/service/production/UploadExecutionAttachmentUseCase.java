@@ -36,7 +36,7 @@ public class UploadExecutionAttachmentUseCase {
     private final ProductionAccessValidator accessValidator;
 
     @Transactional
-    public UploadResult upload(UUID executionId, NewAttachment incoming, User loggedUser) {
+    public AttachmentUploadResult upload(UUID executionId, NewExecutionAttachment incoming, User loggedUser) {
         ProductionExecution execution = executionRepository.findById(executionId)
                 .orElseThrow(() -> new IllegalArgumentException("Apontamento de colheita não encontrado."));
 
@@ -54,7 +54,7 @@ public class UploadExecutionAttachmentUseCase {
             var existing = attachmentRepository
                     .findByExecutionIdAndClientId(executionId, incoming.clientId());
             if (existing.isPresent()) {
-                return new UploadResult(existing.get(), false);
+                return new AttachmentUploadResult(existing.get(), false);
             }
         }
 
@@ -76,10 +76,10 @@ public class UploadExecutionAttachmentUseCase {
                 null
         );
 
-        return new UploadResult(attachmentRepository.save(attachment), true);
+        return new AttachmentUploadResult(attachmentRepository.save(attachment), true);
     }
 
-    private void validate(NewAttachment incoming) {
+    private void validate(NewExecutionAttachment incoming) {
         if (incoming.content() == null || incoming.content().length == 0) {
             throw new IllegalArgumentException("O arquivo enviado está vazio.");
         }

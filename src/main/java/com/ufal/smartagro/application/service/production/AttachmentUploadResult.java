@@ -9,5 +9,5 @@ import com.ufal.smartagro.domain.model.ExecutionAttachment;
  * para que a API responda 201 num caso e 200 no outro. Sem isso, o controlador
  * teria de adivinhar.
  */
-public record UploadResult(ExecutionAttachment attachment, boolean created) {
+public record AttachmentUploadResult(ExecutionAttachment attachment, boolean created) {
 }

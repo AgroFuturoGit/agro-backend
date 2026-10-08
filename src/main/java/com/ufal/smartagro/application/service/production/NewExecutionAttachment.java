@@ -9,7 +9,7 @@ import java.util.UUID;
  * ao Spring Web. O controlador traduz, e o que entra aqui é só o conteúdo e
  * aquilo que o descreve.
  */
-public record NewAttachment(
+public record NewExecutionAttachment(
         UUID clientId,
         String filename,
         String contentType,

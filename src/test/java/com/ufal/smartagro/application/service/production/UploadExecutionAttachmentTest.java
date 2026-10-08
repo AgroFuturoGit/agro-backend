@@ -67,8 +67,8 @@ class UploadExecutionAttachmentTest {
                 LocalDateTime.now(), LocalDateTime.now(), null);
     }
 
-    private NewAttachment foto(UUID clientId, String contentType, int bytes) {
-        return new NewAttachment(clientId, "colheita.jpg", contentType, new byte[bytes]);
+    private NewExecutionAttachment foto(UUID clientId, String contentType, int bytes) {
+        return new NewExecutionAttachment(clientId, "colheita.jpg", contentType, new byte[bytes]);
     }
 
     private void apontamentoExiste() {
@@ -87,7 +87,7 @@ class UploadExecutionAttachmentTest {
         when(attachmentRepository.findAllByExecutionId(EXECUTION_ID)).thenReturn(List.of());
         when(attachmentRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        UploadResult resultado = useCase.upload(EXECUTION_ID, foto(CLIENT_ID, "image/jpeg", 1024), usuario());
+        AttachmentUploadResult resultado = useCase.upload(EXECUTION_ID, foto(CLIENT_ID, "image/jpeg", 1024), usuario());
 
         assertThat(resultado.created()).isTrue();
 
@@ -106,7 +106,7 @@ class UploadExecutionAttachmentTest {
         when(attachmentRepository.findByExecutionIdAndClientId(EXECUTION_ID, CLIENT_ID))
                 .thenReturn(Optional.of(existente));
 
-        UploadResult resultado = useCase.upload(EXECUTION_ID, foto(CLIENT_ID, "image/jpeg", 1024), usuario());
+        AttachmentUploadResult resultado = useCase.upload(EXECUTION_ID, foto(CLIENT_ID, "image/jpeg", 1024), usuario());
 
         assertThat(resultado.created()).isFalse();
         assertThat(resultado.attachment().getId()).isEqualTo(existente.getId());
@@ -120,7 +120,7 @@ class UploadExecutionAttachmentTest {
         when(attachmentRepository.findAllByExecutionId(EXECUTION_ID)).thenReturn(List.of());
         when(attachmentRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        UploadResult resultado = useCase.upload(EXECUTION_ID, foto(null, "image/jpeg", 1024), usuario());
+        AttachmentUploadResult resultado = useCase.upload(EXECUTION_ID, foto(null, "image/jpeg", 1024), usuario());
 
         assertThat(resultado.created()).isTrue();
         verify(attachmentRepository, never()).findByExecutionIdAndClientId(any(), any());
