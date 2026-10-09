@@ -11,10 +11,11 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import com.ufal.smartagro.domain.model.enums.ExecutionStatus;
 
+/** Registro persistido de cada apontamento periódico de colheita e sua validação. */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -32,8 +33,23 @@ public class ProductionExecutionEntity {
     @JoinColumn(name = "production_plan_id", nullable = false)
     private ProductionPlanEntity productionPlan;
 
-    @Column(name = "actual_yield", nullable = false, precision = 10, scale = 2)
-    private BigDecimal actualYield;
+    @Column(nullable = false, precision = 14, scale = 4)
+    /** Quantidade na unidade definida pela cultura e equivalente em quilogramas. */
+    private BigDecimal quantity;
+    @Column(name = "quantity_kg", nullable = false, precision = 14, scale = 4)
+    private BigDecimal quantityKg;
+    @Column(name = "harvested_at", nullable = false)
+    private LocalDateTime harvestedAt;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    /** Resultado atual do fluxo de revisão do apontamento. */
+    private ExecutionStatus status;
+    @Column(name = "validated_by")
+    private String validatedBy;
+    @Column(name = "validated_at")
+    private LocalDateTime validatedAt;
+    @Column(columnDefinition = "text")
+    private String notes;
 
     @Column(precision = 9, scale = 6)
     private BigDecimal latitude;
@@ -46,9 +62,6 @@ public class ProductionExecutionEntity {
 
     @Column(name = "location_recorded_at")
     private LocalDateTime locationRecordedAt;
-
-    @Column(name = "harvest_date", nullable = false)
-    private LocalDate harvestDate;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

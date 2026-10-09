@@ -6,11 +6,15 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/** Campos editáveis do apontamento, incluindo quantidade, horário e decisão de validação. */
 public record ProductionExecutionUpdateDTO(
-        @DecimalMin(value = "0.01", message = "A quantidade produzida deve ser maior que zero.")
-        BigDecimal actualYield,
-
-        LocalDate harvestDate,
+        @DecimalMin(value = "0.01", message = "A quantidade produzida deve ser maior que zero.") BigDecimal quantity,
+        @DecimalMin(value = "0.01", message = "A quantidade em kg deve ser maior que zero.") BigDecimal quantityKg,
+        LocalDateTime harvestedAt,
+        com.ufal.smartagro.domain.model.enums.ExecutionStatus status,
+        String validatedBy,
+        LocalDateTime validatedAt,
+        String notes,
 
         @DecimalMin(value = "-90.0", message = "Latitude inválida.")
         @DecimalMax(value = "90.0", message = "Latitude inválida.")
@@ -39,4 +43,11 @@ public record ProductionExecutionUpdateDTO(
          */
         LocalDateTime baseUpdatedAt
 ) {
+    /** Construtor de compatibilidade; converte o rendimento em quantidade e peso em kg. */
+    public ProductionExecutionUpdateDTO(BigDecimal actualYield, LocalDate harvestDate, BigDecimal latitude,
+                                        BigDecimal longitude, BigDecimal locationAccuracy, LocalDateTime locationRecordedAt,
+                                        Boolean clearLocation, LocalDateTime baseUpdatedAt) {
+        this(actualYield, actualYield, harvestDate == null ? null : harvestDate.atStartOfDay(), null, null, null, null,
+                latitude, longitude, locationAccuracy, locationRecordedAt, clearLocation, baseUpdatedAt);
+    }
 }

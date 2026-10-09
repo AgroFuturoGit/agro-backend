@@ -28,6 +28,7 @@ import com.ufal.smartagro.domain.model.TechnicalAssistance;
 import com.ufal.smartagro.adapters.out.persistence.entity.UserEntity;
 import com.ufal.smartagro.adapters.in.web.dto.technicalassistance.TechnicalAssistanceResponseDTO;
 
+/** Conversões entre objetos de domínio e DTOs expostos pelos endpoints HTTP. */
 public class Mapper {
 
     public static UserResponseDTO toUserResponseDTO(User user) {
@@ -67,21 +68,23 @@ public class Mapper {
         );
     }
 
+    /** Inclui os novos parâmetros da cultura na representação da API. */
     public static CropResponseDTO toCropResponseDTO(Crop crop) {
         return new CropResponseDTO(
                 crop.getId(),
                 crop.getName(),
                 crop.getVariety(),
-                crop.getIsPriority()
+                crop.getIsPriority(), crop.getCycleDays(), crop.getExpectedProductivity(), crop.getHarvestType(), crop.getUnit(), crop.getUnitWeightKg()
         );
     }
 
+    /** Constrói a cultura de domínio com todos os dados enviados no cadastro. */
     public static Crop toCrop(CropRegisterDTO dto) {
         return new Crop(
                 null,
                 dto.name(),
                 dto.variety(),
-                dto.isPriority()
+                dto.isPriority(), dto.cycleDays(), dto.expectedProductivity(), dto.harvestType(), dto.unit(), dto.unitWeightKg()
         );
     }
 
@@ -90,7 +93,7 @@ public class Mapper {
                 null, 
                 dto.name(),
                 dto.variety(),
-                dto.isPriority()
+                dto.isPriority(), dto.cycleDays(), dto.expectedProductivity(), dto.harvestType(), dto.unit(), dto.unitWeightKg()
         );
     }
 
@@ -181,6 +184,7 @@ public class Mapper {
                 farmer.getUpdatedAt()
         );
     }
+    /** Retorna o plano com produtividade snapshot, datas esperadas e localização. */
     public static ProductionPlanResponseDTO toProductionPlanResponseDTO(com.ufal.smartagro.domain.model.ProductionPlan plan) {
         if (plan == null) return null;
         return new ProductionPlanResponseDTO(
@@ -189,7 +193,8 @@ public class Mapper {
                 toHarvestResponseDTO(plan.getHarvest()),
                 toCropResponseDTO(plan.getCrop()),
                 plan.getPlantedArea(),
-                plan.getExpectedYield(),
+                plan.getStatus(), plan.getExpectedHarvestStart(), plan.getExpectedHarvestEnd(), plan.getExpectedProductivity(),
+                plan.getLocationDescription(), plan.getLatitude(), plan.getLongitude(),
                 plan.getPlannedPlantingDate(),
                 plan.getPlannedCalendar(),
                 plan.getCreatedAt(),
@@ -197,13 +202,14 @@ public class Mapper {
         );
     }
 
+    /** Retorna o apontamento com horário, quantidades e dados de validação. */
     public static ProductionExecutionResponseDTO toProductionExecutionResponseDTO(com.ufal.smartagro.domain.model.ProductionExecution exec) {
         if (exec == null) return null;
         return new ProductionExecutionResponseDTO(
                 exec.getId(),
                 exec.getProductionPlan() != null ? exec.getProductionPlan().getId() : null,
-                exec.getActualYield(),
-                exec.getHarvestDate(),
+                exec.getQuantity(), exec.getQuantityKg(), exec.getHarvestedAt(), exec.getStatus(),
+                exec.getValidatedBy(), exec.getValidatedAt(), exec.getNotes(),
                 exec.getLatitude(),
                 exec.getLongitude(),
                 exec.getLocationAccuracy(),
@@ -218,8 +224,11 @@ public class Mapper {
         return new TechnicianResponseDTO(
                 technician.getId(),
                 toUserResponseDTO(technician.getUser()),
+                technician.getRegistrationType(),
+                technician.getRegistrationNumber(),
                 technician.getProfessionalId(),
                 technician.getSpecialty(),
+                toUserResponseDTO(technician.getCreatedBy()),
                 technician.getCreatedAt(),
                 technician.getUpdatedAt()
         );

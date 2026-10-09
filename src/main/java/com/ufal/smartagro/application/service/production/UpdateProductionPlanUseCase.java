@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+/** Atualiza um plano sem substituir o snapshot original de produtividade da cultura. */
 @Service
 @RequiredArgsConstructor
 public class UpdateProductionPlanUseCase {
@@ -20,6 +21,7 @@ public class UpdateProductionPlanUseCase {
     private final ProductionVersionGuard versionGuard;
 
     @Transactional
+    /** Confere acesso e versão concorrente, aplica os campos enviados e salva o plano. */
     public ProductionPlan update(UUID planId, ProductionPlanUpdateDTO dto, User loggedUser) {
         ProductionPlan existingPlan = productionPlanRepository.findById(planId)
                 .orElseThrow(() -> new IllegalArgumentException("Plano de produção não encontrado."));
@@ -40,7 +42,13 @@ public class UpdateProductionPlanUseCase {
                 existingPlan.getHarvest(),
                 existingPlan.getCrop(),
                 dto.plantedArea() != null ? dto.plantedArea() : existingPlan.getPlantedArea(),
-                dto.expectedYield() != null ? dto.expectedYield() : existingPlan.getExpectedYield(),
+                dto.status() != null ? dto.status() : existingPlan.getStatus(),
+                dto.expectedHarvestStart() != null ? dto.expectedHarvestStart() : existingPlan.getExpectedHarvestStart(),
+                dto.expectedHarvestEnd() != null ? dto.expectedHarvestEnd() : existingPlan.getExpectedHarvestEnd(),
+                existingPlan.getExpectedProductivity(),
+                dto.locationDescription() != null ? dto.locationDescription() : existingPlan.getLocationDescription(),
+                dto.latitude() != null ? dto.latitude() : existingPlan.getLatitude(),
+                dto.longitude() != null ? dto.longitude() : existingPlan.getLongitude(),
                 dto.plannedPlantingDate() != null ? dto.plannedPlantingDate() : existingPlan.getPlannedPlantingDate(),
                 dto.plannedCalendar() != null ? dto.plannedCalendar() : existingPlan.getPlannedCalendar(),
                 existingPlan.getCreatedAt(),

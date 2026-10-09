@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/** Atualiza quantidades, horário, validação e localização de um apontamento existente. */
 @Service
 @RequiredArgsConstructor
 public class UpdateProductionExecutionUseCase {
@@ -22,6 +23,7 @@ public class UpdateProductionExecutionUseCase {
     private final ProductionVersionGuard versionGuard;
 
     @Transactional
+    /** Mantém campos omitidos, valida acesso/versão e persiste as alterações recebidas. */
     public ProductionExecution update(UUID executionId, ProductionExecutionUpdateDTO dto, User loggedUser) {
         ProductionExecution existingExecution = productionExecutionRepository.findById(executionId)
                 .orElseThrow(() -> new IllegalArgumentException("Execução de produção não encontrada."));
@@ -43,8 +45,13 @@ public class UpdateProductionExecutionUseCase {
         ProductionExecution updatedExecution = new ProductionExecution(
                 existingExecution.getId(),
                 existingExecution.getProductionPlan(),
-                dto.actualYield() != null ? dto.actualYield() : existingExecution.getActualYield(),
-                dto.harvestDate() != null ? dto.harvestDate() : existingExecution.getHarvestDate(),
+                dto.quantity() != null ? dto.quantity() : existingExecution.getQuantity(),
+                dto.quantityKg() != null ? dto.quantityKg() : existingExecution.getQuantityKg(),
+                dto.harvestedAt() != null ? dto.harvestedAt() : existingExecution.getHarvestedAt(),
+                dto.status() != null ? dto.status() : existingExecution.getStatus(),
+                dto.validatedBy() != null ? dto.validatedBy() : existingExecution.getValidatedBy(),
+                dto.validatedAt() != null ? dto.validatedAt() : existingExecution.getValidatedAt(),
+                dto.notes() != null ? dto.notes() : existingExecution.getNotes(),
                 localizacao.latitude(),
                 localizacao.longitude(),
                 localizacao.accuracy(),
@@ -77,6 +84,7 @@ public class UpdateProductionExecutionUseCase {
      *       posição registrada em campo.</li>
      * </ul>
      */
+    /** Interpreta a intenção de manter, substituir ou limpar a posição GPS no apontamento. */
     private Localizacao resolverLocalizacao(
             ProductionExecutionUpdateDTO dto,
             ProductionExecution existente

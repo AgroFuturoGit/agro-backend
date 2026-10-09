@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+/** Cria plano de produção com snapshot da produtividade da cultura e dados do talhão. */
 @Service
 @RequiredArgsConstructor
 public class CreateProductionPlanUseCase {
@@ -27,6 +28,7 @@ public class CreateProductionPlanUseCase {
     private final ProductionAccessValidator accessValidator;
 
     @Transactional
+    /** Valida vínculos e autorização antes de persistir o novo planejamento. */
     public ProductionPlan create(UUID farmerId, ProductionPlanRegisterDTO dto, User loggedUser) {
         Farmer farmer = farmerRepository.findById(farmerId)
                 .orElseThrow(() -> new IllegalArgumentException("Agricultor não encontrado."));
@@ -39,13 +41,19 @@ public class CreateProductionPlanUseCase {
         Crop crop = cropRepository.findById(dto.cropId())
                 .orElseThrow(() -> new IllegalArgumentException("Cultivo não encontrado."));
 
+        if (crop.getExpectedProductivity() == null || crop.getExpectedProductivity().signum() <= 0) {
+            throw new IllegalArgumentException("O cultivo precisa ter produtividade esperada maior que zero para criar um plano.");
+        }
+
         ProductionPlan plan = new ProductionPlan(
                 null,
                 farmer,
                 harvest,
                 crop,
                 dto.plantedArea(),
-                dto.expectedYield(),
+                com.ufal.smartagro.domain.model.enums.PlanStatus.PLANNED,
+                dto.expectedHarvestStart(), dto.expectedHarvestEnd(), crop.getExpectedProductivity(),
+                dto.locationDescription(), dto.latitude(), dto.longitude(),
                 dto.plannedPlantingDate(),
                 dto.plannedCalendar(),
                 null,

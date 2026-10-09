@@ -1,5 +1,6 @@
 package com.ufal.smartagro.domain.model.enums;
 
+/** Estados de revisão aplicáveis a um apontamento de colheita. */
 public enum ExecutionStatus {
     PENDING("Pendente de validação"),
     VALIDATED("Validado"),

@@ -15,15 +15,17 @@ public class TechnicianMapper {
         if (entity == null) {
             return null;
         }
-        return new Technician(
-                entity.getId(),
-                userMapper.toDomain(entity.getUser()),
-                entity.getProfessionalId(),
-                entity.getSpecialty(),
-                entity.getCreatedAt(),
-                entity.getUpdatedAt(),
-                entity.getDeletedAt()
-        );
+        return Technician.builder()
+                .id(entity.getId())
+                .user(userMapper.toDomain(entity.getUser()))
+                .registrationType(entity.getRegistrationType())
+                .registrationNumber(entity.getRegistrationNumber())
+                .specialty(entity.getSpecialty())
+                .createdBy(userMapper.toDomain(entity.getCreatedBy()))
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .deletedAt(entity.getDeletedAt())
+                .build();
     }
 
     public TechnicianEntity toEntity(Technician domain) {
@@ -33,8 +35,10 @@ public class TechnicianMapper {
         TechnicianEntity entity = new TechnicianEntity();
         entity.setId(domain.getId());
         entity.setUser(userMapper.toEntity(domain.getUser()));
-        entity.setProfessionalId(domain.getProfessionalId());
+        entity.setRegistrationType(domain.getRegistrationType());
+        entity.setRegistrationNumber(domain.getRegistrationNumber());
         entity.setSpecialty(domain.getSpecialty());
+        entity.setCreatedBy(userMapper.toEntity(domain.getCreatedBy()));
         entity.setCreatedAt(domain.getCreatedAt());
         entity.setUpdatedAt(domain.getUpdatedAt());
         entity.setDeletedAt(domain.getDeletedAt());

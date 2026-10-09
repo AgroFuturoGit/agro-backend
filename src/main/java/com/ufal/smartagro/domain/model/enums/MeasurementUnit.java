@@ -1,9 +1,10 @@
 package com.ufal.smartagro.domain.model.enums;
 
+/** Unidades aceitas para informar a quantidade colhida. */
 public enum MeasurementUnit {
     KG("Quilograma"),
     TON("Tonelada"),
-    SACK("Saca"),
+    BAG("Saca"),
     BOX("Caixa");
 
     private final String description;
