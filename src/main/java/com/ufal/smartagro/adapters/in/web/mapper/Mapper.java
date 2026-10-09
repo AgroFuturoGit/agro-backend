@@ -218,8 +218,11 @@ public class Mapper {
         return new TechnicianResponseDTO(
                 technician.getId(),
                 toUserResponseDTO(technician.getUser()),
+                technician.getRegistrationType(),
+                technician.getRegistrationNumber(),
                 technician.getProfessionalId(),
                 technician.getSpecialty(),
+                toUserResponseDTO(technician.getCreatedBy()),
                 technician.getCreatedAt(),
                 technician.getUpdatedAt()
         );

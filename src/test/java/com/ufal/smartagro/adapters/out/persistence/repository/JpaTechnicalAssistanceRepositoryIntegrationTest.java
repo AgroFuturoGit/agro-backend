@@ -158,6 +158,7 @@ class JpaTechnicalAssistanceRepositoryIntegrationTest extends AbstractIntegratio
         technician.setUser(user);
         technician.setProfessionalId("CREA-" + UUID.randomUUID().toString().substring(0, 6));
         technician.setSpecialty("Agronomia");
+        technician.setCreatedBy(user);
         entityManager.persist(technician);
         entityManager.flush();
         return technician;

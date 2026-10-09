@@ -367,8 +367,11 @@ public final class  UserTestFactory {
     public static final class TechnicianBuilder {
         private UUID id = UUID.randomUUID();
         private User user = UserTestFactory.user().technician().build();
+        private com.ufal.smartagro.domain.model.enums.ProfessionalRegistrationType registrationType = com.ufal.smartagro.domain.model.enums.ProfessionalRegistrationType.CREA;
+        private String registrationNumber = "123";
         private String professionalId = "CREA-123";
         private String specialty = "Solo";
+        private User createdBy = UserTestFactory.user().admin().build();
 
         public TechnicianBuilder id(UUID id) {
             this.id = id;
@@ -380,8 +383,53 @@ public final class  UserTestFactory {
             return this;
         }
 
+        public TechnicianBuilder professionalId(String professionalId) {
+            this.professionalId = professionalId;
+            if (professionalId != null) {
+                String[] parts = professionalId.split("-", 2);
+                if (parts.length == 2) {
+                    try {
+                        this.registrationType = com.ufal.smartagro.domain.model.enums.ProfessionalRegistrationType.valueOf(parts[0].trim().toUpperCase());
+                        this.registrationNumber = parts[1].trim();
+                    } catch (Exception e) {
+                        this.registrationNumber = professionalId;
+                    }
+                } else {
+                    this.registrationNumber = professionalId;
+                }
+            }
+            return this;
+        }
+
+        public TechnicianBuilder registrationType(com.ufal.smartagro.domain.model.enums.ProfessionalRegistrationType registrationType) {
+            this.registrationType = registrationType;
+            return this;
+        }
+
+        public TechnicianBuilder registrationNumber(String registrationNumber) {
+            this.registrationNumber = registrationNumber;
+            return this;
+        }
+
+        public TechnicianBuilder specialty(String specialty) {
+            this.specialty = specialty;
+            return this;
+        }
+
+        public TechnicianBuilder createdBy(User createdBy) {
+            this.createdBy = createdBy;
+            return this;
+        }
+
         public Technician build() {
-            return new Technician(id, user, professionalId, specialty, null, null, null);
+            return Technician.builder()
+                    .id(id)
+                    .user(user)
+                    .registrationType(registrationType)
+                    .registrationNumber(registrationNumber)
+                    .specialty(specialty)
+                    .createdBy(createdBy)
+                    .build();
         }
     }
 
