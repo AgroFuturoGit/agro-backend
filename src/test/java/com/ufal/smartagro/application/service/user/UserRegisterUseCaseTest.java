@@ -71,7 +71,6 @@ class UserRegisterUseCaseTest {
                         incoming.getEmail(),
                         incoming.getPassword(),
                         incoming.getCpf(),
-                        incoming.getDateOfBirth(),
                         incoming.getRole()
                 );
             });

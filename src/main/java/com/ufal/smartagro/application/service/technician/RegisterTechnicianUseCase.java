@@ -26,7 +26,7 @@ public class RegisterTechnicianUseCase {
         }
 
         UserRegisterDTO userDto = new UserRegisterDTO(
-                dto.fullName(), dto.email(), dto.password(), dto.cpf(), dto.dateOfBirth(), Role.TECHNICIAN
+                dto.fullName(), dto.email(), dto.password(), dto.cpf(), Role.TECHNICIAN
         );
         User savedUser = userRegisterUseCase.createBaseUser(userDto);
 

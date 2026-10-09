@@ -177,6 +177,21 @@ class RegisterFarmerUseCaseTest {
             verifyNoInteractions(userRegisterUseCase);
             verify(farmerRepository, never()).save(any());
         }
+
+        @Test
+        @DisplayName("Given CPF de agricultor já cadastrado When register Then CpfAlreadyExistsException")
+        void givenDuplicateFarmerCpf_whenRegister_thenThrowsCpfAlreadyExistsException() {
+            User admin = UserTestFactory.user().admin().build();
+            FarmerRegisterDTO dto = UserTestFactory.farmerRegisterDto().build();
+            when(farmerRepository.existsByCpf(dto.cpf())).thenReturn(true);
+
+            assertThatThrownBy(() -> registerFarmerUseCase.register(UUID.randomUUID(), dto, admin))
+                    .isInstanceOf(com.ufal.smartagro.domain.exception.CpfAlreadyExistsException.class)
+                    .hasMessage("O CPF informado já está em uso.");
+
+            verifyNoInteractions(communityRepository, managerRepository, userRegisterUseCase);
+            verify(farmerRepository, never()).save(any());
+        }
     }
 
     private void stubSuccessfulPersist(Community community, FarmerRegisterDTO dto) {
@@ -184,7 +199,6 @@ class RegisterFarmerUseCaseTest {
                 .fullName(dto.fullName())
                 .email(dto.email())
                 .cpf(dto.cpf())
-                .dateOfBirth(dto.dateOfBirth())
                 .build();
         Farmer persisted = UserTestFactory.farmerProfile()
                 .user(savedUser)

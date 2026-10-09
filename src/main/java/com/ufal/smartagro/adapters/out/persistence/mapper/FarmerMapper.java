@@ -16,16 +16,31 @@ public class FarmerMapper {
         if (entity == null) {
             return null;
         }
-        return new Farmer(
-                entity.getId(),
-                userMapper.toDomain(entity.getUser()),
-                communityMapper.toDomain(entity.getCommunity()),
-                entity.getAliasName(),
-                entity.getIsCompliant(),
-                entity.getCreatedAt(),
-                entity.getUpdatedAt(),
-                entity.getDeletedAt()
-        );
+        return Farmer.builder()
+                .id(entity.getId())
+                .user(entity.getUser() != null ? userMapper.toDomain(entity.getUser()) : null)
+                .community(entity.getCommunity() != null ? communityMapper.toDomain(entity.getCommunity()) : null)
+                .fullName(entity.getFullName())
+                .cpf(entity.getCpf())
+                .dateOfBirth(entity.getDateOfBirth())
+                .motherName(entity.getMotherName())
+                .origin(entity.getOrigin())
+                .educationLevel(entity.getEducationLevel())
+                .phone(entity.getPhone())
+                .localName(entity.getLocalName())
+                .street(entity.getStreet())
+                .city(entity.getCity())
+                .state(entity.getState())
+                .ibgeCode(entity.getIbgeCode())
+                .latitude(entity.getLatitude())
+                .longitude(entity.getLongitude())
+                .registrationSource(entity.getRegistrationSource())
+                .createdBy(entity.getCreatedBy() != null ? userMapper.toDomain(entity.getCreatedBy()) : null)
+                .isCompliant(entity.getIsCompliant())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .deletedAt(entity.getDeletedAt())
+                .build();
     }
 
     public FarmerEntity toEntity(Farmer domain) {
@@ -34,9 +49,24 @@ public class FarmerMapper {
         }
         FarmerEntity entity = new FarmerEntity();
         entity.setId(domain.getId());
-        entity.setUser(userMapper.toEntity(domain.getUser()));
-        entity.setCommunity(communityMapper.toEntity(domain.getCommunity()));
-        entity.setAliasName(domain.getAliasName());
+        entity.setUser(domain.getUser() != null ? userMapper.toEntity(domain.getUser()) : null);
+        entity.setCommunity(domain.getCommunity() != null ? communityMapper.toEntity(domain.getCommunity()) : null);
+        entity.setFullName(domain.getFullName());
+        entity.setCpf(domain.getCpf());
+        entity.setDateOfBirth(domain.getDateOfBirth());
+        entity.setMotherName(domain.getMotherName());
+        entity.setOrigin(domain.getOrigin());
+        entity.setEducationLevel(domain.getEducationLevel());
+        entity.setPhone(domain.getPhone());
+        entity.setLocalName(domain.getLocalName());
+        entity.setStreet(domain.getStreet());
+        entity.setCity(domain.getCity());
+        entity.setState(domain.getState());
+        entity.setIbgeCode(domain.getIbgeCode());
+        entity.setLatitude(domain.getLatitude());
+        entity.setLongitude(domain.getLongitude());
+        entity.setRegistrationSource(domain.getRegistrationSource());
+        entity.setCreatedBy(domain.getCreatedBy() != null ? userMapper.toEntity(domain.getCreatedBy()) : null);
         entity.setIsCompliant(domain.getIsCompliant());
         entity.setCreatedAt(domain.getCreatedAt());
         entity.setUpdatedAt(domain.getUpdatedAt());

@@ -31,13 +31,13 @@ import com.ufal.smartagro.adapters.in.web.dto.technicalassistance.TechnicalAssis
 public class Mapper {
 
     public static UserResponseDTO toUserResponseDTO(User user) {
+        if (user == null) return null;
         return new UserResponseDTO(
                 user.getId(),
                 user.getFullName(),
                 user.getEmail(),
                 user.getCpf(),
-                user.getRole(),
-                user.getDateOfBirth());
+                user.getRole());
     }
 
     public static UserResponseDTO toUserResponseDTO(UserEntity entity) {
@@ -47,8 +47,7 @@ public class Mapper {
                 entity.getFullName(),
                 entity.getEmail(),
                 entity.getCpf(),
-                entity.getRole(),
-                entity.getDateOfBirth());
+                entity.getRole());
     }
 
     public static LoginResponseDTO toLoginResponseDTO(String token, User user){
@@ -64,7 +63,6 @@ public class Mapper {
                 dto.email(),
                 encodedPassword,
                 dto.cpf(),
-                dto.dateOfBirth(),
                 dto.role()
         );
     }
@@ -163,7 +161,21 @@ public class Mapper {
                 farmer.getId(),
                 toUserResponseDTO(farmer.getUser()),
                 toCommunityResponseDTO(farmer.getCommunity()),
-                farmer.getAliasName(),
+                farmer.getFullName(),
+                farmer.getCpf(),
+                farmer.getDateOfBirth(),
+                farmer.getMotherName(),
+                farmer.getOrigin(),
+                farmer.getEducationLevel(),
+                farmer.getPhone(),
+                farmer.getLocalName(),
+                farmer.getStreet(),
+                farmer.getCity(),
+                farmer.getState(),
+                farmer.getIbgeCode(),
+                farmer.getLatitude(),
+                farmer.getLongitude(),
+                farmer.getRegistrationSource(),
                 farmer.getIsCompliant(),
                 farmer.getCreatedAt(),
                 farmer.getUpdatedAt()

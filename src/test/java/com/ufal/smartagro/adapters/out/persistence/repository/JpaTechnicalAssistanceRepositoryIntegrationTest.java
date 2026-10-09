@@ -151,7 +151,6 @@ class JpaTechnicalAssistanceRepositoryIntegrationTest extends AbstractIntegratio
         user.setEmail(email);
         user.setPassword("senha123");
         user.setCpf(cpf);
-        user.setDateOfBirth(LocalDate.of(1988, 5, 20));
         user.setRole(Role.TECHNICIAN);
         entityManager.persist(user);
 
