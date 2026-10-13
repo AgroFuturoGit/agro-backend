@@ -52,7 +52,6 @@ class AdminUserUpdateUseCaseTest {
                 .build();
         AdminUserUpdateDTO dto = new AdminUserUpdateDTO(
                 "Nome Admin Editado",
-                LocalDate.of(1992, 2, 2),
                 Role.ADMIN
         );
         when(userRepository.findById(target.getId())).thenReturn(Optional.of(target));
@@ -76,7 +75,7 @@ class AdminUserUpdateUseCaseTest {
     @EnumSource(value = Role.class, names = {"MANAGER", "TECHNICIAN", "FARMER"})
     void givenNonAdmin_whenUpdate_thenAccessDenied(Role role) {
         User actor = UserTestFactory.user().role(role).build();
-        AdminUserUpdateDTO dto = new AdminUserUpdateDTO("Nome", LocalDate.of(1990, 1, 1), Role.ADMIN);
+        AdminUserUpdateDTO dto = new AdminUserUpdateDTO("Nome", Role.ADMIN);
 
         assertThatThrownBy(() -> adminUserUpdateUseCase.update(UUID.randomUUID(), dto, actor))
                 .isInstanceOf(AccessDeniedException.class)
@@ -90,7 +89,7 @@ class AdminUserUpdateUseCaseTest {
     void givenAdmin_whenTargetMissing_thenUserNotFound() {
         User admin = UserTestFactory.user().admin().build();
         UUID missingId = UUID.randomUUID();
-        AdminUserUpdateDTO dto = new AdminUserUpdateDTO("Nome", LocalDate.of(1990, 1, 1), Role.ADMIN);
+        AdminUserUpdateDTO dto = new AdminUserUpdateDTO("Nome", Role.ADMIN);
         when(userRepository.findById(missingId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> adminUserUpdateUseCase.update(missingId, dto, admin))

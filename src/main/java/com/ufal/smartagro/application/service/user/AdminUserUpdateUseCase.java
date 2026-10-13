@@ -35,7 +35,6 @@ public class AdminUserUpdateUseCase {
                 existingUser.getEmail(),
                 existingUser.getPassword(),
                 existingUser.getCpf(),
-                dto.dateOfBirth(),
                 dto.role()
         );
 

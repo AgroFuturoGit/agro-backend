@@ -88,7 +88,6 @@ class JpaFarmerRepositoryIntegrationTest extends AbstractIntegrationTest {
         user.setEmail(email);
         user.setPassword("senha");
         user.setCpf(cpf);
-        user.setDateOfBirth(LocalDate.of(1990, 1, 1));
         user.setRole(Role.FARMER);
         entityManager.persist(user);
         entityManager.flush();
@@ -99,7 +98,10 @@ class JpaFarmerRepositoryIntegrationTest extends AbstractIntegrationTest {
         FarmerEntity farmer = new FarmerEntity();
         farmer.setUser(user);
         farmer.setCommunity(community);
+        farmer.setFullName(user != null ? user.getFullName() : "Agricultor");
+        farmer.setCpf(user != null ? user.getCpf() : "12345678901");
         farmer.setAliasName(aliasName);
+        farmer.setRegistrationSource(com.ufal.smartagro.domain.model.enums.RegistrationSource.MANAGER);
         farmer.setIsCompliant(true);
         return farmer;
     }

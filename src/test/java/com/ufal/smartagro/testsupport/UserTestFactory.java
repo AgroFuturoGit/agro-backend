@@ -93,7 +93,6 @@ public final class  UserTestFactory {
         private String email = "user@smartagro.test";
         private String password = ENCODED_PASSWORD;
         private String cpf = VALID_CPF;
-        private LocalDate dateOfBirth = LocalDate.of(1990, 1, 15);
         private Role role = Role.FARMER;
 
         public UserBuilder id(UUID id) {
@@ -118,11 +117,6 @@ public final class  UserTestFactory {
 
         public UserBuilder cpf(String cpf) {
             this.cpf = cpf;
-            return this;
-        }
-
-        public UserBuilder dateOfBirth(LocalDate dateOfBirth) {
-            this.dateOfBirth = dateOfBirth;
             return this;
         }
 
@@ -159,7 +153,7 @@ public final class  UserTestFactory {
         }
 
         public User build() {
-            return new User(id, fullName, email, password, cpf, dateOfBirth, role);
+            return new User(id, fullName, email, password, cpf, role);
         }
 
         public UserEntity toEntity() {
@@ -169,7 +163,6 @@ public final class  UserTestFactory {
             entity.setEmail(email);
             entity.setPassword(password);
             entity.setCpf(cpf);
-            entity.setDateOfBirth(dateOfBirth);
             entity.setRole(role);
             return entity;
         }
@@ -237,7 +230,6 @@ public final class  UserTestFactory {
         private String email = "novo@smartagro.test";
         private String password = RAW_PASSWORD;
         private String cpf = VALID_CPF;
-        private LocalDate dateOfBirth = LocalDate.of(1988, 5, 20);
         private Role role = Role.TECHNICIAN;
 
         public UserRegisterDTOBuilder fullName(String fullName) {
@@ -260,37 +252,26 @@ public final class  UserTestFactory {
             return this;
         }
 
-        public UserRegisterDTOBuilder dateOfBirth(LocalDate dateOfBirth) {
-            this.dateOfBirth = dateOfBirth;
-            return this;
-        }
-
         public UserRegisterDTOBuilder role(Role role) {
             this.role = role;
             return this;
         }
 
         public UserRegisterDTO build() {
-            return new UserRegisterDTO(fullName, email, password, cpf, dateOfBirth, role);
+            return new UserRegisterDTO(fullName, email, password, cpf, role);
         }
     }
 
     public static final class UserUpdateDTOBuilder {
         private String fullName = "Nome Atualizado";
-        private LocalDate dateOfBirth = LocalDate.of(1991, 8, 10);
 
         public UserUpdateDTOBuilder fullName(String fullName) {
             this.fullName = fullName;
             return this;
         }
 
-        public UserUpdateDTOBuilder dateOfBirth(LocalDate dateOfBirth) {
-            this.dateOfBirth = dateOfBirth;
-            return this;
-        }
-
         public UserUpdateDTO build() {
-            return new UserUpdateDTO(fullName, dateOfBirth);
+            return new UserUpdateDTO(fullName);
         }
     }
 
@@ -350,7 +331,16 @@ public final class  UserTestFactory {
         }
 
         public Farmer build() {
-            return new Farmer(id, user, community, aliasName, isCompliant, null, null, null);
+            return Farmer.builder()
+                    .id(id)
+                    .user(user)
+                    .community(community)
+                    .fullName(user != null ? user.getFullName() : "Agricultor Teste")
+                    .cpf(user != null ? user.getCpf() : VALID_CPF)
+                    .localName(aliasName)
+                    .isCompliant(isCompliant)
+                    .registrationSource(com.ufal.smartagro.domain.model.enums.RegistrationSource.MANAGER)
+                    .build();
         }
     }
 
@@ -377,8 +367,11 @@ public final class  UserTestFactory {
     public static final class TechnicianBuilder {
         private UUID id = UUID.randomUUID();
         private User user = UserTestFactory.user().technician().build();
+        private com.ufal.smartagro.domain.model.enums.ProfessionalRegistrationType registrationType = com.ufal.smartagro.domain.model.enums.ProfessionalRegistrationType.CREA;
+        private String registrationNumber = "123";
         private String professionalId = "CREA-123";
         private String specialty = "Solo";
+        private User createdBy = UserTestFactory.user().admin().build();
 
         public TechnicianBuilder id(UUID id) {
             this.id = id;
@@ -390,8 +383,53 @@ public final class  UserTestFactory {
             return this;
         }
 
+        public TechnicianBuilder professionalId(String professionalId) {
+            this.professionalId = professionalId;
+            if (professionalId != null) {
+                String[] parts = professionalId.split("-", 2);
+                if (parts.length == 2) {
+                    try {
+                        this.registrationType = com.ufal.smartagro.domain.model.enums.ProfessionalRegistrationType.valueOf(parts[0].trim().toUpperCase());
+                        this.registrationNumber = parts[1].trim();
+                    } catch (Exception e) {
+                        this.registrationNumber = professionalId;
+                    }
+                } else {
+                    this.registrationNumber = professionalId;
+                }
+            }
+            return this;
+        }
+
+        public TechnicianBuilder registrationType(com.ufal.smartagro.domain.model.enums.ProfessionalRegistrationType registrationType) {
+            this.registrationType = registrationType;
+            return this;
+        }
+
+        public TechnicianBuilder registrationNumber(String registrationNumber) {
+            this.registrationNumber = registrationNumber;
+            return this;
+        }
+
+        public TechnicianBuilder specialty(String specialty) {
+            this.specialty = specialty;
+            return this;
+        }
+
+        public TechnicianBuilder createdBy(User createdBy) {
+            this.createdBy = createdBy;
+            return this;
+        }
+
         public Technician build() {
-            return new Technician(id, user, professionalId, specialty, null, null, null);
+            return Technician.builder()
+                    .id(id)
+                    .user(user)
+                    .registrationType(registrationType)
+                    .registrationNumber(registrationNumber)
+                    .specialty(specialty)
+                    .createdBy(createdBy)
+                    .build();
         }
     }
 

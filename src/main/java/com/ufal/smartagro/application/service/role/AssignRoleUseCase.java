@@ -34,7 +34,7 @@ public class AssignRoleUseCase {
 
         User updated = new User(
             user.getId(), user.getFullName(), user.getEmail(),
-            user.getPassword(), user.getCpf(), user.getDateOfBirth(),
+            user.getPassword(), user.getCpf(),
             newRole
         );
 

@@ -1,5 +1,6 @@
 package com.ufal.smartagro.adapters.out.persistence.entity;
 
+import com.ufal.smartagro.domain.model.enums.ProfessionalRegistrationType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,11 +30,19 @@ public class TechnicianEntity {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private UserEntity user;
 
-    @Column(name = "professional_id")
-    private String professionalId;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "registration_type", nullable = false)
+    private ProfessionalRegistrationType registrationType;
+
+    @Column(name = "registration_number", nullable = false)
+    private String registrationNumber;
 
     @Column(name = "specialty")
     private String specialty;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by", nullable = false)
+    private UserEntity createdBy;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -43,4 +52,31 @@ public class TechnicianEntity {
     private LocalDateTime updatedAt;
 
     private LocalDateTime deletedAt;
+
+    @Deprecated
+    public String getProfessionalId() {
+        if (registrationType != null && registrationNumber != null) {
+            return registrationType.name() + "-" + registrationNumber;
+        }
+        return registrationNumber;
+    }
+
+    @Deprecated
+    public void setProfessionalId(String professionalId) {
+        if (professionalId != null) {
+            String[] parts = professionalId.split("-", 2);
+            if (parts.length == 2) {
+                try {
+                    this.registrationType = ProfessionalRegistrationType.valueOf(parts[0].trim().toUpperCase());
+                    this.registrationNumber = parts[1].trim();
+                } catch (Exception e) {
+                    this.registrationType = ProfessionalRegistrationType.CREA;
+                    this.registrationNumber = professionalId;
+                }
+            } else {
+                this.registrationType = ProfessionalRegistrationType.CREA;
+                this.registrationNumber = professionalId;
+            }
+        }
+    }
 }

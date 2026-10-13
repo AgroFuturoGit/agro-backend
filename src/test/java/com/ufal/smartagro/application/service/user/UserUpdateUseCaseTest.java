@@ -42,18 +42,16 @@ class UserUpdateUseCaseTest {
     class Immutability {
 
         @Test
-        @DisplayName("Given usuário existente When update Then altera só fullName e dateOfBirth")
+        @DisplayName("Given usuário existente When update Then altera só fullName")
         void givenExistingUser_whenUpdate_thenKeepsEmailCpfPasswordAndRole() {
             User logged = UserTestFactory.user()
                     .farmer()
                     .email("farmer@smartagro.test")
                     .cpf(UserTestFactory.VALID_CPF)
                     .password(UserTestFactory.ENCODED_PASSWORD)
-                    .dateOfBirth(LocalDate.of(1985, 3, 12))
                     .build();
             UserUpdateDTO dto = UserTestFactory.updateDto()
                     .fullName("Nome Atualizado")
-                    .dateOfBirth(LocalDate.of(1986, 4, 1))
                     .build();
 
             when(userRepository.findById(logged.getId())).thenReturn(Optional.of(logged));
@@ -67,7 +65,6 @@ class UserUpdateUseCaseTest {
 
             assertThat(saved.getId()).isEqualTo(logged.getId());
             assertThat(saved.getFullName()).isEqualTo("Nome Atualizado");
-            assertThat(saved.getDateOfBirth()).isEqualTo(LocalDate.of(1986, 4, 1));
             assertThat(saved.getEmail()).isEqualTo("farmer@smartagro.test");
             assertThat(saved.getCpf()).isEqualTo(UserTestFactory.VALID_CPF);
             assertThat(saved.getPassword()).isEqualTo(UserTestFactory.ENCODED_PASSWORD);

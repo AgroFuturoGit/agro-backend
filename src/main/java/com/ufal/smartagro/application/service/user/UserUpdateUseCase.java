@@ -27,7 +27,6 @@ public class UserUpdateUseCase {
                 existingUser.getEmail(),
                 existingUser.getPassword(),
                 existingUser.getCpf(),
-                dto.dateOfBirth(),
                 existingUser.getRole()
         );
 

@@ -36,7 +36,7 @@ public class RegisterManagerUseCase {
                 .orElseThrow(() -> new IllegalArgumentException("Organização não encontrada"));
 
         UserRegisterDTO userDto = new UserRegisterDTO(
-                dto.fullName(), dto.email(), dto.password(), dto.cpf(), dto.dateOfBirth(), Role.MANAGER
+                dto.fullName(), dto.email(), dto.password(), dto.cpf(), Role.MANAGER
         );
         User savedUser = userRegisterUseCase.createBaseUser(userDto);
 

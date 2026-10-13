@@ -151,7 +151,6 @@ class JpaTechnicalAssistanceRepositoryIntegrationTest extends AbstractIntegratio
         user.setEmail(email);
         user.setPassword("senha123");
         user.setCpf(cpf);
-        user.setDateOfBirth(LocalDate.of(1988, 5, 20));
         user.setRole(Role.TECHNICIAN);
         entityManager.persist(user);
 
@@ -159,6 +158,7 @@ class JpaTechnicalAssistanceRepositoryIntegrationTest extends AbstractIntegratio
         technician.setUser(user);
         technician.setProfessionalId("CREA-" + UUID.randomUUID().toString().substring(0, 6));
         technician.setSpecialty("Agronomia");
+        technician.setCreatedBy(user);
         entityManager.persist(technician);
         entityManager.flush();
         return technician;
