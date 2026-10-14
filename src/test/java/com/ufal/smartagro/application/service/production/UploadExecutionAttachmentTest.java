@@ -54,7 +54,7 @@ class UploadExecutionAttachmentTest {
 
     private User usuario() {
         return new User(UUID.randomUUID(), "Fulano", "fulano@ufal.br", "senha",
-                "00000000000", LocalDate.of(1990, 1, 1), Role.FARMER);
+                "00000000000", Role.FARMER);
     }
 
     /**
