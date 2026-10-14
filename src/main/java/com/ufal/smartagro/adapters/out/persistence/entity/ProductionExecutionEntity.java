@@ -11,6 +11,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import com.ufal.smartagro.domain.model.enums.ExecutionStatus;
@@ -39,13 +40,14 @@ public class ProductionExecutionEntity {
     @Column(name = "quantity_kg", nullable = false, precision = 14, scale = 4)
     private BigDecimal quantityKg;
     @Column(name = "harvested_at", nullable = false)
-    private LocalDateTime harvestedAt;
+    private LocalDate harvestedAt;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     /** Resultado atual do fluxo de revisão do apontamento. */
     private ExecutionStatus status;
-    @Column(name = "validated_by")
-    private String validatedBy;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "validated_by")
+    private UserEntity validatedBy;
     @Column(name = "validated_at")
     private LocalDateTime validatedAt;
     @Column(columnDefinition = "text")
