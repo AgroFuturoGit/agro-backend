@@ -5,14 +5,15 @@ import jakarta.validation.constraints.DecimalMin;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /** Campos editáveis do apontamento, incluindo quantidade, horário e decisão de validação. */
 public record ProductionExecutionUpdateDTO(
         @DecimalMin(value = "0.01", message = "A quantidade produzida deve ser maior que zero.") BigDecimal quantity,
         @DecimalMin(value = "0.01", message = "A quantidade em kg deve ser maior que zero.") BigDecimal quantityKg,
-        LocalDateTime harvestedAt,
+        LocalDate harvestedAt,
         com.ufal.smartagro.domain.model.enums.ExecutionStatus status,
-        String validatedBy,
+        UUID validatedBy,
         LocalDateTime validatedAt,
         String notes,
 
@@ -47,7 +48,7 @@ public record ProductionExecutionUpdateDTO(
     public ProductionExecutionUpdateDTO(BigDecimal actualYield, LocalDate harvestDate, BigDecimal latitude,
                                         BigDecimal longitude, BigDecimal locationAccuracy, LocalDateTime locationRecordedAt,
                                         Boolean clearLocation, LocalDateTime baseUpdatedAt) {
-        this(actualYield, actualYield, harvestDate == null ? null : harvestDate.atStartOfDay(), null, null, null, null,
+        this(actualYield, actualYield, harvestDate, null, null, null, null,
                 latitude, longitude, locationAccuracy, locationRecordedAt, clearLocation, baseUpdatedAt);
     }
 }

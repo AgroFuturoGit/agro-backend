@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 public class ProductionExecutionMapper {
 
     private final ProductionPlanMapper productionPlanMapper;
+    private final UserMapper userMapper;
 
     /** Cria o objeto de domínio com quantidades, horário, estado e metadados de validação. */
     public ProductionExecution toDomain(ProductionExecutionEntity entity) {
@@ -20,7 +21,7 @@ public class ProductionExecutionMapper {
                 entity.getId(),
                 productionPlanMapper.toDomain(entity.getProductionPlan()),
                 entity.getQuantity(), entity.getQuantityKg(), entity.getHarvestedAt(), entity.getStatus(),
-                entity.getValidatedBy(), entity.getValidatedAt(), entity.getNotes(),
+                userMapper.toDomain(entity.getValidatedBy()), entity.getValidatedAt(), entity.getNotes(),
                 entity.getLatitude(),
                 entity.getLongitude(),
                 entity.getLocationAccuracy(),
@@ -41,7 +42,7 @@ public class ProductionExecutionMapper {
         entity.setQuantityKg(domain.getQuantityKg());
         entity.setHarvestedAt(domain.getHarvestedAt());
         entity.setStatus(domain.getStatus());
-        entity.setValidatedBy(domain.getValidatedBy());
+        entity.setValidatedBy(userMapper.toEntity(domain.getValidatedBy()));
         entity.setValidatedAt(domain.getValidatedAt());
         entity.setNotes(domain.getNotes());
         entity.setLatitude(domain.getLatitude());
