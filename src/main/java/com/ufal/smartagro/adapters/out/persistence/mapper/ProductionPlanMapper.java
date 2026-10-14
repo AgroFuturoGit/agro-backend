@@ -6,6 +6,7 @@ import com.ufal.smartagro.domain.model.ProductionPlan;
 import org.springframework.stereotype.Component;
 import lombok.RequiredArgsConstructor;
 
+/** Converte planos entre domínio e persistência, preservando snapshot e coordenadas. */
 @Component
 @RequiredArgsConstructor
 public class ProductionPlanMapper {
@@ -14,6 +15,7 @@ public class ProductionPlanMapper {
     private final HarvestMapper harvestMapper;
     private final CropMapper cropMapper;
 
+    /** Mapeia uma linha do banco para o plano usado pelas regras de negócio. */
     public ProductionPlan toDomain(ProductionPlanEntity entity) {
         if (entity == null) return null;
         return new ProductionPlan(
@@ -22,7 +24,8 @@ public class ProductionPlanMapper {
                 harvestMapper.toDomain(entity.getHarvest()),
                 cropMapper.toDomain(entity.getCrop()),
                 entity.getPlantedArea(),
-                entity.getExpectedYield(),
+                entity.getStatus(), entity.getExpectedHarvestStart(), entity.getExpectedHarvestEnd(), entity.getExpectedProductivity(),
+                entity.getLocationDescription(), entity.getLatitude(), entity.getLongitude(),
                 entity.getPlannedPlantingDate(),
                 entity.getPlannedCalendar(),
                 entity.getCreatedAt(),
@@ -31,6 +34,7 @@ public class ProductionPlanMapper {
         );
     }
 
+    /** Mapeia o plano completo para salvar ou atualizar no banco. */
     public ProductionPlanEntity toEntity(ProductionPlan domain) {
         if (domain == null) return null;
         ProductionPlanEntity entity = new ProductionPlanEntity();
@@ -39,7 +43,13 @@ public class ProductionPlanMapper {
         entity.setHarvest(harvestMapper.toEntity(domain.getHarvest()));
         entity.setCrop(cropMapper.toEntity(domain.getCrop()));
         entity.setPlantedArea(domain.getPlantedArea());
-        entity.setExpectedYield(domain.getExpectedYield());
+        entity.setStatus(domain.getStatus());
+        entity.setExpectedHarvestStart(domain.getExpectedHarvestStart());
+        entity.setExpectedHarvestEnd(domain.getExpectedHarvestEnd());
+        entity.setExpectedProductivity(domain.getExpectedProductivity());
+        entity.setLocationDescription(domain.getLocationDescription());
+        entity.setLatitude(domain.getLatitude());
+        entity.setLongitude(domain.getLongitude());
         entity.setPlannedPlantingDate(domain.getPlannedPlantingDate());
         entity.setPlannedCalendar(domain.getPlannedCalendar());
         entity.setCreatedAt(domain.getCreatedAt());

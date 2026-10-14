@@ -10,16 +10,25 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
+/** Resposta do plano com produtividade snapshot; a meta é derivada da área vezes essa produtividade. */
 public record ProductionPlanResponseDTO(
         UUID id,
         FarmerResponseDTO farmer,
         HarvestResponseDTO harvest,
         CropResponseDTO crop,
         BigDecimal plantedArea,
-        BigDecimal expectedYield,
+        com.ufal.smartagro.domain.model.enums.PlanStatus status,
+        LocalDate expectedHarvestStart,
+        LocalDate expectedHarvestEnd,
+        BigDecimal expectedProductivity,
+        String locationDescription,
+        BigDecimal latitude,
+        BigDecimal longitude,
         LocalDate plannedPlantingDate,
         Map<String, Object> plannedCalendar,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
+    /** Valor derivado mantido para compatibilidade: não corresponde a uma coluna persistida. */
+    public BigDecimal expectedYield() { return plantedArea.multiply(expectedProductivity); }
 }

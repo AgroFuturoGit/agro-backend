@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
 
+/** Dados recebidos para planejar uma cultura em uma safra e registrar sua área e localização. */
 public record ProductionPlanRegisterDTO(
         @NotNull(message = "A safra é obrigatória.")
         UUID harvestId,
@@ -18,12 +19,19 @@ public record ProductionPlanRegisterDTO(
         @DecimalMin(value = "0.01", message = "A área de plantio deve ser maior que zero.")
         BigDecimal plantedArea,
 
-        @NotNull(message = "O rendimento esperado é obrigatório.")
-        @DecimalMin(value = "0.01", message = "O rendimento esperado deve ser maior que zero.")
-        BigDecimal expectedYield,
+        LocalDate expectedHarvestStart,
+        LocalDate expectedHarvestEnd,
+        String locationDescription,
+        java.math.BigDecimal latitude,
+        java.math.BigDecimal longitude,
 
         LocalDate plannedPlantingDate,
 
         Map<String, Object> plannedCalendar
 ) {
+    /** Mantém compatibilidade com clientes Java antigos; o rendimento legado não substitui a produtividade da cultura. */
+    public ProductionPlanRegisterDTO(UUID harvestId, UUID cropId, BigDecimal plantedArea, BigDecimal ignoredLegacyYield,
+                                     LocalDate plannedPlantingDate, Map<String, Object> plannedCalendar) {
+        this(harvestId, cropId, plantedArea, null, null, null, null, null, plannedPlantingDate, plannedCalendar);
+    }
 }

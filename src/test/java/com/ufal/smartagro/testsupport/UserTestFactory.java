@@ -80,7 +80,10 @@ public final class  UserTestFactory {
     }
 
     public static Crop crop() {
-        return new Crop(UUID.randomUUID(), "Milho", "BRS", false);
+        // Cultura de teste completa para refletir a produtividade usada pelos novos planos.
+        return new Crop(UUID.randomUUID(), "Milho", "BRS", false, 90, new java.math.BigDecimal("5.00"),
+                com.ufal.smartagro.domain.model.enums.HarvestType.SINGLE,
+                com.ufal.smartagro.domain.model.enums.MeasurementUnit.KG, java.math.BigDecimal.ONE);
     }
 
     public static Harvest harvest() {

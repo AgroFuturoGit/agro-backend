@@ -12,12 +12,14 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+/** Atualiza a cultura após validar permissão e evitar duplicidade de nome/variedade. */
 @RequiredArgsConstructor
 @Service
 public class CropUpdateUseCase {
 
     private final CropRepository cropRepository;
 
+    /** Preserva o identificador e grava também ciclo, produtividade, tipo e unidade atualizados. */
     public Crop execute(UUID id, Crop updatedCropData, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN) {
             throw new AccessDeniedException("User does not have permission to update a crop.");
@@ -37,7 +39,8 @@ public class CropUpdateUseCase {
                 existingCrop.getId(),
                 updatedCropData.getName(),
                 updatedCropData.getVariety(),
-                updatedCropData.getIsPriority()
+                updatedCropData.getIsPriority(), updatedCropData.getCycleDays(), updatedCropData.getExpectedProductivity(),
+                updatedCropData.getHarvestType(), updatedCropData.getUnit(), updatedCropData.getUnitWeightKg()
         );
 
         return cropRepository.save(cropToSave);
