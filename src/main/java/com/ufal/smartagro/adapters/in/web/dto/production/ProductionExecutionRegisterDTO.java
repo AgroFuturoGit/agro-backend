@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 public record ProductionExecutionRegisterDTO(
         @NotNull(message = "A quantidade colhida é obrigatória.") @DecimalMin("0.01") BigDecimal quantity,
         @NotNull(message = "A quantidade em kg é obrigatória.") @DecimalMin("0.01") BigDecimal quantityKg,
-        @NotNull(message = "A data e hora da colheita são obrigatórias.") LocalDateTime harvestedAt,
+        @NotNull(message = "A data da colheita é obrigatória.") LocalDate harvestedAt,
         String notes,
 
         /**
@@ -34,10 +34,10 @@ public record ProductionExecutionRegisterDTO(
         /** Quando o GPS obteve a posição. */
         LocalDateTime locationRecordedAt
 ) {
-    /** Converte a assinatura antiga para os novos campos, tratando a antiga data como início do dia. */
+    /** Converte a assinatura antiga para os novos campos mantendo a data da colheita. */
     public ProductionExecutionRegisterDTO(BigDecimal actualYield, LocalDate harvestDate, BigDecimal latitude,
                                           BigDecimal longitude, BigDecimal locationAccuracy, LocalDateTime locationRecordedAt) {
-        this(actualYield, actualYield, harvestDate == null ? null : harvestDate.atStartOfDay(), null,
+        this(actualYield, actualYield, harvestDate, null,
                 latitude, longitude, locationAccuracy, locationRecordedAt);
     }
 }

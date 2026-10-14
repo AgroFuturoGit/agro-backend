@@ -49,7 +49,7 @@ public class UpdateProductionExecutionUseCase {
                 dto.quantityKg() != null ? dto.quantityKg() : existingExecution.getQuantityKg(),
                 dto.harvestedAt() != null ? dto.harvestedAt() : existingExecution.getHarvestedAt(),
                 dto.status() != null ? dto.status() : existingExecution.getStatus(),
-                dto.validatedBy() != null ? dto.validatedBy() : existingExecution.getValidatedBy(),
+                dto.validatedBy() != null ? userReference(dto.validatedBy()) : existingExecution.getValidatedBy(),
                 dto.validatedAt() != null ? dto.validatedAt() : existingExecution.getValidatedAt(),
                 dto.notes() != null ? dto.notes() : existingExecution.getNotes(),
                 localizacao.latitude(),
@@ -62,6 +62,10 @@ public class UpdateProductionExecutionUseCase {
         );
 
         return productionExecutionRepository.save(updatedExecution);
+    }
+
+    private User userReference(UUID userId) {
+        return User.builder().id(userId).build();
     }
 
     private record Localizacao(

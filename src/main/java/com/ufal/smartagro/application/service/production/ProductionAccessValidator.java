@@ -44,6 +44,14 @@ public class ProductionAccessValidator {
             if (managerOrgId == null || farmerOrgId == null || !managerOrgId.equals(farmerOrgId)) {
                 throw new AccessDeniedException("O gestor só tem acesso aos agricultores da sua própria organização.");
             }
+        } else if (loggedUser.getRole() == Role.TECHNICIAN) {
+            Technician technician = technicianRepository.findByUserId(loggedUser.getId())
+                    .orElseThrow(() -> new AccessDeniedException("Técnico não encontrado."));
+            UUID communityId = farmer.getCommunity() == null ? null : farmer.getCommunity().getId();
+            if (communityId == null || technicalAssistanceRepository
+                    .findActiveByTechnicianAndCommunity(technician.getId(), communityId).isEmpty()) {
+                throw new AccessDeniedException("O técnico só pode visualizar agricultores das comunidades sob sua assistência.");
+            }
         }
     }
 

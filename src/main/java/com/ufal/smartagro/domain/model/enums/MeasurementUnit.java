@@ -4,7 +4,7 @@ package com.ufal.smartagro.domain.model.enums;
 public enum MeasurementUnit {
     KG("Quilograma"),
     TON("Tonelada"),
-    BAG("Saca"),
+    SACK("Saca"),
     BOX("Caixa");
 
     private final String description;

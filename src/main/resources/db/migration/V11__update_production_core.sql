@@ -27,16 +27,16 @@ ALTER TABLE production_plans DROP COLUMN expected_yield;
 ALTER TABLE production_executions
     ADD COLUMN quantity NUMERIC(14, 4),
     ADD COLUMN quantity_kg NUMERIC(14, 4),
-    ADD COLUMN harvested_at TIMESTAMP,
+    ADD COLUMN harvested_at DATE,
     ADD COLUMN status VARCHAR(30) NOT NULL DEFAULT 'PENDING',
-    ADD COLUMN validated_by VARCHAR(255),
+    ADD COLUMN validated_by UUID REFERENCES users(id),
     ADD COLUMN validated_at TIMESTAMP,
     ADD COLUMN notes TEXT;
 
 UPDATE production_executions
 SET quantity = actual_yield,
     quantity_kg = actual_yield,
-    harvested_at = harvest_date::timestamp;
+    harvested_at = harvest_date;
 
 ALTER TABLE production_executions
     ALTER COLUMN quantity SET NOT NULL,
