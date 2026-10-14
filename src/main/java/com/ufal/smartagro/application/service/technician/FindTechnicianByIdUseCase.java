@@ -1,6 +1,7 @@
 package com.ufal.smartagro.application.service.technician;
 
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
@@ -23,8 +24,13 @@ public class FindTechnicianByIdUseCase {
 
     @Transactional(readOnly = true)
     public Technician findById(UUID id, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Apenas administradores e gestores podem consultar técnicos por ID.");
+        }
+
         Technician technician = technicianRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Técnico não encontrado."));
+                .filter(t -> t.getDeletedAt() == null)
+                .orElseThrow(() -> new EntityNotFoundException("Técnico não encontrado."));
 
         if (loggedUser.getRole() == Role.ADMIN) {
             return technician;

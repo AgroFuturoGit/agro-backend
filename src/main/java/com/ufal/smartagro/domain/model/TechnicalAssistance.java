@@ -11,10 +11,14 @@ import java.util.UUID;
 public class TechnicalAssistance {
     private UUID id;
     private Technician technician;
-    private Farmer farmer;
+    private Community community;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
+
+    public boolean isActive() {
+        return endDate == null && deletedAt == null;
+    }
 }

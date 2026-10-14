@@ -36,6 +36,16 @@ public class FarmerRepositoryImpl implements FarmerRepository {
     }
 
     @Override
+    public Optional<Farmer> findByCpf(String cpf) {
+        return jpaRepository.findByCpf(cpf).map(mapper::toDomain);
+    }
+
+    @Override
+    public boolean existsByCpf(String cpf) {
+        return jpaRepository.existsByCpf(cpf);
+    }
+
+    @Override
     public java.util.List<Farmer> findAll() {
         return jpaRepository.findAll().stream()
                 .map(mapper::toDomain)

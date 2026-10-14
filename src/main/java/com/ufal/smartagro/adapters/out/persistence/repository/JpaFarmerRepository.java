@@ -11,6 +11,8 @@ import java.util.UUID;
 
 public interface JpaFarmerRepository extends JpaRepository<FarmerEntity, UUID> {
     Optional<FarmerEntity> findByUserId(UUID userId);
+    Optional<FarmerEntity> findByCpf(String cpf);
+    boolean existsByCpf(String cpf);
     java.util.List<FarmerEntity> findAllByCommunityId(UUID communityId);
 
     @Modifying

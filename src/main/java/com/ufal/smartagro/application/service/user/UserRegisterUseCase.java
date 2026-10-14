@@ -37,7 +37,7 @@ public class UserRegisterUseCase {
             throw new EmailAlreadyExistsException();
         }
 
-        if (userRepository.existsByCpf(dto.cpf())) {
+        if (dto.cpf() != null && !dto.cpf().isBlank() && userRepository.existsByCpf(dto.cpf())) {
             throw new CpfAlreadyExistsException();
         }
 

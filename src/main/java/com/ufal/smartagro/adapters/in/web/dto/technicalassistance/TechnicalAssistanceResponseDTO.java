@@ -6,7 +6,7 @@ import java.util.UUID;
 public record TechnicalAssistanceResponseDTO(
         UUID id,
         UUID technicianId,
-        UUID farmerId,
+        UUID communityId,
         LocalDateTime startDate,
         LocalDateTime endDate
 ) {}

@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record TechnicalAssistanceRegisterDTO(
-        @NotNull(message = "O ID do técnico é obrigatório") UUID technicianId,
-        @NotNull(message = "O ID do agricultor é obrigatório") UUID farmerId,
+        UUID technicianId,
+        @NotNull(message = "O ID da comunidade é obrigatório") UUID communityId,
         @NotNull(message = "A data de início é obrigatória") LocalDateTime startDate
 ) {}

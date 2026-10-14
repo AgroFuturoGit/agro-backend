@@ -28,7 +28,6 @@ public class DataInitializer implements CommandLineRunner {
                     adminEmail,
                     passwordEncoder.encode("12345678"),
                     "00000000000",
-                    LocalDate.now(),
                     Role.ADMIN
             );
             userRepository.save(admin);

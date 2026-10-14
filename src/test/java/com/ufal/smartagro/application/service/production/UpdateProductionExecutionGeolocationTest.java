@@ -56,7 +56,7 @@ class UpdateProductionExecutionGeolocationTest {
     /** O acesso é validado por um colaborador mockado; o papel aqui é indiferente. */
     private User usuario() {
         return new User(UUID.randomUUID(), "Fulano", "fulano@ufal.br", "senha",
-                "00000000000", LocalDate.of(1990, 1, 1), Role.FARMER);
+                "00000000000", Role.FARMER);
     }
 
     private ProductionExecution existente(BigDecimal latitude, BigDecimal longitude) {

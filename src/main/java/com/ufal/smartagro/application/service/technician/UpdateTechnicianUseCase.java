@@ -2,8 +2,10 @@ package com.ufal.smartagro.application.service.technician;
 
 import com.ufal.smartagro.adapters.in.web.dto.technician.TechnicianUpdateDTO;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.ProfessionalRegistrationType;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.TechnicianRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +22,13 @@ public class UpdateTechnicianUseCase {
 
     @Transactional
     public Technician update(UUID id, TechnicianUpdateDTO dto, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Apenas administradores ou o próprio técnico podem atualizar este perfil.");
+        }
+
         Technician existing = technicianRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Técnico não encontrado."));
+                .filter(t -> t.getDeletedAt() == null)
+                .orElseThrow(() -> new EntityNotFoundException("Técnico não encontrado."));
 
         if (loggedUser.getRole() == Role.TECHNICIAN) {
             if (existing.getUser() == null || !existing.getUser().getId().equals(loggedUser.getId())) {
@@ -31,15 +38,28 @@ public class UpdateTechnicianUseCase {
             throw new AccessDeniedException("Apenas administradores ou o próprio técnico podem atualizar este perfil.");
         }
 
-        Technician updated = new Technician(
-                existing.getId(),
-                existing.getUser(),
-                dto.professionalId() != null ? dto.professionalId() : existing.getProfessionalId(),
-                dto.specialty() != null ? dto.specialty() : existing.getSpecialty(),
-                existing.getCreatedAt(),
-                null,
-                existing.getDeletedAt()
-        );
+        ProfessionalRegistrationType regType;
+        String regNum;
+
+        if (dto.professionalId() != null) {
+            regType = dto.registrationType();
+            regNum = dto.registrationNumber() != null ? dto.registrationNumber() : dto.professionalId();
+        } else {
+            regType = dto.registrationType() != null ? dto.registrationType() : existing.getRegistrationType();
+            regNum = dto.registrationNumber() != null ? dto.registrationNumber() : existing.getRegistrationNumber();
+        }
+
+        Technician updated = Technician.builder()
+                .id(existing.getId())
+                .user(existing.getUser())
+                .registrationType(regType)
+                .registrationNumber(regNum)
+                .specialty(dto.specialty() != null ? dto.specialty() : existing.getSpecialty())
+                .createdBy(existing.getCreatedBy())
+                .createdAt(existing.getCreatedAt())
+                .updatedAt(null)
+                .deletedAt(existing.getDeletedAt())
+                .build();
 
         return technicianRepository.save(updated);
     }

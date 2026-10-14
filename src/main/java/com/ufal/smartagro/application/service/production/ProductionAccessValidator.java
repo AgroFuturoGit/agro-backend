@@ -57,11 +57,11 @@ public class ProductionAccessValidator {
         Technician technician = technicianRepository.findByUserId(loggedUser.getId())
                 .orElseThrow(() -> new AccessDeniedException("Técnico não encontrado."));
 
-        if (farmer == null || farmer.getId() == null) {
+        if (farmer == null || farmer.getId() == null || farmer.getCommunity() == null || farmer.getCommunity().getId() == null) {
             throw new AccessDeniedException(TECHNICIAN_WRITE_DENIED);
         }
 
-        technicalAssistanceRepository.findActiveByTechnicianAndFarmer(technician.getId(), farmer.getId())
+        technicalAssistanceRepository.findActiveByTechnicianAndCommunity(technician.getId(), farmer.getCommunity().getId())
                 .orElseThrow(() -> new AccessDeniedException(TECHNICIAN_WRITE_DENIED));
     }
 }
