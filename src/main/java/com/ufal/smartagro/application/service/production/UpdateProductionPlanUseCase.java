@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 /** Atualiza um plano sem substituir o snapshot original de produtividade da cultura. */
@@ -36,6 +37,11 @@ public class UpdateProductionPlanUseCase {
                 "O plano de produção foi alterado por outro usuário depois que esta edição começou."
         );
 
+        LocalDate harvestStart = Boolean.TRUE.equals(dto.clearHarvestDates()) ? null
+                : (dto.expectedHarvestStart() != null ? dto.expectedHarvestStart() : existingPlan.getExpectedHarvestStart());
+        LocalDate harvestEnd = Boolean.TRUE.equals(dto.clearHarvestDates()) ? null
+                : (dto.expectedHarvestEnd() != null ? dto.expectedHarvestEnd() : existingPlan.getExpectedHarvestEnd());
+
         ProductionPlan updatedPlan = new ProductionPlan(
                 existingPlan.getId(),
                 existingPlan.getFarmer(),
@@ -43,8 +49,8 @@ public class UpdateProductionPlanUseCase {
                 existingPlan.getCrop(),
                 dto.plantedArea() != null ? dto.plantedArea() : existingPlan.getPlantedArea(),
                 dto.status() != null ? dto.status() : existingPlan.getStatus(),
-                dto.expectedHarvestStart() != null ? dto.expectedHarvestStart() : existingPlan.getExpectedHarvestStart(),
-                dto.expectedHarvestEnd() != null ? dto.expectedHarvestEnd() : existingPlan.getExpectedHarvestEnd(),
+                harvestStart,
+                harvestEnd,
                 existingPlan.getExpectedProductivity(),
                 dto.locationDescription() != null ? dto.locationDescription() : existingPlan.getLocationDescription(),
                 dto.latitude() != null ? dto.latitude() : existingPlan.getLatitude(),
