@@ -29,11 +29,17 @@ public class CreateProductionExecutionUseCase {
 
         accessValidator.validateWriteAccess(plan.getFarmer(), loggedUser);
 
+        java.math.BigDecimal quantityKg = ProductionQuantityCalculator.calculateQuantityKg(
+                plan.getCrop(),
+                dto.quantity(),
+                dto.quantityKg()
+        );
+
         ProductionExecution execution = new ProductionExecution(
                 null,
                 plan,
                 dto.quantity(),
-                dto.quantityKg(),
+                quantityKg,
                 dto.harvestedAt(),
                 com.ufal.smartagro.domain.model.enums.ExecutionStatus.PENDING,
                 null,

@@ -24,15 +24,30 @@ public record ProductionPlanUpdateDTO(
         Map<String, Object> plannedCalendar,
 
         /**
+         * Remove as datas previstas de colheita caso verdadeiro.
+         */
+        Boolean clearHarvestDates,
+
+        /**
          * Versão do plano que o cliente tinha em mãos ao editar. Quando enviada,
          * o servidor recusa a escrita com 409 caso já tenha avançado além dela.
          * Omitir mantém o comportamento de sobrescrita direta.
          */
         LocalDateTime baseUpdatedAt
 ) {
+    /** Construtor para compatibilidade sem o campo clearHarvestDates. */
+    public ProductionPlanUpdateDTO(BigDecimal plantedArea, com.ufal.smartagro.domain.model.enums.PlanStatus status,
+                                   LocalDate expectedHarvestStart, LocalDate expectedHarvestEnd,
+                                   BigDecimal expectedProductivity, String locationDescription,
+                                   BigDecimal latitude, BigDecimal longitude, LocalDate plannedPlantingDate,
+                                   Map<String, Object> plannedCalendar, LocalDateTime baseUpdatedAt) {
+        this(plantedArea, status, expectedHarvestStart, expectedHarvestEnd, expectedProductivity,
+                locationDescription, latitude, longitude, plannedPlantingDate, plannedCalendar, null, baseUpdatedAt);
+    }
+
     /** Construtor legado mantido para compatibilidade; não grava mais expectedYield. */
     public ProductionPlanUpdateDTO(BigDecimal plantedArea, BigDecimal ignoredLegacyYield, LocalDate plannedPlantingDate,
                                    Map<String, Object> plannedCalendar, LocalDateTime baseUpdatedAt) {
-        this(plantedArea, null, null, null, null, null, null, null, plannedPlantingDate, plannedCalendar, baseUpdatedAt);
+        this(plantedArea, null, null, null, null, null, null, null, plannedPlantingDate, plannedCalendar, null, baseUpdatedAt);
     }
 }
