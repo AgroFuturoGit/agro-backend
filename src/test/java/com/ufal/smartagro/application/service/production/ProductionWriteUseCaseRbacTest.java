@@ -205,7 +205,7 @@ class ProductionWriteUseCaseRbacTest {
 
             assertThatThrownBy(() -> createPlan.create(farmer.getId(), planRegisterDto(), techUser))
                     .isInstanceOf(AccessDeniedException.class)
-                    .hasMessage(ProductionAccessValidator.TECHNICIAN_WRITE_DENIED);
+                    .hasMessage(ProductionAccessValidator.TECHNICIAN_READ_DENIED);
 
             verify(productionPlanRepository, never()).save(any());
         }
@@ -226,7 +226,7 @@ class ProductionWriteUseCaseRbacTest {
 
             assertThatThrownBy(() -> updatePlan.update(plan.getId(), planUpdateDto(), techUser))
                     .isInstanceOf(AccessDeniedException.class)
-                    .hasMessage(ProductionAccessValidator.TECHNICIAN_WRITE_DENIED);
+                    .hasMessage(ProductionAccessValidator.TECHNICIAN_READ_DENIED);
 
             verify(productionPlanRepository, never()).save(any());
         }
@@ -242,7 +242,7 @@ class ProductionWriteUseCaseRbacTest {
 
             assertThatThrownBy(() -> deletePlan.delete(plan.getId(), techUser))
                     .isInstanceOf(AccessDeniedException.class)
-                    .hasMessage(ProductionAccessValidator.TECHNICIAN_WRITE_DENIED);
+                    .hasMessage(ProductionAccessValidator.TECHNICIAN_READ_DENIED);
 
             verify(productionPlanRepository, never()).delete(plan.getId());
         }
@@ -258,7 +258,7 @@ class ProductionWriteUseCaseRbacTest {
 
             assertThatThrownBy(() -> createExecution.create(plan.getId(), executionRegisterDto(), techUser))
                     .isInstanceOf(AccessDeniedException.class)
-                    .hasMessage(ProductionAccessValidator.TECHNICIAN_WRITE_DENIED);
+                    .hasMessage(ProductionAccessValidator.TECHNICIAN_READ_DENIED);
 
             verify(productionExecutionRepository, never()).save(any());
         }
@@ -275,7 +275,7 @@ class ProductionWriteUseCaseRbacTest {
 
             assertThatThrownBy(() -> updateExecution.update(execution.getId(), executionUpdateDto(), techUser))
                     .isInstanceOf(AccessDeniedException.class)
-                    .hasMessage(ProductionAccessValidator.TECHNICIAN_WRITE_DENIED);
+                    .hasMessage(ProductionAccessValidator.TECHNICIAN_READ_DENIED);
 
             verify(productionExecutionRepository, never()).save(any());
         }
@@ -292,7 +292,7 @@ class ProductionWriteUseCaseRbacTest {
 
             assertThatThrownBy(() -> deleteExecution.delete(execution.getId(), techUser))
                     .isInstanceOf(AccessDeniedException.class)
-                    .hasMessage(ProductionAccessValidator.TECHNICIAN_WRITE_DENIED);
+                    .hasMessage(ProductionAccessValidator.TECHNICIAN_READ_DENIED);
 
             verify(productionExecutionRepository, never()).delete(execution.getId());
         }
