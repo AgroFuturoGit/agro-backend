@@ -20,6 +20,8 @@ public class ProductionAccessValidator {
 
     static final String TECHNICIAN_WRITE_DENIED =
             "O técnico só pode alterar produção de agricultores sob sua assistência.";
+    static final String TECHNICIAN_READ_DENIED =
+            "O técnico só pode visualizar agricultores das comunidades sob sua assistência.";
 
     private final ManagerRepository managerRepository;
     private final TechnicianRepository technicianRepository;
@@ -50,7 +52,7 @@ public class ProductionAccessValidator {
             UUID communityId = farmer.getCommunity() == null ? null : farmer.getCommunity().getId();
             if (communityId == null || technicalAssistanceRepository
                     .findActiveByTechnicianAndCommunity(technician.getId(), communityId).isEmpty()) {
-                throw new AccessDeniedException("O técnico só pode visualizar agricultores das comunidades sob sua assistência.");
+                throw new AccessDeniedException(TECHNICIAN_READ_DENIED);
             }
         }
     }

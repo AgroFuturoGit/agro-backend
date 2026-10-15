@@ -7,6 +7,7 @@ import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Organization;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.ProductionPlan;
+import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
@@ -69,6 +70,7 @@ class ProductionReadUseCaseRbacTest {
     void givenTechnician_whenFindThirdPartyPlan_thenAllowsRead() {
         User technician = UserTestFactory.user().technician().build();
         ProductionPlan plan = UserTestFactory.productionPlan().build();
+        stubTechnicianWithAssistance(technician, plan.getFarmer());
         when(productionPlanRepository.findById(plan.getId())).thenReturn(Optional.of(plan));
 
         ProductionPlan result = findPlanById.findById(plan.getId(), technician);
@@ -82,6 +84,7 @@ class ProductionReadUseCaseRbacTest {
         User technician = UserTestFactory.user().technician().build();
         Farmer farmer = UserTestFactory.farmerProfile().build();
         ProductionPlan plan = UserTestFactory.productionPlan().farmer(farmer).build();
+        stubTechnicianWithAssistance(technician, farmer);
         when(farmerRepository.findById(farmer.getId())).thenReturn(Optional.of(farmer));
         when(productionPlanRepository.findAllByFarmerId(farmer.getId())).thenReturn(List.of(plan));
 
@@ -96,6 +99,7 @@ class ProductionReadUseCaseRbacTest {
         User technician = UserTestFactory.user().technician().build();
         ProductionPlan plan = UserTestFactory.productionPlan().build();
         ProductionExecution execution = executionOf(plan);
+        stubTechnicianWithAssistance(technician, plan.getFarmer());
         when(productionExecutionRepository.findById(execution.getId())).thenReturn(Optional.of(execution));
 
         ProductionExecution result = findExecutionById.findById(execution.getId(), technician);
@@ -108,6 +112,7 @@ class ProductionReadUseCaseRbacTest {
     void givenTechnician_whenCompareThirdPartyPlan_thenAllowsRead() {
         User technician = UserTestFactory.user().technician().build();
         ProductionPlan plan = UserTestFactory.productionPlan().build();
+        stubTechnicianWithAssistance(technician, plan.getFarmer());
         when(productionPlanRepository.findById(plan.getId())).thenReturn(Optional.of(plan));
         when(productionExecutionRepository.findAllByProductionPlanId(plan.getId())).thenReturn(List.of());
 
@@ -115,6 +120,22 @@ class ProductionReadUseCaseRbacTest {
 
         assertThat(result.productionPlanId()).isEqualTo(plan.getId());
         assertThat(result.expectedYield()).isEqualByComparingTo(plan.getExpectedYield());
+    }
+
+    @Test
+    @DisplayName("Given TECHNICIAN When find plano de comunidade sem assistência Then AccessDeniedException")
+    void givenTechnician_whenFindPlanWithoutAssistance_thenAccessDenied() {
+        User technicianUser = UserTestFactory.user().technician().build();
+        Technician technician = UserTestFactory.technicianProfile().user(technicianUser).build();
+        ProductionPlan plan = UserTestFactory.productionPlan().build();
+        when(productionPlanRepository.findById(plan.getId())).thenReturn(Optional.of(plan));
+        when(technicianRepository.findByUserId(technicianUser.getId())).thenReturn(Optional.of(technician));
+        when(technicalAssistanceRepository.findActiveByTechnicianAndCommunity(
+                technician.getId(), plan.getFarmer().getCommunity().getId())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> findPlanById.findById(plan.getId(), technicianUser))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage(ProductionAccessValidator.TECHNICIAN_READ_DENIED);
     }
 
     @Test
@@ -149,6 +170,15 @@ class ProductionReadUseCaseRbacTest {
         assertThatThrownBy(() -> findPlanById.findById(plan.getId(), managerUser))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("O gestor só tem acesso aos agricultores da sua própria organização.");
+    }
+
+    private void stubTechnicianWithAssistance(User technicianUser, Farmer farmer) {
+        Technician technician = UserTestFactory.technicianProfile().user(technicianUser).build();
+        when(technicianRepository.findByUserId(technicianUser.getId())).thenReturn(Optional.of(technician));
+        when(technicalAssistanceRepository.findActiveByTechnicianAndCommunity(
+                technician.getId(), farmer.getCommunity().getId()))
+                .thenReturn(Optional.of(UserTestFactory.technicalAssistance()
+                        .technician(technician).community(farmer.getCommunity()).build()));
     }
 
     private ProductionExecution executionOf(ProductionPlan plan) {
