@@ -64,12 +64,12 @@ class ProductionAccessValidatorTest {
     }
 
     @Nested
-    @DisplayName("ADMIN e TECHNICIAN — leitura ampliada sem checagem de tenant")
+    @DisplayName("ADMIN e TECHNICIAN — ADMIN irrestrito; TECHNICIAN só com assistência ativa")
     class AdminAndTechnician {
 
         @ParameterizedTest(name = "Given Role.{0} When acessa farmer de outra org Then permite")
-        @EnumSource(value = Role.class, names = {"ADMIN", "TECHNICIAN"})
-        void givenAdminOrTechnician_whenAccessAnyFarmer_thenAllows(Role role) {
+        @EnumSource(value = Role.class, names = {"ADMIN"})
+        void givenAdmin_whenAccessAnyFarmer_thenAllows(Role role) {
             User loggedUser = UserTestFactory.user().role(role).build();
             Farmer farmer = UserTestFactory.farmerProfile().build();
 
@@ -77,6 +77,60 @@ class ProductionAccessValidatorTest {
                     .doesNotThrowAnyException();
 
             verifyNoInteractions(managerRepository);
+        }
+
+        @Test
+        @DisplayName("Given TECHNICIAN When comunidade com assistência ativa Then validateAccess permite")
+        void givenTechnician_whenActiveAssistance_thenAllows() {
+            User techUser = UserTestFactory.user().technician().build();
+            Technician technician = UserTestFactory.technicianProfile().user(techUser).build();
+            Farmer farmer = UserTestFactory.farmerProfile().build();
+            when(technicianRepository.findByUserId(techUser.getId())).thenReturn(Optional.of(technician));
+            when(technicalAssistanceRepository.findActiveByTechnicianAndCommunity(technician.getId(), farmer.getCommunity().getId()))
+                    .thenReturn(Optional.of(UserTestFactory.technicalAssistance().technician(technician).community(farmer.getCommunity()).build()));
+
+            assertThatCode(() -> productionAccessValidator.validateAccess(farmer, techUser))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("Given TECHNICIAN When comunidade sem assistência ativa Then validateAccess nega")
+        void givenTechnician_whenNoAssistance_thenDenied() {
+            User techUser = UserTestFactory.user().technician().build();
+            Technician technician = UserTestFactory.technicianProfile().user(techUser).build();
+            Farmer farmer = UserTestFactory.farmerProfile().build();
+            when(technicianRepository.findByUserId(techUser.getId())).thenReturn(Optional.of(technician));
+            when(technicalAssistanceRepository.findActiveByTechnicianAndCommunity(technician.getId(), farmer.getCommunity().getId()))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> productionAccessValidator.validateAccess(farmer, techUser))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessage(ProductionAccessValidator.TECHNICIAN_READ_DENIED);
+        }
+
+        @Test
+        @DisplayName("Given TECHNICIAN When agricultor sem comunidade Then validateAccess nega")
+        void givenTechnician_whenFarmerWithoutCommunity_thenDenied() {
+            User techUser = UserTestFactory.user().technician().build();
+            Technician technician = UserTestFactory.technicianProfile().user(techUser).build();
+            Farmer farmer = UserTestFactory.farmerProfile().community(null).build();
+            when(technicianRepository.findByUserId(techUser.getId())).thenReturn(Optional.of(technician));
+
+            assertThatThrownBy(() -> productionAccessValidator.validateAccess(farmer, techUser))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessage(ProductionAccessValidator.TECHNICIAN_READ_DENIED);
+        }
+
+        @Test
+        @DisplayName("Given TECHNICIAN sem perfil When validateAccess Then AccessDeniedException")
+        void givenTechnicianWithoutProfile_whenValidateAccess_thenDenied() {
+            User techUser = UserTestFactory.user().technician().build();
+            Farmer farmer = UserTestFactory.farmerProfile().build();
+            when(technicianRepository.findByUserId(techUser.getId())).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> productionAccessValidator.validateAccess(farmer, techUser))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessage("Técnico não encontrado.");
         }
     }
 
@@ -265,7 +319,7 @@ class ProductionAccessValidatorTest {
 
             assertThatThrownBy(() -> productionAccessValidator.validateWriteAccess(farmer, techUser))
                     .isInstanceOf(AccessDeniedException.class)
-                    .hasMessage(ProductionAccessValidator.TECHNICIAN_WRITE_DENIED);
+                    .hasMessage(ProductionAccessValidator.TECHNICIAN_READ_DENIED);
         }
     }
 }

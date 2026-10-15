@@ -44,9 +44,20 @@ public class ProductionController {
     private final RejectProductionExecutionUseCase rejectProductionExecutionUseCase;
     private final ListProductionExecutionsUseCase listProductionExecutionsUseCase;
     private final CompareProductionUseCase compareProductionUseCase;
+    private final ProductionDashboardUseCase productionDashboardUseCase;
     private final FindProductionExecutionByIdUseCase findProductionExecutionByIdUseCase;
     private final DeleteProductionExecutionUseCase deleteProductionExecutionUseCase;
     private final UserRepository userRepository;
+
+    @Operation(summary = "Painel de produção conforme o perfil", description = "Compara a meta prevista com a produção validada no escopo permitido ao usuário.", security = @SecurityRequirement(name = "bearerAuth"))
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN', 'FARMER')")
+    @GetMapping("/production/dashboard")
+    public ResponseEntity<ProductionDashboardDTO> productionDashboard(
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+        return ResponseEntity.ok(productionDashboardUseCase.getDashboard(loggedUser));
+    }
 
     @Operation(summary = "Criar plano de produção", description = "Cria um plano de produção agrícola para determinado agricultor.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
