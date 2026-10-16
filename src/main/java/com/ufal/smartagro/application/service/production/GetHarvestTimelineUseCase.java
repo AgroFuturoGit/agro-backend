@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
@@ -30,6 +31,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class GetHarvestTimelineUseCase {
+
+    private static final long MAX_TIMELINE_SPAN_DAYS = 1826; // ~5 anos de proteção contra datas anômalas
 
     private final ProductionPlanRepository productionPlanRepository;
     private final ProductionExecutionRepository productionExecutionRepository;
@@ -49,7 +52,7 @@ public class GetHarvestTimelineUseCase {
         Crop crop = plan.getCrop();
         HarvestType harvestType = (crop != null && crop.getHarvestType() != null)
                 ? crop.getHarvestType()
-                : HarvestType.CONTINUOUS;
+                : HarvestType.SINGLE;
 
         List<ProductionExecution> executions = productionExecutionRepository.findAllByProductionPlanId(planId);
 
@@ -66,17 +69,21 @@ public class GetHarvestTimelineUseCase {
             TimelineGranularity granularity
     ) {
         List<ProductionExecution> validExecutions = executions.stream()
-                .filter(e -> e.getStatus() != ExecutionStatus.REJECTED)
+                .filter(e -> e.getStatus() == ExecutionStatus.VALIDATED || e.getStatus() == ExecutionStatus.PENDING)
                 .toList();
 
-        if (plan.getExpectedHarvestStart() == null && plan.getExpectedHarvestEnd() == null && validExecutions.isEmpty()) {
+        BigDecimal expectedTotal = plan.getExpectedYield() != null ? plan.getExpectedYield() : BigDecimal.ZERO;
+        boolean hasExpectedYield = expectedTotal.compareTo(BigDecimal.ZERO) > 0;
+        boolean hasDates = plan.getExpectedHarvestStart() != null || plan.getExpectedHarvestEnd() != null;
+
+        if (!hasExpectedYield && !hasDates && validExecutions.isEmpty()) {
             return new HarvestTimelineDTO(plan.getId(), HarvestType.SINGLE, granularity, "kg", List.of());
         }
 
         BigDecimal actualTotal = BigDecimal.ZERO;
         BigDecimal pendingTotal = BigDecimal.ZERO;
 
-        for (ProductionExecution execution : executions) {
+        for (ProductionExecution execution : validExecutions) {
             BigDecimal qty = execution.getQuantityKg() != null ? execution.getQuantityKg() : BigDecimal.ZERO;
             if (execution.getStatus() == ExecutionStatus.VALIDATED) {
                 actualTotal = actualTotal.add(qty);
@@ -88,19 +95,19 @@ public class GetHarvestTimelineUseCase {
         LocalDate pointDate;
         if (plan.getExpectedHarvestEnd() != null) {
             pointDate = plan.getExpectedHarvestEnd();
+        } else if (plan.getExpectedHarvestStart() != null) {
+            pointDate = plan.getExpectedHarvestStart();
         } else if (!validExecutions.isEmpty()) {
             pointDate = validExecutions.stream()
                     .map(ProductionExecution::getHarvestedAt)
                     .filter(Objects::nonNull)
                     .max(Comparator.naturalOrder())
                     .orElse(LocalDate.now());
-        } else if (plan.getExpectedHarvestStart() != null) {
-            pointDate = plan.getExpectedHarvestStart();
+        } else if (plan.getPlannedPlantingDate() != null) {
+            pointDate = plan.getPlannedPlantingDate();
         } else {
             pointDate = LocalDate.now();
         }
-
-        BigDecimal expectedTotal = plan.getExpectedYield() != null ? plan.getExpectedYield() : BigDecimal.ZERO;
 
         TimelinePointDTO point = new TimelinePointDTO(
                 pointDate,
@@ -124,7 +131,8 @@ public class GetHarvestTimelineUseCase {
             TimelineGranularity granularity
     ) {
         List<ProductionExecution> validExecutions = executions.stream()
-                .filter(e -> e.getStatus() != ExecutionStatus.REJECTED && e.getHarvestedAt() != null)
+                .filter(e -> (e.getStatus() == ExecutionStatus.VALIDATED || e.getStatus() == ExecutionStatus.PENDING)
+                        && e.getHarvestedAt() != null)
                 .toList();
 
         LocalDate planStart = plan.getExpectedHarvestStart();
@@ -153,6 +161,10 @@ public class GetHarvestTimelineUseCase {
             }
         }
 
+        if (ChronoUnit.DAYS.between(minDate, maxDate) > MAX_TIMELINE_SPAN_DAYS) {
+            maxDate = minDate.plusDays(MAX_TIMELINE_SPAN_DAYS);
+        }
+
         BigDecimal totalExpectedMeta = hasValidPlanWindow && plan.getExpectedYield() != null
                 ? plan.getExpectedYield()
                 : BigDecimal.ZERO;
@@ -164,7 +176,7 @@ public class GetHarvestTimelineUseCase {
         List<TimelinePointDTO> points = new ArrayList<>();
         LocalDate current = (granularity == TimelineGranularity.MONTH)
                 ? minDate.withDayOfMonth(1)
-                : minDate;
+                : minDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
 
         long cumulativeOverlapDays = 0;
         BigDecimal previousCumulativeExpected = BigDecimal.ZERO;

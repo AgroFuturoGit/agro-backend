@@ -79,6 +79,10 @@ class GetHarvestTimelineUseCaseTest {
     }
 
     private ProductionPlan createPlan(Crop crop, LocalDate start, LocalDate end, BigDecimal area, BigDecimal productivity) {
+        return createPlanWithPlantingDate(crop, start, end, area, productivity, null);
+    }
+
+    private ProductionPlan createPlanWithPlantingDate(Crop crop, LocalDate start, LocalDate end, BigDecimal area, BigDecimal productivity, LocalDate plantingDate) {
         return new ProductionPlan(
                 UUID.randomUUID(),
                 defaultFarmer,
@@ -92,7 +96,7 @@ class GetHarvestTimelineUseCaseTest {
                 "Lote 1",
                 null,
                 null,
-                null,
+                plantingDate,
                 null,
                 null,
                 null,
@@ -421,5 +425,87 @@ class GetHarvestTimelineUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(nonExistentId, TimelineGranularity.WEEK, adminUser))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("Plano de produção não encontrado.");
+    }
+
+    @Test
+    @DisplayName("14. Alinhamento semanal para Segunda-Feira quando janela inicia no meio da semana")
+    void alinhamentoSemanalParaSegundaFeiraQuandoJanelaIniciaNoMeioDaSemana() {
+        // Quarta-feira 06/05/2026 até Sexta-feira 15/05/2026
+        LocalDate start = LocalDate.of(2026, 5, 6);
+        LocalDate end = LocalDate.of(2026, 5, 15);
+        ProductionPlan plan = createPlan(continuousCrop, start, end, new BigDecimal("10.00"), new BigDecimal("10.00"));
+
+        when(productionPlanRepository.findById(plan.getId())).thenReturn(Optional.of(plan));
+        when(productionExecutionRepository.findAllByProductionPlanId(plan.getId())).thenReturn(List.of());
+
+        HarvestTimelineDTO result = useCase.execute(plan.getId(), TimelineGranularity.WEEK, adminUser);
+
+        // Deve ter 2 semanas: 04/05/2026 (Segunda) e 11/05/2026 (Segunda)
+        assertThat(result.points()).hasSize(2);
+        assertThat(result.points().get(0).date()).isEqualTo(LocalDate.of(2026, 5, 4));
+        assertThat(result.points().get(1).date()).isEqualTo(LocalDate.of(2026, 5, 11));
+
+        // Meta total 100 kg distribuída proporcionalmente aos dias de sobreposição em cada semana
+        // Semana 1: 06/05 a 10/05 (5 dias). Semana 2: 11/05 a 15/05 (5 dias). Total = 10 dias.
+        // 50.00 kg em cada semana.
+        assertThat(result.points().get(0).expectedValue()).isEqualByComparingTo("50.00");
+        assertThat(result.points().get(1).expectedValue()).isEqualByComparingTo("50.00");
+    }
+
+    @Test
+    @DisplayName("15. Fallback para SINGLE quando a cultura não possui harvestType definido (legada/null)")
+    void fallbackParaHarvestTypeSingleQuandoCulturaNaoPossuiHarvestType() {
+        Crop legacyCrop = new Crop(UUID.randomUUID(), "Cultura Antiga", "Variedade", false, 90,
+                new BigDecimal("10.00"), null, null, null);
+        ProductionPlan plan = createPlan(legacyCrop, LocalDate.of(2026, 5, 1), LocalDate.of(2026, 5, 30),
+                new BigDecimal("10.00"), new BigDecimal("10.00"));
+
+        when(productionPlanRepository.findById(plan.getId())).thenReturn(Optional.of(plan));
+        when(productionExecutionRepository.findAllByProductionPlanId(plan.getId())).thenReturn(List.of());
+
+        HarvestTimelineDTO result = useCase.execute(plan.getId(), TimelineGranularity.WEEK, adminUser);
+
+        assertThat(result.harvestType()).isEqualTo(HarvestType.SINGLE);
+        assertThat(result.points()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("16. Plano SINGLE com meta mas sem datas de previsão faz fallback para data de plantio")
+    void planoSingleComMetaSemDatasDePrevisaoFazFallbackParaDataDePlantio() {
+        LocalDate plantingDate = LocalDate.of(2026, 3, 15);
+        ProductionPlan plan = createPlanWithPlantingDate(singleCrop, null, null,
+                new BigDecimal("10.00"), new BigDecimal("10.00"), plantingDate);
+
+        when(productionPlanRepository.findById(plan.getId())).thenReturn(Optional.of(plan));
+        when(productionExecutionRepository.findAllByProductionPlanId(plan.getId())).thenReturn(List.of());
+
+        HarvestTimelineDTO result = useCase.execute(plan.getId(), TimelineGranularity.WEEK, adminUser);
+
+        assertThat(result.harvestType()).isEqualTo(HarvestType.SINGLE);
+        assertThat(result.points()).hasSize(1);
+        TimelinePointDTO point = result.points().get(0);
+        assertThat(point.date()).isEqualTo(plantingDate);
+        assertThat(point.expectedValue()).isEqualByComparingTo("100.00");
+        assertThat(point.actualValue()).isEqualByComparingTo("0.00");
+        assertThat(point.pendingValue()).isEqualByComparingTo("0.00");
+    }
+
+    @Test
+    @DisplayName("17. Proteção contra datas anômalas (outlier) limita span temporal da timeline contínua")
+    void protecaoContraDatasAnomalasLimitaSpanTemporal() {
+        LocalDate start = LocalDate.of(2026, 5, 4);
+        LocalDate end = LocalDate.of(2026, 5, 24);
+        ProductionPlan plan = createPlan(continuousCrop, start, end, new BigDecimal("10.00"), new BigDecimal("10.00"));
+
+        // Apontamento anômalo com ano 2226 (~200 anos no futuro)
+        ProductionExecution outlier = createExecution(plan, LocalDate.of(2226, 5, 4), new BigDecimal("10.00"), ExecutionStatus.VALIDATED);
+
+        when(productionPlanRepository.findById(plan.getId())).thenReturn(Optional.of(plan));
+        when(productionExecutionRepository.findAllByProductionPlanId(plan.getId())).thenReturn(List.of(outlier));
+
+        HarvestTimelineDTO result = useCase.execute(plan.getId(), TimelineGranularity.WEEK, adminUser);
+
+        // Deve limitar a no máximo ~262 semanas (~5 anos) em vez de iterar por 200 anos (10.400 semanas)
+        assertThat(result.points().size()).isLessThanOrEqualTo(265);
     }
 }
