@@ -1,12 +1,12 @@
 ## Especificação do Modelo de Dados - Projeto SmartAgro (ProduPlan)
 
-Data: 06 de outubro de 2026
+Data: 16 de outubro de 2026
 
 UML Classes: pendente de atualização para a v2.0
 
 Diagrama ER: pendente de atualização para a v2.0
 
-Versão: 2.0
+Versão: 2.1
 
 Este documento detalha a modelagem lógica do banco de dados PostgreSQL para o sistema SmartAgro, cujo nome de aplicação se consolida como ProduPlan, seguindo os requisitos de gestão social e produtiva para a agricultura familiar. A modelagem segue nomeação em inglês, utiliza soft delete e contém um fluxo auditável.
 
@@ -23,6 +23,11 @@ Esta versão incorpora os ajustes de banco exigidos pelo [Epic 5] Adequação de
 |   |   | (ciclo, colheita contínua, apontamentos validados, geolocalizados e com |
 |   |   | anexos fotográficos), views analíticas, índices e padronização dos campos de |
 |   |   | sincronização. |
+| 2.1 | 16/10/2026 | Detalhamento das regras das views analíticas e da trilha de |
+|   |   | auditoria (Feature 6.6): justificativa de rejeição em ProductionExecution, |
+|   |   | colunas e regras de vw_active_farmers, vw_plan_progress e |
+|   |   | mv_org_harvest_summary, e novo enum audit_action. Alterações apenas |
+|   |   | aditivas, sem quebra de compatibilidade. |
 
 A versão sobe de 1.0 para 2.0 (incremento major, conforme versionamento semântico) porque contém mudanças incompatíveis: renomeação de tabela, colunas, chaves estrangeiras e valor de enum, além da remoção de colunas. Consultas, entidades JPA e contratos de API escritos para a v1.0 deixam de funcionar sem migração.
 
@@ -171,6 +176,8 @@ O diagrama a seguir ilustra as dependências entre os módulos do sistema:
 | plan_status | PLANNED, ACTIVE, FINISHED, | ProductionPlan.status |
 |   | CANCELED |   |
 | execution_status | PENDING, VALIDATED, REJECTED ProductionExecution.status |   |
+| audit_action | CREATE, UPDATE, DELETE, VALIDATE, | AuditLog.action |
+|   | REJECT, EXPORT |   |
 
 ## 5. Módulo de Acesso e Segurança (RBAC)
 
@@ -259,7 +266,7 @@ Núcleo operacional do sistema, onde se organiza o ciclo de vida das culturas.
 | ProductionExecuti id (PK), production_plan_id (FK), | Apontamento de colheita. Um |
 | on | harvested_at (DATE), quantity, quantity_kg, plano recebe N apontamentos. |
 | status (Enum execution_status), | quantity está na unidade da |
-|   | validated_by (FK User), validated_at, notes, cultura e quantity_kg é o valor |
+|   | validated_by (FK User), validated_at, notes, rejection_reason, cultura e quantity_kg é o valor |
 | latitude, longitude, created_at, updated_at, | normalizado, calculado no |
 | deleted_at | registro. Só apontamentos |
 |   | VALIDATED entram no realizado. |
@@ -273,7 +280,13 @@ Núcleo operacional do sistema, onde se organiza o ciclo de vida das culturas.
 |   | enviadas inalteradas na |
 |   | sincronização. Se o GPS falhar, |
 |   | o apontamento é salvo sem |
-|   | coordenadas. |
+|   | coordenadas. notes guarda só as |
+|   | observações do autor do apontamento; |
+|   | rejection_reason (opcional) guarda a |
+|   | justificativa informada pelo validador |
+|   | ao rejeitar (status REJECTED) e é |
+|   | limpo se o apontamento voltar a |
+|   | PENDING ou for VALIDATED. |
 | ExecutionAttach id (PK), execution_id (FK), file_url, | Anexos fotográficos do |
 | ment | mime_type, file_size, created_by (FK User), apontamento (ocorrências, |
 | created_at, updated_at, deleted_at | pragas, notas fiscais de |
@@ -321,16 +334,35 @@ Este módulo não possui tabelas próprias. Os dados são compostos por views e 
 | vw_active_farmers | View | Agricultores com deleted_at IS NULL. Ponto único de |
 |   |   | entrada de todas as consultas analíticas e exportações. |
 |   |   | Quando o autocadastro sair do standby, recebe |
-|   |   | também o filtro registration_status = APPROVED. |
+|   |   | também o filtro registration_status = APPROVED. Não filtra por |
+|   |   | is_compliant: a coluna é exposta para o indicador de Adimplência |
+|   |   | (seção 9.2), que precisa dos agricultores inadimplentes. |
 | vw_plan_progress | View | Por plano: meta em kg (planted_area × |
 |   |   | expected_productivity), realizado em kg (soma de |
 |   |   | quantity_kg dos apontamentos VALIDATED e não |
 |   |   | excluídos), percentual de conclusão e data do último |
-|   |   | apontamento. Construída sobre vw_active_farmers. |
+|   |   | apontamento. Construída sobre vw_active_farmers. Colunas: plan_id, |
+|   |   | farmer_id, community_id, organization_id, harvest_id, crop_id, |
+|   |   | plan_status, planted_area, expected_productivity, target_kg, |
+|   |   | realized_kg, completion_pct, last_execution_date. Regras: o plano |
+|   |   | sem apontamentos aparece com realized_kg = 0; completion_pct pode |
+|   |   | ultrapassar 100 e é nulo quando a meta é 0; planos CANCELED |
+|   |   | permanecem na view, com seu status; last_execution_date é a data |
+|   |   | do último apontamento não excluído, de qualquer status, pois mede |
+|   |   | a atividade em campo e não a validação. |
 | mv_org_harvest_summ | View | Consolidação por organização × comunidade × cultura |
 | ary | materializada | × safra para o dashboard gerencial. Atualizada em |
 |   |   | background com REFRESH MATERIALIZED VIEW |
-|   |   | CONCURRENTLY (exige índice único). |
+|   |   | CONCURRENTLY (exige índice único). Colunas: plan_count, |
+|   |   | farmer_count, planted_area_ha, target_kg, realized_kg, |
+|   |   | completion_pct, last_execution_date. Parte da vw_plan_progress e |
+|   |   | exclui os planos CANCELED, para que a meta e o percentual da |
+|   |   | organização não sejam inflados por planos que não serão |
+|   |   | colhidos, e os agricultores sem comunidade, que não pertencem a |
+|   |   | nenhuma organização. Reflete os dados com defasagem de até o |
+|   |   | intervalo de atualização (padrão de 5 minutos). Não há isolamento |
+|   |   | por perfil no banco: toda consulta deve filtrar por |
+|   |   | organization_id (MANAGER) ou community_id (TECHNICIAN). |
 
 ## 9.2 Indicadores
 
@@ -370,11 +402,19 @@ Este módulo não possui tabelas próprias. Os dados são compostos por views e 
 |   |   | append-only: não tem |
 |   |   | updated_at nem deleted_at, e os |
 |   |   | registros nunca são alterados |
-|   |   | ou excluídos. Ações registradas |
-|   |   | incluem criação de Comunidade |
-|   |   | e Técnico, validação de |
-|   |   | apontamentos e exportação de |
-|   |   | relatórios (EXPORT). |
+|   |   | ou excluídos, regra imposta pelo |
+|   |   | próprio banco (UPDATE, DELETE e |
+|   |   | TRUNCATE são bloqueados). user_id é |
+|   |   | obrigatório (quem executou a ação); |
+|   |   | target_id é opcional, pois ações |
+|   |   | sem alvo único (ex.: EXPORT) não o |
+|   |   | têm. action usa o enum audit_action. |
+|   |   | O registro é gravado na mesma |
+|   |   | transação da ação auditada. Ações |
+|   |   | registradas: criação de Comunidade |
+|   |   | e de Técnico, validação e rejeição |
+|   |   | de apontamentos e, quando existir, |
+|   |   | exportação de relatórios (EXPORT). |
 
 ## 11. Preparação para Autocadastro (standby)
 
@@ -434,7 +474,12 @@ O autocadastro do agricultor fica em standby, conforme a Feature 5.2 (#15). A v2
 |   | production_plan(farmer_id, harvest_id, crop_id), |
 |   | production_execution(production_plan_id, harvested_at), |
 |   | technical_assistance(technician_id, community_id), |
-|   | execution_attachment(execution_id). Índice único em farmer(cpf) e |
+|   | manager(organization_id), |
+|   | execution_attachment(execution_id). Índice parcial adicional em |
+|   | production_execution(production_plan_id), incluindo quantity_kg, apenas |
+|   | para status = VALIDATED, que sustenta o cálculo do realizado em |
+|   | vw_plan_progress. AuditLog: índices por (target_table, target_id), |
+|   | (user_id, created_at) e (created_at). Índice único em farmer(cpf) e |
 |   | farmer(user_id). |
 | Desempenho | Metas dos critérios de aceite: dashboard do agricultor abaixo de 500 ms e |
 |   | dashboard gerencial abaixo de 2 s. |
