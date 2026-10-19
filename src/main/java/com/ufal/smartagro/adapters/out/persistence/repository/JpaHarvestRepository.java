@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 public interface JpaHarvestRepository extends JpaRepository <HarvestEntity, UUID> {
@@ -15,4 +17,7 @@ public interface JpaHarvestRepository extends JpaRepository <HarvestEntity, UUID
     @Modifying
     @Query("UPDATE HarvestEntity h SET h.deletedAt = CURRENT_TIMESTAMP WHERE h.id = :id")
     void softDeleteById(@Param("id") UUID id);
+
+    @Query("SELECT h FROM HarvestEntity h WHERE h.startDate <= :date AND h.endDate >= :date ORDER BY h.startDate DESC")
+    List<HarvestEntity> findActiveHarvests(@Param("date") LocalDate date);
 }
