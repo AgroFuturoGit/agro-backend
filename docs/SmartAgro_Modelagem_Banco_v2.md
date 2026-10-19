@@ -66,6 +66,7 @@ A versão sobe de 1.0 para 2.0 (incremento major, conforme versionamento semânt
 |   | expected_harvest_end, expected_productivity (snapshot), localização e GPS | #20 |
 | Adição | ProductionExecution: status de validação (status, validated_by, validated_at) e | #18, #19 |
 |   | notes |   |
+| Adição | ProductionExecution: rejection_reason (justificativa de rejeição separada de notes) | #26 |
 | Adição | ProductionExecution: latitude e longitude opcionais, capturadas no momento | #11 |
 |   | do apontamento (inclusive offline) |   |
 | Adição | Nova tabela ExecutionAttachment para anexos fotográficos dos apontamentos #12 |   |
@@ -488,6 +489,11 @@ O autocadastro do agricultor fica em standby, conforme a Feature 5.2 (#15). A v2
 | Campos de | Todas as tabelas (exceto tabelas de relacionamento puro N:N e AuditLog) |
 | Sincronização | devem conter created_at, updated_at e deleted_at do tipo TIMESTAMP. Na v2.0 |
 |   | todas as tabelas foram ajustadas a essa regra. |
+| Trava de DDL (Views) | Colunas utilizadas nas views analíticas (vw_active_farmers, |
+|   | vw_plan_progress) e na view materializada (mv_org_harvest_summary) |
+|   | não podem sofrer DROP COLUMN ou ALTER TYPE sem antes derrubar as views |
+|   | com CASCADE e recriá-las na sequência da migração. |
+
 
 ## 13. Perfis de Acesso (RBAC)
 

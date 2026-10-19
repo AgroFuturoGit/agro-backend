@@ -20,6 +20,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,6 +36,8 @@ class RejectProductionExecutionUseCaseTest {
     private TechnicianRepository technicianRepository;
     @Mock
     private TechnicalAssistanceRepository technicalAssistanceRepository;
+    @Mock
+    private com.ufal.smartagro.application.service.audit.AuditLogService auditLogService;
 
     private RejectProductionExecutionUseCase useCase;
 
@@ -41,7 +45,7 @@ class RejectProductionExecutionUseCaseTest {
     void setUp() {
         ProductionAccessValidator validator = new ProductionAccessValidator(
                 managerRepository, technicianRepository, technicalAssistanceRepository);
-        useCase = new RejectProductionExecutionUseCase(productionExecutionRepository, validator);
+        useCase = new RejectProductionExecutionUseCase(productionExecutionRepository, validator, auditLogService);
     }
 
     private ProductionExecution createPendingExecution(Farmer farmer, String notes) {
@@ -72,11 +76,12 @@ class RejectProductionExecutionUseCaseTest {
                 .hasMessage("O agricultor não tem permissão para rejeitar apontamentos.");
 
         verify(productionExecutionRepository, never()).save(any());
+        verify(auditLogService, never()).record(any(), any(), any(), any(), any());
     }
 
     @Test
-    @DisplayName("ADMIN rejeita apontamento com justificativa gravada nas notas")
-    void givenAdmin_whenRejectWithReason_thenSucceedsAndAppendsReason() {
+    @DisplayName("ADMIN rejeita apontamento com justificativa gravada em rejectionReason e notas intactas")
+    void givenAdmin_whenRejectWithReason_thenSucceedsAndSetsRejectionReason() {
         User admin = UserTestFactory.user().admin().build();
         Farmer farmer = UserTestFactory.farmerProfile().build();
         ProductionExecution execution = createPendingExecution(farmer, "Colheita matinal");
@@ -89,11 +94,20 @@ class RejectProductionExecutionUseCaseTest {
         assertThat(result.getStatus()).isEqualTo(ExecutionStatus.REJECTED);
         assertThat(result.getValidatedBy()).isEqualTo(admin);
         assertThat(result.getValidatedAt()).isNotNull();
-        assertThat(result.getNotes()).isEqualTo("Colheita matinal | [Motivo da rejeição]: Peso informado diverge do romaneio");
+        assertThat(result.getNotes()).isEqualTo("Colheita matinal");
+        assertThat(result.getRejectionReason()).isEqualTo("Peso informado diverge do romaneio");
+
+        verify(auditLogService).record(
+                eq(admin),
+                eq(com.ufal.smartagro.domain.model.enums.AuditAction.REJECT),
+                eq("production_executions"),
+                eq(execution.getId()),
+                argThat(map -> "PENDING".equals(map.get("previousStatus")) && "Peso informado diverge do romaneio".equals(map.get("reason")))
+        );
     }
 
     @Test
-    @DisplayName("ADMIN rejeita apontamento sem justificativa prévia")
+    @DisplayName("ADMIN rejeita apontamento sem notas prévias mantendo notas nulas")
     void givenAdmin_whenRejectWithoutInitialNotes_thenSetsReason() {
         User admin = UserTestFactory.user().admin().build();
         Farmer farmer = UserTestFactory.farmerProfile().build();
@@ -105,7 +119,25 @@ class RejectProductionExecutionUseCaseTest {
         ProductionExecution result = useCase.reject(execution.getId(), "Fora dos padrões", admin);
 
         assertThat(result.getStatus()).isEqualTo(ExecutionStatus.REJECTED);
-        assertThat(result.getNotes()).isEqualTo("[Motivo da rejeição]: Fora dos padrões");
+        assertThat(result.getNotes()).isNull();
+        assertThat(result.getRejectionReason()).isEqualTo("Fora dos padrões");
+    }
+
+    @Test
+    @DisplayName("ADMIN rejeita apontamento com motivo nulo ou em branco resultando em rejectionReason nulo")
+    void givenAdmin_whenRejectWithBlankReason_thenRejectionReasonIsNull() {
+        User admin = UserTestFactory.user().admin().build();
+        Farmer farmer = UserTestFactory.farmerProfile().build();
+        ProductionExecution execution = createPendingExecution(farmer, "Observação existente");
+
+        when(productionExecutionRepository.findById(execution.getId())).thenReturn(Optional.of(execution));
+        when(productionExecutionRepository.save(any(ProductionExecution.class))).thenAnswer(i -> i.getArgument(0));
+
+        ProductionExecution result = useCase.reject(execution.getId(), "   ", admin);
+
+        assertThat(result.getStatus()).isEqualTo(ExecutionStatus.REJECTED);
+        assertThat(result.getNotes()).isEqualTo("Observação existente");
+        assertThat(result.getRejectionReason()).isNull();
     }
 
     @Test

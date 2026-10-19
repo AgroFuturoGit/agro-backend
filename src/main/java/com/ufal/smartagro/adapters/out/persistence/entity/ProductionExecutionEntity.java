@@ -53,6 +53,9 @@ public class ProductionExecutionEntity {
     @Column(columnDefinition = "text")
     private String notes;
 
+    @Column(name = "rejection_reason", columnDefinition = "text")
+    private String rejectionReason;
+
     @Column(precision = 9, scale = 6)
     private BigDecimal latitude;
 

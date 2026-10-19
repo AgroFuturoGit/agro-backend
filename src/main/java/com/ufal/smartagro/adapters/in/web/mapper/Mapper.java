@@ -211,6 +211,7 @@ public class Mapper {
                 exec.getQuantity(), exec.getQuantityKg(), exec.getHarvestedAt(), exec.getStatus(),
                 exec.getValidatedBy() != null ? exec.getValidatedBy().getId() : null,
                 exec.getValidatedAt(), exec.getNotes(),
+                exec.getRejectionReason(),
                 exec.getLatitude(),
                 exec.getLongitude(),
                 exec.getLocationAccuracy(),

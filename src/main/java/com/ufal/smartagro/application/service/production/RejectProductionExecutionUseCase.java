@@ -1,8 +1,10 @@
 package com.ufal.smartagro.application.service.production;
 
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.ExecutionStatus;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.ProductionExecutionRepository;
@@ -11,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /** Rejeita um apontamento de colheita, associando o revisor e a justificativa da recusa. */
@@ -20,10 +24,11 @@ public class RejectProductionExecutionUseCase {
 
     private final ProductionExecutionRepository productionExecutionRepository;
     private final ProductionAccessValidator accessValidator;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public ProductionExecution reject(UUID executionId, String reason, User loggedUser) {
-        if (loggedUser.getRole() == Role.FARMER) {
+        if (loggedUser == null || loggedUser.getRole() == Role.FARMER) {
             throw new AccessDeniedException("O agricultor não tem permissão para rejeitar apontamentos.");
         }
 
@@ -34,13 +39,8 @@ public class RejectProductionExecutionUseCase {
             accessValidator.validateWriteAccess(execution.getProductionPlan().getFarmer(), loggedUser);
         }
 
-        String updatedNotes = execution.getNotes();
-        if (reason != null && !reason.trim().isEmpty()) {
-            String justification = "[Motivo da rejeição]: " + reason.trim();
-            updatedNotes = (updatedNotes == null || updatedNotes.trim().isEmpty())
-                    ? justification
-                    : updatedNotes.trim() + " | " + justification;
-        }
+        ExecutionStatus oldStatus = execution.getStatus();
+        String rejectionReason = (reason != null && !reason.trim().isEmpty()) ? reason.trim() : null;
 
         ProductionExecution rejectedExecution = new ProductionExecution(
                 execution.getId(),
@@ -51,7 +51,8 @@ public class RejectProductionExecutionUseCase {
                 ExecutionStatus.REJECTED,
                 loggedUser,
                 LocalDateTime.now(),
-                updatedNotes,
+                execution.getNotes(),
+                rejectionReason,
                 execution.getLatitude(),
                 execution.getLongitude(),
                 execution.getLocationAccuracy(),
@@ -61,6 +62,20 @@ public class RejectProductionExecutionUseCase {
                 execution.getDeletedAt()
         );
 
-        return productionExecutionRepository.save(rejectedExecution);
+        ProductionExecution saved = productionExecutionRepository.save(rejectedExecution);
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("previousStatus", oldStatus != null ? oldStatus.name() : null);
+        details.put("reason", saved.getRejectionReason());
+
+        auditLogService.record(
+                loggedUser,
+                AuditAction.REJECT,
+                "production_executions",
+                saved.getId(),
+                details
+        );
+
+        return saved;
     }
 }
