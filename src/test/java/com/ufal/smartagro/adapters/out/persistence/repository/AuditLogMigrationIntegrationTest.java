@@ -12,8 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.dao.DataAccessException;
+import com.ufal.smartagro.config.security.persistence.JpaAuditingConfig;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -23,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@Import(JpaAuditingConfig.class)
 class AuditLogMigrationIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
@@ -117,6 +121,7 @@ class AuditLogMigrationIntegrationTest extends AbstractIntegrationTest {
         user.setPassword("password123");
         user.setCpf(cpf);
         user.setRole(Role.ADMIN);
+        user.setCreatedAt(LocalDateTime.now());
         entityManager.persist(user);
         entityManager.flush();
         return user;

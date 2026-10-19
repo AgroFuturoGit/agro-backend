@@ -1,6 +1,7 @@
 package com.ufal.smartagro.adapters.out.persistence.repository;
 
 import com.ufal.smartagro.support.AbstractIntegrationTest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,53 @@ class FlywayBackfillIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    private UUID planId;
+
+    @BeforeEach
+    void setUp() {
+        UUID orgId = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO organizations (id, name, tax_id, type, created_at) VALUES (?, ?, ?, 'COOPERATIVE', CURRENT_TIMESTAMP)",
+                orgId, "Org Backfill", "TAX-" + UUID.randomUUID()
+        );
+
+        UUID commId = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO communities (id, name, organization_id, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
+                commId, "Comunidade Backfill", orgId
+        );
+
+        UUID farmerId = UUID.randomUUID();
+        jdbcTemplate.update(
+                """
+                INSERT INTO farmers (id, community_id, full_name, cpf, registration_source, is_compliant, created_at)
+                VALUES (?, ?, 'Produtor Backfill', ?, 'MANAGER', true, CURRENT_TIMESTAMP)
+                """,
+                farmerId, commId, "CPF-" + UUID.randomUUID().toString().substring(0, 11)
+        );
+
+        UUID harvestId = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO harvests (id, name, start_date, end_date) VALUES (?, 'Safra Backfill', '2026-01-01', '2026-12-31')",
+                harvestId
+        );
+
+        UUID cropId = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO crop (id, name) VALUES (?, 'Milho')",
+                cropId
+        );
+
+        planId = UUID.randomUUID();
+        jdbcTemplate.update(
+                """
+                INSERT INTO production_plans (id, farmer_id, harvest_id, crop_id, planted_area, expected_productivity, status, created_at)
+                VALUES (?, ?, ?, ?, 10.0, 100.0, 'IN_PROGRESS', CURRENT_TIMESTAMP)
+                """,
+                planId, farmerId, harvestId, cropId
+        );
+    }
+
     @Test
     @DisplayName("Backfill deve migrar motivo da rejeição concatenado em notes para rejection_reason")
     void backfill_migraMotivoCorretamente() {
@@ -28,9 +76,9 @@ class FlywayBackfillIntegrationTest extends AbstractIntegrationTest {
             INSERT INTO production_executions (
                 id, production_plan_id, quantity, quantity_kg, harvested_at, status, notes, rejection_reason, created_at
             ) VALUES (
-                ?, (SELECT id FROM production_plans LIMIT 1), 10.0, 10.0, CURRENT_DATE, 'REJECTED', 'Observação de campo | [Motivo da rejeição]: Foto ilegível', NULL, CURRENT_TIMESTAMP
+                ?, ?, 10.0, 10.0, CURRENT_DATE, 'REJECTED', 'Observação de campo | [Motivo da rejeição]: Foto ilegível', NULL, CURRENT_TIMESTAMP
             )
-            """, id);
+            """, id, planId);
 
         jdbcTemplate.execute("""
             UPDATE production_executions
@@ -53,9 +101,9 @@ class FlywayBackfillIntegrationTest extends AbstractIntegrationTest {
             INSERT INTO production_executions (
                 id, production_plan_id, quantity, quantity_kg, harvested_at, status, notes, rejection_reason, created_at
             ) VALUES (
-                ?, (SELECT id FROM production_plans LIMIT 1), 10.0, 10.0, CURRENT_DATE, 'REJECTED', '[Motivo da rejeição]: Produto estragado', NULL, CURRENT_TIMESTAMP
+                ?, ?, 10.0, 10.0, CURRENT_DATE, 'REJECTED', '[Motivo da rejeição]: Produto estragado', NULL, CURRENT_TIMESTAMP
             )
-            """, id);
+            """, id, planId);
 
         jdbcTemplate.execute("""
             UPDATE production_executions

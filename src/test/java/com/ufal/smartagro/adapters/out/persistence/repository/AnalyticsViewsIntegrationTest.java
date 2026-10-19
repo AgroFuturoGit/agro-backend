@@ -175,8 +175,8 @@ class AnalyticsViewsIntegrationTest extends AbstractIntegrationTest {
         UUID id = UUID.randomUUID();
         jdbcTemplate.update(
                 """
-                INSERT INTO farmers (id, community_id, full_name, cpf, is_compliant, created_at, deleted_at)
-                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+                INSERT INTO farmers (id, community_id, full_name, cpf, registration_source, is_compliant, created_at, deleted_at)
+                VALUES (?, ?, ?, ?, 'MANAGER', ?, CURRENT_TIMESTAMP, ?)
                 """,
                 id, commId, fullName, cpf, isCompliant, deletedAt
         );
