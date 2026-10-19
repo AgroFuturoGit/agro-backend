@@ -43,18 +43,18 @@ class FlywayBackfillIntegrationTest extends AbstractIntegrationTest {
                 INSERT INTO farmers (id, community_id, full_name, cpf, registration_source, is_compliant, created_at)
                 VALUES (?, ?, 'Produtor Backfill', ?, 'MANAGER', true, CURRENT_TIMESTAMP)
                 """,
-                farmerId, commId, "CPF-" + UUID.randomUUID().toString().substring(0, 11)
+                farmerId, commId, "12345678901"
         );
 
         UUID harvestId = UUID.randomUUID();
         jdbcTemplate.update(
-                "INSERT INTO harvests (id, name, start_date, end_date) VALUES (?, 'Safra Backfill', '2026-01-01', '2026-12-31')",
+                "INSERT INTO harvests (id, label, start_date, end_date, created_at) VALUES (?, 'Safra Backfill', '2026-01-01', '2026-12-31', CURRENT_TIMESTAMP)",
                 harvestId
         );
 
         UUID cropId = UUID.randomUUID();
         jdbcTemplate.update(
-                "INSERT INTO crop (id, name) VALUES (?, 'Milho')",
+                "INSERT INTO crop (id, name, variety, is_priority, created_at) VALUES (?, 'Milho', 'Comum', true, CURRENT_TIMESTAMP)",
                 cropId
         );
 

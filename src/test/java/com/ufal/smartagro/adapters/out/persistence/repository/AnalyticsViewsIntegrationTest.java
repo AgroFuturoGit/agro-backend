@@ -183,11 +183,11 @@ class AnalyticsViewsIntegrationTest extends AbstractIntegrationTest {
         return id;
     }
 
-    private UUID insertHarvest(String name) {
+    private UUID insertHarvest(String label) {
         UUID id = UUID.randomUUID();
         jdbcTemplate.update(
-                "INSERT INTO harvests (id, name, start_date, end_date) VALUES (?, ?, '2026-01-01', '2026-12-31')",
-                id, name
+                "INSERT INTO harvests (id, label, start_date, end_date, created_at) VALUES (?, ?, '2026-01-01', '2026-12-31', CURRENT_TIMESTAMP)",
+                id, label
         );
         return id;
     }
@@ -195,7 +195,7 @@ class AnalyticsViewsIntegrationTest extends AbstractIntegrationTest {
     private UUID insertCrop(String name) {
         UUID id = UUID.randomUUID();
         jdbcTemplate.update(
-                "INSERT INTO crop (id, name) VALUES (?, ?)",
+                "INSERT INTO crop (id, name, variety, is_priority, created_at) VALUES (?, ?, 'Comum', true, CURRENT_TIMESTAMP)",
                 id, name
         );
         return id;
