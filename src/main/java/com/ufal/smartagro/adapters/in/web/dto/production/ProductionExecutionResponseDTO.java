@@ -16,6 +16,7 @@ public record ProductionExecutionResponseDTO(
         UUID validatedBy,
         LocalDateTime validatedAt,
         String notes,
+        String rejectionReason,
         BigDecimal latitude,
         BigDecimal longitude,
         BigDecimal locationAccuracy,
@@ -23,4 +24,13 @@ public record ProductionExecutionResponseDTO(
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
+    public ProductionExecutionResponseDTO(
+            UUID id, UUID productionPlanId, BigDecimal quantity, BigDecimal quantityKg, LocalDate harvestedAt,
+            com.ufal.smartagro.domain.model.enums.ExecutionStatus status, UUID validatedBy, LocalDateTime validatedAt,
+            String notes, BigDecimal latitude, BigDecimal longitude, BigDecimal locationAccuracy,
+            LocalDateTime locationRecordedAt, LocalDateTime createdAt, LocalDateTime updatedAt
+    ) {
+        this(id, productionPlanId, quantity, quantityKg, harvestedAt, status, validatedBy, validatedAt, notes, null,
+                latitude, longitude, locationAccuracy, locationRecordedAt, createdAt, updatedAt);
+    }
 }

@@ -44,6 +44,7 @@ public class ValidateProductionExecutionUseCase {
                 loggedUser,
                 LocalDateTime.now(),
                 execution.getNotes(),
+                null,
                 execution.getLatitude(),
                 execution.getLongitude(),
                 execution.getLocationAccuracy(),

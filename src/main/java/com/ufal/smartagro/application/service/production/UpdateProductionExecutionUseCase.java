@@ -87,6 +87,12 @@ public class UpdateProductionExecutionUseCase {
             newNotes = dto.notes().trim().isEmpty() ? null : dto.notes();
         }
 
+        String newRejectionReason = existingExecution.getRejectionReason();
+        if (newStatus == com.ufal.smartagro.domain.model.enums.ExecutionStatus.VALIDATED
+                || newStatus == com.ufal.smartagro.domain.model.enums.ExecutionStatus.PENDING) {
+            newRejectionReason = null;
+        }
+
         ProductionExecution updatedExecution = new ProductionExecution(
                 existingExecution.getId(),
                 existingExecution.getProductionPlan(),
@@ -97,6 +103,7 @@ public class UpdateProductionExecutionUseCase {
                 newValidatedBy,
                 newValidatedAt,
                 newNotes,
+                newRejectionReason,
                 localizacao.latitude(),
                 localizacao.longitude(),
                 localizacao.accuracy(),

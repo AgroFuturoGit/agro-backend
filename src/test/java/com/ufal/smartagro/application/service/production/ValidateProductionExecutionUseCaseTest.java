@@ -97,6 +97,28 @@ class ValidateProductionExecutionUseCaseTest {
     }
 
     @Test
+    @DisplayName("Ao validar apontamento previamente rejeitado, rejectionReason é limpo")
+    void givenPreviouslyRejectedExecution_whenValidate_thenClearsRejectionReason() {
+        User admin = UserTestFactory.user().admin().build();
+        Farmer farmer = UserTestFactory.farmerProfile().build();
+        ProductionPlan plan = UserTestFactory.productionPlan().farmer(farmer).build();
+        ProductionExecution rejectedExecution = new ProductionExecution(
+                UUID.randomUUID(), plan, new BigDecimal("10.00"), new BigDecimal("10.00"),
+                LocalDate.of(2026, 5, 10), ExecutionStatus.REJECTED, null, null,
+                "Observação", "Foto ilegível", null, null, null, null, null, null, null
+        );
+
+        when(productionExecutionRepository.findById(rejectedExecution.getId())).thenReturn(Optional.of(rejectedExecution));
+        when(productionExecutionRepository.save(any(ProductionExecution.class))).thenAnswer(i -> i.getArgument(0));
+
+        ProductionExecution result = useCase.validate(rejectedExecution.getId(), admin);
+
+        assertThat(result.getStatus()).isEqualTo(ExecutionStatus.VALIDATED);
+        assertThat(result.getRejectionReason()).isNull();
+        assertThat(result.getNotes()).isEqualTo("Observação");
+    }
+
+    @Test
     @DisplayName("TECHNICIAN com assistência ativa pode validar apontamento")
     void givenTechnicianWithAssistance_whenValidate_thenSucceeds() {
         User techUser = UserTestFactory.user().technician().build();

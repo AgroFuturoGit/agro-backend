@@ -22,6 +22,7 @@ public class ProductionExecutionMapper {
                 productionPlanMapper.toDomain(entity.getProductionPlan()),
                 entity.getQuantity(), entity.getQuantityKg(), entity.getHarvestedAt(), entity.getStatus(),
                 userMapper.toDomain(entity.getValidatedBy()), entity.getValidatedAt(), entity.getNotes(),
+                entity.getRejectionReason(),
                 entity.getLatitude(),
                 entity.getLongitude(),
                 entity.getLocationAccuracy(),
@@ -45,6 +46,7 @@ public class ProductionExecutionMapper {
         entity.setValidatedBy(userMapper.toEntity(domain.getValidatedBy()));
         entity.setValidatedAt(domain.getValidatedAt());
         entity.setNotes(domain.getNotes());
+        entity.setRejectionReason(domain.getRejectionReason());
         entity.setLatitude(domain.getLatitude());
         entity.setLongitude(domain.getLongitude());
         entity.setLocationAccuracy(domain.getLocationAccuracy());

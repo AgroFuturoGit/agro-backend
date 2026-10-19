@@ -34,13 +34,7 @@ public class RejectProductionExecutionUseCase {
             accessValidator.validateWriteAccess(execution.getProductionPlan().getFarmer(), loggedUser);
         }
 
-        String updatedNotes = execution.getNotes();
-        if (reason != null && !reason.trim().isEmpty()) {
-            String justification = "[Motivo da rejeição]: " + reason.trim();
-            updatedNotes = (updatedNotes == null || updatedNotes.trim().isEmpty())
-                    ? justification
-                    : updatedNotes.trim() + " | " + justification;
-        }
+        String rejectionReason = (reason != null && !reason.trim().isEmpty()) ? reason.trim() : null;
 
         ProductionExecution rejectedExecution = new ProductionExecution(
                 execution.getId(),
@@ -51,7 +45,8 @@ public class RejectProductionExecutionUseCase {
                 ExecutionStatus.REJECTED,
                 loggedUser,
                 LocalDateTime.now(),
-                updatedNotes,
+                execution.getNotes(),
+                rejectionReason,
                 execution.getLatitude(),
                 execution.getLongitude(),
                 execution.getLocationAccuracy(),

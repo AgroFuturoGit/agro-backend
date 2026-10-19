@@ -31,3 +31,15 @@ CREATE TRIGGER trg_audit_logs_immutable
 CREATE TRIGGER trg_audit_logs_no_truncate
     BEFORE TRUNCATE ON audit_logs
     FOR EACH STATEMENT EXECUTE FUNCTION audit_logs_block_mutation();
+
+-- ============================================================================
+-- PRODUCTION EXECUTIONS: Nova coluna e migração de dados legados
+-- ============================================================================
+
+ALTER TABLE production_executions ADD COLUMN rejection_reason TEXT;
+
+-- Backfill: extrai o motivo que estava concatenado em notes e limpa as observações
+UPDATE production_executions
+SET rejection_reason = substring(notes FROM '\[Motivo da rejeição\]: (.*)$'),
+    notes = NULLIF(btrim(regexp_replace(notes, '\s*\|?\s*\[Motivo da rejeição\]: .*$', '')), '')
+WHERE status = 'REJECTED' AND notes LIKE '%[Motivo da rejeição]: %';
