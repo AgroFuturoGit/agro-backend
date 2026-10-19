@@ -1,15 +1,22 @@
 package com.ufal.smartagro.adapters.in.web.controller;
 
+import com.ufal.smartagro.adapters.in.web.dto.analytics.FarmerDashboardSummaryDTO;
+import com.ufal.smartagro.adapters.in.web.dto.analytics.FarmerPlanSummaryCardDTO;
+import com.ufal.smartagro.adapters.in.web.dto.analytics.HarvestSummaryInfoDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.HarvestTimelineDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.TimelinePointDTO;
 import com.ufal.smartagro.adapters.out.persistence.entity.UserEntity;
+import com.ufal.smartagro.application.service.production.GetFarmerDashboardSummaryUseCase;
 import com.ufal.smartagro.application.service.production.GetHarvestTimelineUseCase;
 import com.ufal.smartagro.config.security.SecurityConfig;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.config.security.filter.JwtAuthenticationFilter;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
+import com.ufal.smartagro.domain.exception.HarvestNotFoundException;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.HarvestType;
+import com.ufal.smartagro.domain.model.enums.PlanProgressStatus;
+import com.ufal.smartagro.domain.model.enums.PlanStatus;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.model.enums.TimelineGranularity;
 import com.ufal.smartagro.domain.port.out.UserRepository;
@@ -50,6 +57,9 @@ class AnalyticsControllerTest {
 
     @MockitoBean
     private GetHarvestTimelineUseCase getHarvestTimelineUseCase;
+
+    @MockitoBean
+    private GetFarmerDashboardSummaryUseCase getFarmerDashboardSummaryUseCase;
 
     @MockitoBean
     private UserRepository userRepository;
@@ -168,5 +178,136 @@ class AnalyticsControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.message").value("Plano de produção não encontrado."));
+    }
+
+    @Test
+    @DisplayName("GET /farmers/me/summary: deve retornar HTTP 200 com resumo consolidado do agricultor autenticado")
+    void deveRetornarHttp200ComResumoDoAgricultorAutenticado() throws Exception {
+        User farmerUser = UserTestFactory.user().role(Role.FARMER).build();
+        UserDetailsImpl farmerUserDetails = userDetails(farmerUser);
+        when(userRepository.findById(farmerUser.getId())).thenReturn(Optional.of(farmerUser));
+
+        UUID harvestId = UUID.randomUUID();
+        UUID planId = UUID.randomUUID();
+        UUID cropId = UUID.randomUUID();
+
+        HarvestSummaryInfoDTO harvestDto = new HarvestSummaryInfoDTO(
+                harvestId, "Safra 2026", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31)
+        );
+
+        FarmerPlanSummaryCardDTO cardDto = new FarmerPlanSummaryCardDTO(
+                planId,
+                cropId,
+                "Mandioca",
+                "Branca",
+                HarvestType.SINGLE,
+                "KG",
+                PlanStatus.ACTIVE,
+                "Talhão 1",
+                new BigDecimal("2.50"),
+                new BigDecimal("5000.00"),
+                new BigDecimal("3500.00"),
+                new BigDecimal("500.00"),
+                new BigDecimal("70.00"),
+                PlanProgressStatus.ON_TRACK,
+                LocalDate.of(2026, 2, 1),
+                LocalDate.of(2026, 8, 1),
+                LocalDate.of(2026, 10, 1),
+                LocalDate.of(2026, 9, 15)
+        );
+
+        FarmerDashboardSummaryDTO summaryDto = new FarmerDashboardSummaryDTO(
+                farmerUser.getId(),
+                farmerUser.getFullName(),
+                "Comunidade São Pedro",
+                harvestDto,
+                false,
+                1,
+                1,
+                new BigDecimal("2.50"),
+                new BigDecimal("5000.00"),
+                new BigDecimal("3500.00"),
+                new BigDecimal("500.00"),
+                new BigDecimal("70.00"),
+                List.of(cardDto)
+        );
+
+        when(getFarmerDashboardSummaryUseCase.execute(null, farmerUser)).thenReturn(summaryDto);
+
+        mockMvc.perform(get("/analytics/farmers/me/summary")
+                        .with(user(farmerUserDetails))
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.farmerId").value(farmerUser.getId().toString()))
+                .andExpect(jsonPath("$.farmerName").value(farmerUser.getFullName()))
+                .andExpect(jsonPath("$.communityName").value("Comunidade São Pedro"))
+                .andExpect(jsonPath("$.currentHarvest.id").value(harvestId.toString()))
+                .andExpect(jsonPath("$.currentHarvest.label").value("Safra 2026"))
+                .andExpect(jsonPath("$.isEmpty").value(false))
+                .andExpect(jsonPath("$.totalPlansCount").value(1))
+                .andExpect(jsonPath("$.activePlotsCount").value(1))
+                .andExpect(jsonPath("$.totalPlantedAreaHa").value(2.50))
+                .andExpect(jsonPath("$.totalTargetKg").value(5000.00))
+                .andExpect(jsonPath("$.totalRealizedKg").value(3500.00))
+                .andExpect(jsonPath("$.totalPendingKg").value(500.00))
+                .andExpect(jsonPath("$.overallCompletionPct").value(70.00))
+                .andExpect(jsonPath("$.plans[0].planId").value(planId.toString()))
+                .andExpect(jsonPath("$.plans[0].cropName").value("Mandioca"))
+                .andExpect(jsonPath("$.plans[0].progressStatus").value("ON_TRACK"));
+    }
+
+    @Test
+    @DisplayName("GET /farmers/me/summary: deve repassar harvestId quando fornecido como query param")
+    void devePassarHarvestIdQuandoFornecido() throws Exception {
+        User farmerUser = UserTestFactory.user().role(Role.FARMER).build();
+        UserDetailsImpl farmerUserDetails = userDetails(farmerUser);
+        when(userRepository.findById(farmerUser.getId())).thenReturn(Optional.of(farmerUser));
+
+        UUID harvestId = UUID.randomUUID();
+        FarmerDashboardSummaryDTO emptyDto = FarmerDashboardSummaryDTO.empty(
+                farmerUser.getId(), farmerUser.getFullName(), null, null
+        );
+
+        when(getFarmerDashboardSummaryUseCase.execute(harvestId, farmerUser)).thenReturn(emptyDto);
+
+        mockMvc.perform(get("/analytics/farmers/me/summary")
+                        .param("harvestId", harvestId.toString())
+                        .with(user(farmerUserDetails)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isEmpty").value(true));
+    }
+
+    @Test
+    @DisplayName("GET /farmers/me/summary: deve retornar HTTP 404 quando harvestId informado não existir")
+    void deveRetornarHttp404QuandoSafraNaoEncontrada() throws Exception {
+        User farmerUser = UserTestFactory.user().role(Role.FARMER).build();
+        UserDetailsImpl farmerUserDetails = userDetails(farmerUser);
+        when(userRepository.findById(farmerUser.getId())).thenReturn(Optional.of(farmerUser));
+
+        UUID nonExistentHarvestId = UUID.randomUUID();
+        when(getFarmerDashboardSummaryUseCase.execute(nonExistentHarvestId, farmerUser))
+                .thenThrow(new HarvestNotFoundException("Safra não encontrada."));
+
+        mockMvc.perform(get("/analytics/farmers/me/summary")
+                        .param("harvestId", nonExistentHarvestId.toString())
+                        .with(user(farmerUserDetails)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Safra não encontrada."));
+    }
+
+    @Test
+    @DisplayName("GET /farmers/me/summary: deve retornar HTTP 403 quando usuário não possuir papel FARMER")
+    void deveRetornarHttp403QuandoUsuarioNaoForFarmer() throws Exception {
+        mockMvc.perform(get("/analytics/farmers/me/summary")
+                        .with(user(adminUserDetails)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("GET /farmers/me/summary: deve rejeitar requisição não autenticada com HTTP 403")
+    void deveRejeitarRequisicaoNaoAutenticada() throws Exception {
+        mockMvc.perform(get("/analytics/farmers/me/summary"))
+                .andExpect(status().isForbidden());
     }
 }
