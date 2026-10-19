@@ -15,6 +15,7 @@ import java.math.RoundingMode;
 import java.util.List;
 import java.util.UUID;
 
+/** Compara a meta calculada do plano com a soma dos apontamentos validados. */
 @Service
 @RequiredArgsConstructor
 public class CompareProductionUseCase {
@@ -24,6 +25,7 @@ public class CompareProductionUseCase {
     private final ProductionAccessValidator accessValidator;
 
     @Transactional(readOnly = true)
+    /** Calcula desvio e percentual realizado usando área × produtividade e kg validados. */
     public ProductionComparisonDTO compare(UUID planId, User loggedUser) {
         ProductionPlan plan = productionPlanRepository.findById(planId)
                 .orElseThrow(() -> new IllegalArgumentException("Plano de produção não encontrado."));
@@ -33,10 +35,11 @@ public class CompareProductionUseCase {
         List<ProductionExecution> executions = productionExecutionRepository.findAllByProductionPlanId(planId);
 
         BigDecimal totalActualYield = executions.stream()
-                .map(ProductionExecution::getActualYield)
+                .filter(e -> e.getStatus() == com.ufal.smartagro.domain.model.enums.ExecutionStatus.VALIDATED)
+                .map(ProductionExecution::getQuantityKg)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal expectedYield = plan.getExpectedYield();
+        BigDecimal expectedYield = plan.getPlantedArea().multiply(plan.getExpectedProductivity());
         BigDecimal difference = totalActualYield.subtract(expectedYield);
 
         BigDecimal percentageRealized = BigDecimal.ZERO;

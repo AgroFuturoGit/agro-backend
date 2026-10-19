@@ -7,13 +7,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/** Dados de um apontamento de colheita; o estado inicial de validação é definido pelo serviço. */
 public record ProductionExecutionRegisterDTO(
-        @NotNull(message = "A quantidade real produzida é obrigatória.")
-        @DecimalMin(value = "0.01", message = "A quantidade produzida deve ser maior que zero.")
-        BigDecimal actualYield,
-
-        @NotNull(message = "A data da colheita é obrigatória.")
-        LocalDate harvestDate,
+        @NotNull(message = "A quantidade colhida é obrigatória.") @DecimalMin("0.01") BigDecimal quantity,
+        @NotNull(message = "A quantidade em kg é obrigatória.") @DecimalMin("0.01") BigDecimal quantityKg,
+        @NotNull(message = "A data da colheita é obrigatória.") LocalDate harvestedAt,
+        String notes,
 
         /**
          * Onde o apontamento foi feito. Opcional: o aparelho pode estar sem
@@ -35,4 +34,10 @@ public record ProductionExecutionRegisterDTO(
         /** Quando o GPS obteve a posição. */
         LocalDateTime locationRecordedAt
 ) {
+    /** Converte a assinatura antiga para os novos campos mantendo a data da colheita. */
+    public ProductionExecutionRegisterDTO(BigDecimal actualYield, LocalDate harvestDate, BigDecimal latitude,
+                                          BigDecimal longitude, BigDecimal locationAccuracy, LocalDateTime locationRecordedAt) {
+        this(actualYield, actualYield, harvestDate, null,
+                latitude, longitude, locationAccuracy, locationRecordedAt);
+    }
 }

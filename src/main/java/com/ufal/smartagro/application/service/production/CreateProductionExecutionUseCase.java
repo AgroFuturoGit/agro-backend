@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+/** Registra cada ocorrência de colheita como apontamento independente. */
 @Service
 @RequiredArgsConstructor
 public class CreateProductionExecutionUseCase {
@@ -21,17 +22,29 @@ public class CreateProductionExecutionUseCase {
     private final ProductionAccessValidator accessValidator;
 
     @Transactional
+    /** Cria o apontamento em estado PENDING após validar plano e acesso do usuário. */
     public ProductionExecution create(UUID planId, ProductionExecutionRegisterDTO dto, User loggedUser) {
         ProductionPlan plan = productionPlanRepository.findById(planId)
                 .orElseThrow(() -> new IllegalArgumentException("Plano de produção não encontrado."));
 
         accessValidator.validateWriteAccess(plan.getFarmer(), loggedUser);
 
+        java.math.BigDecimal quantityKg = ProductionQuantityCalculator.calculateQuantityKg(
+                plan.getCrop(),
+                dto.quantity(),
+                dto.quantityKg()
+        );
+
         ProductionExecution execution = new ProductionExecution(
                 null,
                 plan,
-                dto.actualYield(),
-                dto.harvestDate(),
+                dto.quantity(),
+                quantityKg,
+                dto.harvestedAt(),
+                com.ufal.smartagro.domain.model.enums.ExecutionStatus.PENDING,
+                null,
+                null,
+                dto.notes(),
                 dto.latitude(),
                 dto.longitude(),
                 dto.locationAccuracy(),

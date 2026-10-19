@@ -40,11 +40,24 @@ public class ProductionController {
     private final DeleteProductionPlanUseCase deleteProductionPlanUseCase;
     
     private final UpdateProductionExecutionUseCase updateProductionExecutionUseCase;
+    private final ValidateProductionExecutionUseCase validateProductionExecutionUseCase;
+    private final RejectProductionExecutionUseCase rejectProductionExecutionUseCase;
     private final ListProductionExecutionsUseCase listProductionExecutionsUseCase;
     private final CompareProductionUseCase compareProductionUseCase;
+    private final ProductionDashboardUseCase productionDashboardUseCase;
     private final FindProductionExecutionByIdUseCase findProductionExecutionByIdUseCase;
     private final DeleteProductionExecutionUseCase deleteProductionExecutionUseCase;
     private final UserRepository userRepository;
+
+    @Operation(summary = "Painel de produção conforme o perfil", description = "Compara a meta prevista com a produção validada no escopo permitido ao usuário.", security = @SecurityRequirement(name = "bearerAuth"))
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN', 'FARMER')")
+    @GetMapping("/production/dashboard")
+    public ResponseEntity<ProductionDashboardDTO> productionDashboard(
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+        return ResponseEntity.ok(productionDashboardUseCase.getDashboard(loggedUser));
+    }
 
     @Operation(summary = "Criar plano de produção", description = "Cria um plano de produção agrícola para determinado agricultor.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
@@ -273,5 +286,47 @@ public class ProductionController {
 
         deleteProductionExecutionUseCase.delete(executionId, loggedUser);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Validar execução de produção", description = "Valida um apontamento de colheita.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Execução validada com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Execução não encontrada")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER')")
+    @PostMapping("/production-executions/{executionId}/validate")
+    public ResponseEntity<ProductionExecutionResponseDTO> validateProductionExecution(
+            @PathVariable UUID executionId,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+
+        ProductionExecution execution = validateProductionExecutionUseCase.validate(executionId, loggedUser);
+        ProductionExecutionResponseDTO response = Mapper.toProductionExecutionResponseDTO(execution);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Rejeitar execução de produção", description = "Rejeita um apontamento de colheita com justificativa.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Execução rejeitada com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Execução não encontrada")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER')")
+    @PostMapping("/production-executions/{executionId}/reject")
+    public ResponseEntity<ProductionExecutionResponseDTO> rejectProductionExecution(
+            @PathVariable UUID executionId,
+            @RequestBody(required = false) RejectExecutionDTO dto,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+
+        String reason = dto != null ? dto.reason() : null;
+        ProductionExecution execution = rejectProductionExecutionUseCase.reject(executionId, reason, loggedUser);
+        ProductionExecutionResponseDTO response = Mapper.toProductionExecutionResponseDTO(execution);
+        return ResponseEntity.ok(response);
     }
 }

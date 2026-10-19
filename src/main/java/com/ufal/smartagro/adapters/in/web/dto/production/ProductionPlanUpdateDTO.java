@@ -6,16 +6,27 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+/** Campos que podem ser alterados em um plano, incluindo estado, janela de colheita e localização. */
 public record ProductionPlanUpdateDTO(
         @DecimalMin(value = "0.01", message = "A área de plantio deve ser maior que zero.")
         BigDecimal plantedArea,
 
-        @DecimalMin(value = "0.01", message = "O rendimento esperado deve ser maior que zero.")
-        BigDecimal expectedYield,
+        com.ufal.smartagro.domain.model.enums.PlanStatus status,
+        LocalDate expectedHarvestStart,
+        LocalDate expectedHarvestEnd,
+        BigDecimal expectedProductivity,
+        String locationDescription,
+        BigDecimal latitude,
+        BigDecimal longitude,
 
         LocalDate plannedPlantingDate,
 
         Map<String, Object> plannedCalendar,
+
+        /**
+         * Remove as datas previstas de colheita caso verdadeiro.
+         */
+        Boolean clearHarvestDates,
 
         /**
          * Versão do plano que o cliente tinha em mãos ao editar. Quando enviada,
@@ -24,4 +35,19 @@ public record ProductionPlanUpdateDTO(
          */
         LocalDateTime baseUpdatedAt
 ) {
+    /** Construtor para compatibilidade sem o campo clearHarvestDates. */
+    public ProductionPlanUpdateDTO(BigDecimal plantedArea, com.ufal.smartagro.domain.model.enums.PlanStatus status,
+                                   LocalDate expectedHarvestStart, LocalDate expectedHarvestEnd,
+                                   BigDecimal expectedProductivity, String locationDescription,
+                                   BigDecimal latitude, BigDecimal longitude, LocalDate plannedPlantingDate,
+                                   Map<String, Object> plannedCalendar, LocalDateTime baseUpdatedAt) {
+        this(plantedArea, status, expectedHarvestStart, expectedHarvestEnd, expectedProductivity,
+                locationDescription, latitude, longitude, plannedPlantingDate, plannedCalendar, null, baseUpdatedAt);
+    }
+
+    /** Construtor legado mantido para compatibilidade; não grava mais expectedYield. */
+    public ProductionPlanUpdateDTO(BigDecimal plantedArea, BigDecimal ignoredLegacyYield, LocalDate plannedPlantingDate,
+                                   Map<String, Object> plannedCalendar, LocalDateTime baseUpdatedAt) {
+        this(plantedArea, null, null, null, null, null, null, null, plannedPlantingDate, plannedCalendar, null, baseUpdatedAt);
+    }
 }

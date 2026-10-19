@@ -17,7 +17,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
+import com.ufal.smartagro.domain.model.enums.PlanStatus;
 
+/** Persistência do plano, incluindo estado, produtividade congelada e localização do talhão. */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -46,8 +48,22 @@ public class ProductionPlanEntity {
     @Column(name = "planted_area", nullable = false, precision = 10, scale = 2)
     private BigDecimal plantedArea;
 
-    @Column(name = "expected_yield", nullable = false, precision = 10, scale = 2)
-    private BigDecimal expectedYield;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    /** Estado atual do planejamento. */
+    private PlanStatus status;
+
+    private LocalDate expectedHarvestStart;
+    private LocalDate expectedHarvestEnd;
+    @Column(precision = 14, scale = 4)
+    /** Cópia da produtividade da cultura no momento em que o plano foi criado. */
+    private BigDecimal expectedProductivity;
+    /** Descrição livre e coordenadas do local de plantio. */
+    private String locationDescription;
+    @Column(precision = 9, scale = 6)
+    private BigDecimal latitude;
+    @Column(precision = 9, scale = 6)
+    private BigDecimal longitude;
 
     @Column(name = "planned_planting_date")
     private LocalDate plannedPlantingDate;

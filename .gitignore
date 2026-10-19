@@ -36,4 +36,4 @@ build/
 .env.prod
 .env.local
 
-/docs
+/docs/plan
