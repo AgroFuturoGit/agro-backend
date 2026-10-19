@@ -146,7 +146,7 @@ class GetFarmerDashboardSummaryUseCaseTest {
         void execute_quandoHarvestIdInformado_deveUsarSafraInformada() {
             when(farmerRepository.findByUserId(userId)).thenReturn(Optional.of(farmer));
             when(harvestRepository.findById(harvestId)).thenReturn(Optional.of(harvest));
-            when(productionPlanRepository.findPlanSummariesByFarmer(farmerId, harvestId)).thenReturn(List.of());
+            when(productionPlanRepository.findPlanSummariesByFarmer(farmerId, harvestId, false)).thenReturn(List.of());
 
             FarmerDashboardSummaryDTO result = useCase.execute(harvestId, farmerUser);
 
@@ -169,18 +169,27 @@ class GetFarmerDashboardSummaryUseCaseTest {
         }
 
         @Test
-        @DisplayName("Deve buscar safra ativa quando harvestId for nulo")
+        @DisplayName("Deve buscar safra ativa quando harvestId for nulo e passar includeActiveContinuous = true")
         void execute_quandoHarvestIdNulo_deveBuscarSafraAtiva() {
             LocalDate referenceDate = LocalDate.of(2026, 5, 20);
             when(farmerRepository.findByUserId(userId)).thenReturn(Optional.of(farmer));
             when(harvestRepository.findActiveHarvest(referenceDate)).thenReturn(Optional.of(harvest));
-            when(productionPlanRepository.findPlanSummariesByFarmer(farmerId, harvestId)).thenReturn(List.of());
+            FarmerPlanSummary plan = new FarmerPlanSummary(
+                    UUID.randomUUID(), UUID.randomUUID(), "Milho", "Híbrido",
+                    HarvestType.CONTINUOUS, "KG", PlanStatus.ACTIVE, "Pomar 1",
+                    new BigDecimal("1.00"), new BigDecimal("1000.00"), new BigDecimal("500.00"),
+                    BigDecimal.ZERO, LocalDate.of(2026, 1, 1),
+                    LocalDate.of(2026, 4, 1), LocalDate.of(2026, 10, 1), null
+            );
+            when(productionPlanRepository.findPlanSummariesByFarmer(farmerId, harvestId, true)).thenReturn(List.of(plan));
 
             FarmerDashboardSummaryDTO result = useCase.execute(null, farmerUser, referenceDate);
 
             assertThat(result.currentHarvest()).isNotNull();
             assertThat(result.currentHarvest().id()).isEqualTo(harvestId);
+            assertThat(result.isEmpty()).isFalse();
             verify(harvestRepository).findActiveHarvest(referenceDate);
+            verify(productionPlanRepository).findPlanSummariesByFarmer(farmerId, harvestId, true);
         }
 
         @Test
@@ -189,12 +198,78 @@ class GetFarmerDashboardSummaryUseCaseTest {
             LocalDate referenceDate = LocalDate.of(2026, 5, 20);
             when(farmerRepository.findByUserId(userId)).thenReturn(Optional.of(farmer));
             when(harvestRepository.findActiveHarvest(referenceDate)).thenReturn(Optional.empty());
-            when(productionPlanRepository.findPlanSummariesByFarmer(farmerId, null)).thenReturn(List.of());
+            when(productionPlanRepository.findPlanSummariesByFarmer(farmerId, null, false)).thenReturn(List.of());
 
             FarmerDashboardSummaryDTO result = useCase.execute(null, farmerUser, referenceDate);
 
             assertThat(result.currentHarvest()).isNull();
-            verify(productionPlanRepository).findPlanSummariesByFarmer(farmerId, null);
+            verify(productionPlanRepository).findPlanSummariesByFarmer(farmerId, null, false);
+        }
+    }
+
+    @Nested
+    @DisplayName("Colheita Contínua e Fallback de Planos Ativos")
+    class ContinuousHarvestAndFallbackTests {
+
+        @Test
+        @DisplayName("Ponto 1: Quando safra ativa não tem planos para o agricultor, faz fallback para planos ACTIVE/PLANNED de outras safras")
+        void execute_quandoSafraAtivaSemPlanosMasHaPlanosAtivosAnteriores_deveFazerFallback() {
+            LocalDate referenceDate = LocalDate.of(2026, 5, 20);
+            when(farmerRepository.findByUserId(userId)).thenReturn(Optional.of(farmer));
+            when(harvestRepository.findActiveHarvest(referenceDate)).thenReturn(Optional.of(harvest));
+
+            // Safra ativa retorna vazio
+            when(productionPlanRepository.findPlanSummariesByFarmer(farmerId, harvestId, true))
+                    .thenReturn(List.of());
+
+            // Fallback busca todos os planos sem filtro de safra
+            FarmerPlanSummary ongoingPlan = new FarmerPlanSummary(
+                    UUID.randomUUID(), UUID.randomUUID(), "Laranja", "Pera",
+                    HarvestType.CONTINUOUS, "KG", PlanStatus.ACTIVE, "Pomar 2025",
+                    new BigDecimal("3.00"), new BigDecimal("6000.00"), new BigDecimal("2000.00"),
+                    BigDecimal.ZERO, LocalDate.of(2025, 6, 1),
+                    LocalDate.of(2025, 9, 1), LocalDate.of(2026, 12, 31), null
+            );
+            FarmerPlanSummary finishedPlan = new FarmerPlanSummary(
+                    UUID.randomUUID(), UUID.randomUUID(), "Milho", "Antigo",
+                    HarvestType.SINGLE, "KG", PlanStatus.FINISHED, "Talhão Antigo",
+                    new BigDecimal("1.00"), new BigDecimal("1000.00"), new BigDecimal("1000.00"),
+                    BigDecimal.ZERO, LocalDate.of(2025, 1, 1),
+                    LocalDate.of(2025, 4, 1), LocalDate.of(2025, 5, 1), null
+            );
+
+            when(productionPlanRepository.findPlanSummariesByFarmer(farmerId, null, false))
+                    .thenReturn(List.of(ongoingPlan, finishedPlan));
+
+            FarmerDashboardSummaryDTO result = useCase.execute(null, farmerUser, referenceDate);
+
+            assertThat(result.isEmpty()).isFalse();
+            // Somente o plano ACTIVE deve ter sido incluído pelo fallback, excluindo o FINISHED
+            assertThat(result.plans()).hasSize(1);
+            assertThat(result.plans().get(0).cropName()).isEqualTo("Laranja");
+            assertThat(result.plans().get(0).status()).isEqualTo(PlanStatus.ACTIVE);
+            verify(productionPlanRepository).findPlanSummariesByFarmer(farmerId, harvestId, true);
+            verify(productionPlanRepository).findPlanSummariesByFarmer(farmerId, null, false);
+        }
+
+        @Test
+        @DisplayName("Ponto 1: Quando nem a safra ativa nem outras safras têm planos ativos, retorna Empty State")
+        void execute_quandoSafraAtivaSemPlanosENenhumPlanoAtivoEmOutrasSafras_deveRetornarEmptyState() {
+            LocalDate referenceDate = LocalDate.of(2026, 5, 20);
+            when(farmerRepository.findByUserId(userId)).thenReturn(Optional.of(farmer));
+            when(harvestRepository.findActiveHarvest(referenceDate)).thenReturn(Optional.of(harvest));
+
+            when(productionPlanRepository.findPlanSummariesByFarmer(farmerId, harvestId, true))
+                    .thenReturn(List.of());
+            when(productionPlanRepository.findPlanSummariesByFarmer(farmerId, null, false))
+                    .thenReturn(List.of());
+
+            FarmerDashboardSummaryDTO result = useCase.execute(null, farmerUser, referenceDate);
+
+            assertThat(result.isEmpty()).isTrue();
+            assertThat(result.totalPlansCount()).isZero();
+            verify(productionPlanRepository).findPlanSummariesByFarmer(farmerId, harvestId, true);
+            verify(productionPlanRepository).findPlanSummariesByFarmer(farmerId, null, false);
         }
     }
 
@@ -207,7 +282,7 @@ class GetFarmerDashboardSummaryUseCaseTest {
         void execute_quandoNaoPossuiPlanos_deveRetornarEmptyState() {
             when(farmerRepository.findByUserId(userId)).thenReturn(Optional.of(farmer));
             when(harvestRepository.findById(harvestId)).thenReturn(Optional.of(harvest));
-            when(productionPlanRepository.findPlanSummariesByFarmer(farmerId, harvestId)).thenReturn(List.of());
+            when(productionPlanRepository.findPlanSummariesByFarmer(farmerId, harvestId, false)).thenReturn(List.of());
 
             FarmerDashboardSummaryDTO result = useCase.execute(harvestId, farmerUser);
 
@@ -257,7 +332,7 @@ class GetFarmerDashboardSummaryUseCaseTest {
                     LocalDate.of(2026, 4, 1), LocalDate.of(2026, 5, 1), LocalDate.of(2026, 4, 25)
             );
 
-            when(productionPlanRepository.findPlanSummariesByFarmer(farmerId, harvestId))
+            when(productionPlanRepository.findPlanSummariesByFarmer(farmerId, harvestId, false))
                     .thenReturn(List.of(plan1, plan2, plan3));
 
             FarmerDashboardSummaryDTO result = useCase.execute(harvestId, farmerUser, today);

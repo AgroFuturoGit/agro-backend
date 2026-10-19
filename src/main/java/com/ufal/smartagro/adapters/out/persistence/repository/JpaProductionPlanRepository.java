@@ -42,12 +42,17 @@ public interface JpaProductionPlanRepository extends JpaRepository<ProductionPla
             WHERE pp.farmer_id = :farmerId
               AND pp.deleted_at IS NULL
               AND pp.status <> 'CANCELED'
-              AND (CAST(:harvestId AS uuid) IS NULL OR pp.harvest_id = CAST(:harvestId AS uuid))
+              AND (
+                    (CAST(:harvestId AS uuid) IS NULL)
+                 OR (pp.harvest_id = CAST(:harvestId AS uuid))
+                 OR (:includeActiveContinuous = true AND c.harvest_type = 'CONTINUOUS' AND pp.status = 'ACTIVE')
+              )
             GROUP BY pp.id, pp.created_at, c.id, c.name, c.variety, c.harvest_type, c.unit
             ORDER BY pp.created_at DESC
             """, nativeQuery = true)
     List<FarmerPlanSummaryProjection> findPlanSummariesByFarmer(
             @Param("farmerId") UUID farmerId,
-            @Param("harvestId") UUID harvestId
+            @Param("harvestId") UUID harvestId,
+            @Param("includeActiveContinuous") boolean includeActiveContinuous
     );
 }

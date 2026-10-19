@@ -48,26 +48,35 @@ public class ProductionPlanRepositoryImpl implements ProductionPlanRepository {
     }
 
     @Override
-    public List<FarmerPlanSummary> findPlanSummariesByFarmer(UUID farmerId, UUID harvestId) {
-        return jpaRepository.findPlanSummariesByFarmer(farmerId, harvestId).stream()
+    public List<FarmerPlanSummary> findPlanSummariesByFarmer(UUID farmerId, UUID harvestId, boolean includeActiveContinuous) {
+        return jpaRepository.findPlanSummariesByFarmer(farmerId, harvestId, includeActiveContinuous).stream()
                 .map(this::toFarmerPlanSummary)
                 .toList();
     }
 
+    @Override
+    public List<FarmerPlanSummary> findPlanSummariesByFarmer(UUID farmerId, UUID harvestId) {
+        return findPlanSummariesByFarmer(farmerId, harvestId, false);
+    }
+
     private FarmerPlanSummary toFarmerPlanSummary(FarmerPlanSummaryProjection p) {
-        HarvestType harvestType = null;
-        if (p.getHarvestType() != null) {
+        HarvestType harvestType = HarvestType.SINGLE;
+        if (p.getHarvestType() != null && !p.getHarvestType().isBlank()) {
             try {
-                harvestType = HarvestType.valueOf(p.getHarvestType());
+                harvestType = HarvestType.valueOf(p.getHarvestType().trim());
             } catch (IllegalArgumentException ignored) {
+                harvestType = HarvestType.SINGLE;
             }
         }
 
-        PlanStatus status = null;
-        if (p.getStatus() != null) {
+        String unit = (p.getUnit() != null && !p.getUnit().isBlank()) ? p.getUnit().trim() : "KG";
+
+        PlanStatus status = PlanStatus.PLANNED;
+        if (p.getStatus() != null && !p.getStatus().isBlank()) {
             try {
-                status = PlanStatus.valueOf(p.getStatus());
+                status = PlanStatus.valueOf(p.getStatus().trim());
             } catch (IllegalArgumentException ignored) {
+                status = PlanStatus.PLANNED;
             }
         }
 
@@ -81,7 +90,7 @@ public class ProductionPlanRepositoryImpl implements ProductionPlanRepository {
                 p.getCropName(),
                 p.getCropVariety(),
                 harvestType,
-                p.getUnit(),
+                unit,
                 status,
                 p.getLocationDescription(),
                 p.getPlantedAreaHa(),

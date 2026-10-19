@@ -60,17 +60,20 @@ public class GetFarmerDashboardSummaryUseCase {
         // Resolução da safra
         HarvestSummaryInfoDTO currentHarvestDto = null;
         UUID resolvedHarvestId = harvestId;
+        boolean includeActiveContinuous = false;
 
         if (harvestId != null) {
             Harvest harvest = harvestRepository.findById(harvestId)
                     .orElseThrow(() -> new HarvestNotFoundException("Safra não encontrada."));
             currentHarvestDto = toHarvestSummaryInfoDTO(harvest);
+            includeActiveContinuous = false;
         } else {
             Optional<Harvest> activeHarvest = harvestRepository.findActiveHarvest(today);
             if (activeHarvest.isPresent()) {
                 Harvest harvest = activeHarvest.get();
                 resolvedHarvestId = harvest.getId();
                 currentHarvestDto = toHarvestSummaryInfoDTO(harvest);
+                includeActiveContinuous = true;
             }
         }
 
@@ -80,7 +83,21 @@ public class GetFarmerDashboardSummaryUseCase {
         String communityName = farmer.getCommunity() != null ? farmer.getCommunity().getName() : null;
 
         List<FarmerPlanSummary> planSummaries = productionPlanRepository
-                .findPlanSummariesByFarmer(farmer.getId(), resolvedHarvestId);
+                .findPlanSummariesByFarmer(farmer.getId(), resolvedHarvestId, includeActiveContinuous);
+
+        // Fallback gracioso: quando o agricultor abre a visão padrão (sem harvestId explícito)
+        // e a safra vigente ainda não possui planos, busca planos em andamento (ACTIVE / PLANNED)
+        // para não exibir um falso Empty State quando há lavouras ativas
+        if (harvestId == null && resolvedHarvestId != null && planSummaries.isEmpty()) {
+            List<FarmerPlanSummary> allPlans = productionPlanRepository
+                    .findPlanSummariesByFarmer(farmer.getId(), null, false);
+            List<FarmerPlanSummary> activeOrPlanned = allPlans.stream()
+                    .filter(p -> p.status() == PlanStatus.ACTIVE || p.status() == PlanStatus.PLANNED)
+                    .toList();
+            if (!activeOrPlanned.isEmpty()) {
+                planSummaries = activeOrPlanned;
+            }
+        }
 
         if (planSummaries.isEmpty()) {
             return FarmerDashboardSummaryDTO.empty(farmer.getId(), farmerName, communityName, currentHarvestDto);

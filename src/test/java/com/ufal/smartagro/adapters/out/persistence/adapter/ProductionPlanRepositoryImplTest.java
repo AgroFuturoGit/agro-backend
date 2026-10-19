@@ -98,7 +98,7 @@ class ProductionPlanRepositoryImplTest {
                 LocalDate.of(2026, 6, 20)
         );
 
-        when(jpaRepository.findPlanSummariesByFarmer(farmerId, harvestId))
+        when(jpaRepository.findPlanSummariesByFarmer(farmerId, harvestId, false))
                 .thenReturn(List.of(projection));
 
         List<FarmerPlanSummary> summaries = repository.findPlanSummariesByFarmer(farmerId, harvestId);
@@ -124,16 +124,16 @@ class ProductionPlanRepositoryImplTest {
     }
 
     @Test
-    @DisplayName("findPlanSummariesByFarmer: deve tratar valores nulos e inválidos com fallback seguro")
+    @DisplayName("findPlanSummariesByFarmer: deve tratar valores nulos e inválidos com fallback seguro (SINGLE, KG, PLANNED)")
     void findPlanSummariesByFarmer_deveTratarNulosEInvalidosComFallback() {
         FarmerPlanSummaryProjection projection = createProjection(
                 planId,
                 cropId,
                 "Mandioca",
                 null,
-                "VALOR_INVALIDO",
-                "KG",
-                "DESCONHECIDO",
+                null, // harvestType nulo -> fallback para SINGLE
+                null, // unit nula -> fallback para KG
+                null, // status nulo -> fallback para PLANNED
                 null,
                 new BigDecimal("2.00"),
                 null, // targetKg nulo
@@ -145,15 +145,16 @@ class ProductionPlanRepositoryImplTest {
                 null
         );
 
-        when(jpaRepository.findPlanSummariesByFarmer(farmerId, null))
+        when(jpaRepository.findPlanSummariesByFarmer(farmerId, null, true))
                 .thenReturn(List.of(projection));
 
-        List<FarmerPlanSummary> summaries = repository.findPlanSummariesByFarmer(farmerId, null);
+        List<FarmerPlanSummary> summaries = repository.findPlanSummariesByFarmer(farmerId, null, true);
 
         assertThat(summaries).hasSize(1);
         FarmerPlanSummary summary = summaries.get(0);
-        assertThat(summary.harvestType()).isNull();
-        assertThat(summary.status()).isNull();
+        assertThat(summary.harvestType()).isEqualTo(HarvestType.SINGLE);
+        assertThat(summary.unit()).isEqualTo("KG");
+        assertThat(summary.status()).isEqualTo(PlanStatus.PLANNED);
         assertThat(summary.targetKg()).isEqualTo(BigDecimal.ZERO);
         assertThat(summary.realizedKg()).isEqualTo(BigDecimal.ZERO);
         assertThat(summary.pendingKg()).isEqualTo(BigDecimal.ZERO);
