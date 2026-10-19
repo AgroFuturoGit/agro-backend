@@ -35,12 +35,14 @@ class RegisterTechnicianUseCaseTest {
     private TechnicianRepository technicianRepository;
     @Mock
     private UserRegisterUseCase userRegisterUseCase;
+    @Mock
+    private com.ufal.smartagro.application.service.audit.AuditLogService auditLogService;
 
     @InjectMocks
     private RegisterTechnicianUseCase registerTechnicianUseCase;
 
     @Test
-    @DisplayName("Given ADMIN When register Then cadastra técnico com sucesso incluindo registrationType e createdBy")
+    @DisplayName("Given ADMIN When register Then cadastra técnico com sucesso incluindo registrationType e createdBy gerando auditoria")
     void givenAdmin_whenRegister_thenRegistersSuccessfully() {
         User admin = UserTestFactory.user().admin().build();
         User createdUser = UserTestFactory.user().technician().build();
@@ -60,6 +62,14 @@ class RegisterTechnicianUseCaseTest {
         assertThat(result.getRegistrationNumber()).isEqualTo("98765");
         assertThat(result.getSpecialty()).isEqualTo("Solo");
         assertThat(result.getCreatedBy()).isEqualTo(admin);
+
+        org.mockito.Mockito.verify(auditLogService).record(
+                org.mockito.ArgumentMatchers.eq(admin),
+                org.mockito.ArgumentMatchers.eq(com.ufal.smartagro.domain.model.enums.AuditAction.CREATE),
+                org.mockito.ArgumentMatchers.eq("technicians"),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.argThat(map -> "CFT".equals(map.get("registrationType")))
+        );
     }
 
     @ParameterizedTest(name = "Given Role.{0} When register Then AccessDeniedException")
@@ -75,6 +85,6 @@ class RegisterTechnicianUseCaseTest {
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Acesso negado. Somente administradores podem realizar esta ação.");
 
-        verifyNoInteractions(userRegisterUseCase, technicianRepository);
+        verifyNoInteractions(userRegisterUseCase, technicianRepository, auditLogService);
     }
 }

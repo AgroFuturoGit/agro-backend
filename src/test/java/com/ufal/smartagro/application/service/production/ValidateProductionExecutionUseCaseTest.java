@@ -21,6 +21,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,6 +37,8 @@ class ValidateProductionExecutionUseCaseTest {
     private TechnicianRepository technicianRepository;
     @Mock
     private TechnicalAssistanceRepository technicalAssistanceRepository;
+    @Mock
+    private com.ufal.smartagro.application.service.audit.AuditLogService auditLogService;
 
     private ValidateProductionExecutionUseCase useCase;
 
@@ -42,7 +46,7 @@ class ValidateProductionExecutionUseCaseTest {
     void setUp() {
         ProductionAccessValidator validator = new ProductionAccessValidator(
                 managerRepository, technicianRepository, technicalAssistanceRepository);
-        useCase = new ValidateProductionExecutionUseCase(productionExecutionRepository, validator);
+        useCase = new ValidateProductionExecutionUseCase(productionExecutionRepository, validator, auditLogService);
     }
 
     private ProductionExecution createPendingExecution(Farmer farmer) {
@@ -73,10 +77,11 @@ class ValidateProductionExecutionUseCaseTest {
                 .hasMessage("O agricultor não tem permissão para validar apontamentos.");
 
         verify(productionExecutionRepository, never()).save(any());
+        verify(auditLogService, never()).record(any(), any(), any(), any(), any());
     }
 
     @Test
-    @DisplayName("ADMIN pode validar apontamento com sucesso")
+    @DisplayName("ADMIN pode validar apontamento com sucesso gerando auditoria")
     void givenAdmin_whenValidate_thenSucceeds() {
         User admin = UserTestFactory.user().admin().build();
         Farmer farmer = UserTestFactory.farmerProfile().build();
@@ -94,6 +99,14 @@ class ValidateProductionExecutionUseCaseTest {
         ArgumentCaptor<ProductionExecution> captor = ArgumentCaptor.forClass(ProductionExecution.class);
         verify(productionExecutionRepository).save(captor.capture());
         assertThat(captor.getValue().getStatus()).isEqualTo(ExecutionStatus.VALIDATED);
+
+        verify(auditLogService).record(
+                eq(admin),
+                eq(com.ufal.smartagro.domain.model.enums.AuditAction.VALIDATE),
+                eq("production_executions"),
+                eq(execution.getId()),
+                argThat(map -> "PENDING".equals(map.get("previousStatus")) && new BigDecimal("10.00").equals(map.get("quantityKg")))
+        );
     }
 
     @Test
