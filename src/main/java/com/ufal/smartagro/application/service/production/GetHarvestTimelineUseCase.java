@@ -77,7 +77,8 @@ public class GetHarvestTimelineUseCase {
         boolean hasDates = plan.getExpectedHarvestStart() != null || plan.getExpectedHarvestEnd() != null;
 
         if (!hasExpectedYield && !hasDates && validExecutions.isEmpty()) {
-            return new HarvestTimelineDTO(plan.getId(), HarvestType.SINGLE, granularity, "kg", List.of());
+            boolean hasExpectedWindow = plan.getExpectedHarvestStart() != null && plan.getExpectedHarvestEnd() != null && !plan.getExpectedHarvestStart().isAfter(plan.getExpectedHarvestEnd());
+            return new HarvestTimelineDTO(plan.getId(), HarvestType.SINGLE, granularity, "kg", hasExpectedWindow, List.of());
         }
 
         BigDecimal actualTotal = BigDecimal.ZERO;
@@ -116,11 +117,13 @@ public class GetHarvestTimelineUseCase {
                 pendingTotal.setScale(2, RoundingMode.HALF_UP)
         );
 
+        boolean hasExpectedWindow = plan.getExpectedHarvestStart() != null && plan.getExpectedHarvestEnd() != null && !plan.getExpectedHarvestStart().isAfter(plan.getExpectedHarvestEnd());
         return new HarvestTimelineDTO(
                 plan.getId(),
                 HarvestType.SINGLE,
                 granularity,
                 "kg",
+                hasExpectedWindow,
                 List.of(point)
         );
     }
@@ -140,7 +143,7 @@ public class GetHarvestTimelineUseCase {
         boolean hasValidPlanWindow = planStart != null && planEnd != null && !planStart.isAfter(planEnd);
 
         if (!hasValidPlanWindow && validExecutions.isEmpty()) {
-            return new HarvestTimelineDTO(plan.getId(), HarvestType.CONTINUOUS, granularity, "kg", List.of());
+            return new HarvestTimelineDTO(plan.getId(), HarvestType.CONTINUOUS, granularity, "kg", hasValidPlanWindow, List.of());
         }
 
         LocalDate minDate = null;
@@ -245,6 +248,7 @@ public class GetHarvestTimelineUseCase {
                 HarvestType.CONTINUOUS,
                 granularity,
                 "kg",
+                hasValidPlanWindow,
                 points
         );
     }

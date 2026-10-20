@@ -1,5 +1,6 @@
 package com.ufal.smartagro.adapters.in.web.dto.production;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -9,11 +10,13 @@ import java.util.Map;
 /** Campos que podem ser alterados em um plano, incluindo estado, janela de colheita e localização. */
 public record ProductionPlanUpdateDTO(
         @DecimalMin(value = "0.01", message = "A área de plantio deve ser maior que zero.")
+        @Schema(description = "Área plantada em hectares (ha)", example = "2.5")
         BigDecimal plantedArea,
 
         com.ufal.smartagro.domain.model.enums.PlanStatus status,
         LocalDate expectedHarvestStart,
         LocalDate expectedHarvestEnd,
+        @Schema(description = "Produtividade esperada congelada em kg/ha", example = "12000.00")
         BigDecimal expectedProductivity,
         String locationDescription,
         BigDecimal latitude,

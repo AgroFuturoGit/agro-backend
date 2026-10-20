@@ -84,6 +84,21 @@ class AdminUserUpdateUseCaseTest {
         verifyNoInteractions(userRepository);
     }
 
+    @ParameterizedTest(name = "Given ADMIN When tenta alterar role para {0} Then IllegalArgumentException")
+    @EnumSource(value = Role.class, names = {"MANAGER", "FARMER", "TECHNICIAN"})
+    void givenAdmin_whenUpdateToSpecializedRole_thenIllegalArgumentException(Role specializedRole) {
+        User admin = UserTestFactory.user().admin().build();
+        User target = UserTestFactory.user().admin().build();
+        AdminUserUpdateDTO dto = new AdminUserUpdateDTO("Nome", specializedRole);
+        when(userRepository.findById(target.getId())).thenReturn(Optional.of(target));
+
+        assertThatThrownBy(() -> adminUserUpdateUseCase.update(target.getId(), dto, admin))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Para criar ou promover gestores, produtores e técnicos, utilize as rotas específicas de perfil.");
+
+        verify(userRepository, never()).save(any());
+    }
+
     @Test
     @DisplayName("Given ADMIN When alvo inexistente Then UserNotFoundException")
     void givenAdmin_whenTargetMissing_thenUserNotFound() {

@@ -2,6 +2,7 @@ package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.InvalidStateTransitionException;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.AuditAction;
@@ -34,6 +35,10 @@ public class RejectProductionExecutionUseCase {
 
         ProductionExecution execution = productionExecutionRepository.findById(executionId)
                 .orElseThrow(() -> new IllegalArgumentException("Execução de produção não encontrada."));
+
+        if (execution.getStatus() != ExecutionStatus.PENDING) {
+            throw new InvalidStateTransitionException("Apenas apontamentos com status PENDENTE podem ser rejeitados. Status atual: " + execution.getStatus());
+        }
 
         if (execution.getProductionPlan() != null) {
             accessValidator.validateWriteAccess(execution.getProductionPlan().getFarmer(), loggedUser);

@@ -54,7 +54,7 @@ class UserRegisterUseCaseTest {
     class HappyPath {
 
         @ParameterizedTest(name = "Given ADMIN When registra Role.{0} Then persiste usuário com senha encoded")
-        @EnumSource(value = Role.class, names = {"ADMIN", "TECHNICIAN"})
+        @EnumSource(value = Role.class, names = {"ADMIN"})
         void givenAdmin_whenRegisterAllowedRole_thenReturnsPersistedUser(Role targetRole) {
             User admin = UserTestFactory.user().admin().build();
             UserRegisterDTO dto = UserTestFactory.registerDto().role(targetRole).build();
@@ -95,6 +95,19 @@ class UserRegisterUseCaseTest {
     @Nested
     @DisplayName("RBAC — somente ADMIN pode chamar register()")
     class RbacBlocking {
+
+        @ParameterizedTest(name = "Given ADMIN When tenta registrar papel especializado Role.{0} via rota genérica Then IllegalArgumentException")
+        @EnumSource(value = Role.class, names = {"MANAGER", "FARMER", "TECHNICIAN"})
+        void givenAdmin_whenRegisterSpecializedRole_thenThrowsIllegalArgumentException(Role specializedRole) {
+            User admin = UserTestFactory.user().admin().build();
+            UserRegisterDTO dto = UserTestFactory.registerDto().role(specializedRole).build();
+
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> userRegisterUseCase.register(dto, admin))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Para criar ou promover gestores, produtores e técnicos, utilize as rotas específicas de perfil.");
+
+            org.mockito.Mockito.verifyNoInteractions(userRepository, passwordEncoder);
+        }
 
         @Test
         @DisplayName("Given MANAGER When tenta cadastrar ADMIN Then AccessDeniedException e nenhum save")
