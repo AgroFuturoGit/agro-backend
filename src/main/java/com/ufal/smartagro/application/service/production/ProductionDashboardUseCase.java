@@ -4,6 +4,7 @@ import com.ufal.smartagro.adapters.in.web.dto.production.ProductionDashboardDTO;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.*;
 import com.ufal.smartagro.domain.model.enums.ExecutionStatus;
+import com.ufal.smartagro.domain.model.enums.PlanStatus;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.*;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,7 @@ public class ProductionDashboardUseCase {
             CommunityTotals community = totals.computeIfAbsent(communityId, id -> new CommunityTotals(id, communityName));
             community.farmers++;
             for (ProductionPlan plan : planRepository.findAllByFarmerId(farmer.getId())) {
+                if (plan.getDeletedAt() != null || plan.getStatus() == PlanStatus.CANCELED) continue;
                 BigDecimal target = plan.getExpectedYield();
                 BigDecimal realized = executionRepository.findAllByProductionPlanId(plan.getId()).stream()
                         .filter(e -> e.getStatus() == ExecutionStatus.VALIDATED)

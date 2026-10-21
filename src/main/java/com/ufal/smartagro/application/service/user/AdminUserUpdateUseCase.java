@@ -29,6 +29,11 @@ public class AdminUserUpdateUseCase {
         User existingUser = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
 
+        if (dto.role() != existingUser.getRole() &&
+                (dto.role() == Role.MANAGER || dto.role() == Role.FARMER || dto.role() == Role.TECHNICIAN)) {
+            throw new IllegalArgumentException("Para criar ou promover gestores, produtores e técnicos, utilize as rotas específicas de perfil.");
+        }
+
         User updatedUser = new User(
                 existingUser.getId(),
                 dto.fullName(),

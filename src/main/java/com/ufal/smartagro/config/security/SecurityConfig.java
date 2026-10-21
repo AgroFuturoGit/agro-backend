@@ -2,6 +2,7 @@ package com.ufal.smartagro.config.security;
 
 import com.ufal.smartagro.config.security.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -32,6 +33,8 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                     .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                    .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                    .requestMatchers("/error").permitAll()
                     .requestMatchers("/auth/login").permitAll()
                     // Actuator roda na porta 9090 (não exposta externamente no compose)
                     .requestMatchers("/actuator/**").permitAll()

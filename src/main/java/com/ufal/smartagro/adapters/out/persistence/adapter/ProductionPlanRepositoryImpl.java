@@ -48,6 +48,16 @@ public class ProductionPlanRepositoryImpl implements ProductionPlanRepository {
     }
 
     @Override
+    public boolean existsByHarvestId(UUID harvestId) {
+        return jpaRepository.existsByHarvestId(harvestId);
+    }
+
+    @Override
+    public boolean existsByCropId(UUID cropId) {
+        return jpaRepository.existsByCropId(cropId);
+    }
+
+    @Override
     public List<FarmerPlanSummary> findPlanSummariesByFarmer(UUID farmerId, UUID harvestId, boolean includeActiveContinuous) {
         return jpaRepository.findPlanSummariesByFarmer(farmerId, harvestId, includeActiveContinuous).stream()
                 .map(this::toFarmerPlanSummary)
