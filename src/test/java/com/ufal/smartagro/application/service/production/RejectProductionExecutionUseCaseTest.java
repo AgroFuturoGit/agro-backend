@@ -1,6 +1,7 @@
 package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.InvalidStateTransitionException;
 import com.ufal.smartagro.domain.model.*;
 import com.ufal.smartagro.domain.model.enums.ExecutionStatus;
 import com.ufal.smartagro.domain.port.out.*;
@@ -138,6 +139,25 @@ class RejectProductionExecutionUseCaseTest {
         assertThat(result.getStatus()).isEqualTo(ExecutionStatus.REJECTED);
         assertThat(result.getNotes()).isEqualTo("Observação existente");
         assertThat(result.getRejectionReason()).isNull();
+    }
+
+    @Test
+    @DisplayName("Ao rejeitar apontamento que já não está PENDING, lança InvalidStateTransitionException")
+    void givenNonPendingExecution_whenReject_thenThrowsInvalidStateTransitionException() {
+        User admin = UserTestFactory.user().admin().build();
+        Farmer farmer = UserTestFactory.farmerProfile().build();
+        ProductionPlan plan = UserTestFactory.productionPlan().farmer(farmer).build();
+        ProductionExecution alreadyRejected = new ProductionExecution(
+                UUID.randomUUID(), plan, new BigDecimal("10.00"), new BigDecimal("10.00"),
+                LocalDate.of(2026, 5, 10), ExecutionStatus.REJECTED, null, null,
+                "Observação", "Motivo", null, null, null, null, null, null, null
+        );
+
+        when(productionExecutionRepository.findById(alreadyRejected.getId())).thenReturn(Optional.of(alreadyRejected));
+
+        assertThatThrownBy(() -> useCase.reject(alreadyRejected.getId(), "Novo motivo", admin))
+                .isInstanceOf(InvalidStateTransitionException.class)
+                .hasMessageContaining("Apenas apontamentos com status PENDENTE podem ser rejeitados");
     }
 
     @Test

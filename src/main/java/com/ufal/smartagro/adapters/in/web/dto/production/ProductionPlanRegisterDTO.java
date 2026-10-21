@@ -1,5 +1,6 @@
 package com.ufal.smartagro.adapters.in.web.dto.production;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
@@ -19,13 +20,14 @@ public record ProductionPlanRegisterDTO(
         @NotNull(message = "A área de plantio é obrigatória.")
         @Schema(description = "Área plantada em hectares (ha). A meta de produção é calculada em kg a partir desta área e da produtividade em kg/ha.", example = "2.5")
         @DecimalMin(value = "0.01", message = "A área de plantio deve ser maior que zero.")
+        @Schema(description = "Área plantada em hectares (ha)", example = "2.5")
         BigDecimal plantedArea,
 
         LocalDate expectedHarvestStart,
         LocalDate expectedHarvestEnd,
         String locationDescription,
-        java.math.BigDecimal latitude,
-        java.math.BigDecimal longitude,
+        BigDecimal latitude,
+        BigDecimal longitude,
 
         LocalDate plannedPlantingDate,
 

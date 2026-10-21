@@ -13,6 +13,10 @@ import java.util.UUID;
 public interface JpaProductionPlanRepository extends JpaRepository<ProductionPlanEntity, UUID> {
     List<ProductionPlanEntity> findAllByFarmerId(UUID farmerId);
 
+    boolean existsByHarvestId(UUID harvestId);
+
+    boolean existsByCropId(UUID cropId);
+
     @Modifying
     @Query("UPDATE ProductionPlanEntity p SET p.deletedAt = CURRENT_TIMESTAMP WHERE p.id = :id")
     void softDeleteById(@Param("id") UUID id);

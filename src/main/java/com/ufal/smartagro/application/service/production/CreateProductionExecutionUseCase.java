@@ -54,6 +54,29 @@ public class CreateProductionExecutionUseCase {
                 null
         );
 
-        return productionExecutionRepository.save(execution);
+        ProductionExecution saved = productionExecutionRepository.save(execution);
+        if (plan.getStatus() == com.ufal.smartagro.domain.model.enums.PlanStatus.PLANNED) {
+            ProductionPlan activePlan = new ProductionPlan(
+                    plan.getId(),
+                    plan.getFarmer(),
+                    plan.getHarvest(),
+                    plan.getCrop(),
+                    plan.getPlantedArea(),
+                    com.ufal.smartagro.domain.model.enums.PlanStatus.ACTIVE,
+                    plan.getExpectedHarvestStart(),
+                    plan.getExpectedHarvestEnd(),
+                    plan.getExpectedProductivity(),
+                    plan.getLocationDescription(),
+                    plan.getLatitude(),
+                    plan.getLongitude(),
+                    plan.getPlannedPlantingDate(),
+                    plan.getPlannedCalendar(),
+                    plan.getCreatedAt(),
+                    null,
+                    plan.getDeletedAt()
+            );
+            productionPlanRepository.save(activePlan);
+        }
+        return saved;
     }
 }

@@ -1,6 +1,7 @@
 package com.ufal.smartagro.domain.model;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -11,6 +12,7 @@ import com.ufal.smartagro.domain.model.enums.ExecutionStatus;
 
 /** Apontamento individual de colheita, com quantidades, posição e trilha de validação. */
 @Getter
+@Builder
 @AllArgsConstructor
 public class ProductionExecution {
     private UUID id;
