@@ -1,14 +1,34 @@
 package com.ufal.smartagro.domain.model;
 
 import org.junit.jupiter.api.Test;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class FamilyCompositionTest {
-    @Test void preservesValidFieldsIncludingAgeZero() {
-        UUID id = UUID.randomUUID(); LocalDateTime createdAt = LocalDateTime.now();
-        FamilyComposition value = FamilyComposition.builder().id(id).name("Ana").kinship("Filha").age(0).createdAt(createdAt).build();
-        assertThat(value.getId()).isEqualTo(id); assertThat(value.getAge()).isZero(); assertThat(value.getCreatedAt()).isEqualTo(createdAt);
+
+    @Test
+    void deveCriarFamilyCompositionCorretamente() {
+        UUID id = UUID.randomUUID();
+        Farmer farmer = Farmer.builder().id(UUID.randomUUID()).build();
+        LocalDateTime now = LocalDateTime.now();
+
+        FamilyComposition composition = FamilyComposition.builder()
+                .id(id)
+                .farmer(farmer)
+                .name("Maria Silva")
+                .kinship("Esposa")
+                .age(42)
+                .createdAt(now)
+                .build();
+
+        assertThat(composition.getId()).isEqualTo(id);
+        assertThat(composition.getFarmer()).isEqualTo(farmer);
+        assertThat(composition.getName()).isEqualTo("Maria Silva");
+        assertThat(composition.getKinship()).isEqualTo("Esposa");
+        assertThat(composition.getAge()).isEqualTo(42);
+        assertThat(composition.getCreatedAt()).isEqualTo(now);
     }
 }

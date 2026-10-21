@@ -1,3 +1,5 @@
+-- Tabelas auxiliares socioeconômicas e de campo do produtor (Feature 5.5)
+
 CREATE TABLE family_compositions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     farmer_id UUID NOT NULL REFERENCES farmers(id),
@@ -32,19 +34,6 @@ CREATE TABLE field_occurrences (
     deleted_at TIMESTAMP
 );
 
-CREATE TABLE execution_attachments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    execution_id UUID NOT NULL REFERENCES production_executions(id),
-    file_url VARCHAR(500) NOT NULL,
-    mime_type VARCHAR(100) NOT NULL,
-    file_size BIGINT NOT NULL,
-    created_by UUID REFERENCES users(id),
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP,
-    deleted_at TIMESTAMP
-);
-
 CREATE INDEX idx_family_compositions_farmer_id ON family_compositions (farmer_id) WHERE deleted_at IS NULL;
 CREATE INDEX idx_financings_farmer_id ON financings (farmer_id) WHERE deleted_at IS NULL;
 CREATE INDEX idx_field_occurrences_execution_id ON field_occurrences (execution_id) WHERE deleted_at IS NULL;
-CREATE INDEX idx_execution_attachments_execution_id ON execution_attachments (execution_id) WHERE deleted_at IS NULL;
