@@ -49,21 +49,24 @@ class HarvestTimelineDTOTest {
         assertThat(dto.harvestType()).isEqualTo(HarvestType.CONTINUOUS);
         assertThat(dto.granularity()).isEqualTo(TimelineGranularity.WEEK);
         assertThat(dto.unit()).isEqualTo("kg");
+        assertThat(dto.hasExpectedWindow()).isFalse();
         assertThat(dto.points()).containsExactly(point);
     }
 
     @Test
-    void deveCriarHarvestTimelineDTOComUnidadeCustomizada() {
+    void deveCriarHarvestTimelineDTOComUnidadeCustomizadaEWindow() {
         UUID planId = UUID.randomUUID();
         HarvestTimelineDTO dto = new HarvestTimelineDTO(
                 planId,
                 HarvestType.SINGLE,
                 TimelineGranularity.MONTH,
                 "saca",
+                true,
                 List.of()
         );
 
         assertThat(dto.unit()).isEqualTo("saca");
+        assertThat(dto.hasExpectedWindow()).isTrue();
         assertThat(dto.points()).isEmpty();
     }
 }

@@ -14,14 +14,35 @@ public record HarvestTimelineDTO(
         HarvestType harvestType,
         TimelineGranularity granularity,
         String unit,
+        boolean hasExpectedWindow,
         List<TimelinePointDTO> points
 ) {
     public HarvestTimelineDTO(
             UUID planId,
             HarvestType harvestType,
             TimelineGranularity granularity,
+            boolean hasExpectedWindow,
             List<TimelinePointDTO> points
     ) {
-        this(planId, harvestType, granularity, "kg", points);
+        this(planId, harvestType, granularity, "kg", hasExpectedWindow, points);
+    }
+
+    public HarvestTimelineDTO(
+            UUID planId,
+            HarvestType harvestType,
+            TimelineGranularity granularity,
+            String unit,
+            List<TimelinePointDTO> points
+    ) {
+        this(planId, harvestType, granularity, unit, false, points);
+    }
+
+    public HarvestTimelineDTO(
+            UUID planId,
+            HarvestType harvestType,
+            TimelineGranularity granularity,
+            List<TimelinePointDTO> points
+    ) {
+        this(planId, harvestType, granularity, "kg", false, points);
     }
 }

@@ -27,6 +27,10 @@ public class UserRegisterUseCase {
             throw new AccessDeniedException();
         }
 
+        if (dto.role() == Role.MANAGER || dto.role() == Role.FARMER || dto.role() == Role.TECHNICIAN) {
+            throw new IllegalArgumentException("Para criar ou promover gestores, produtores e técnicos, utilize as rotas específicas de perfil.");
+        }
+
         User savedUser = createBaseUser(dto);
         return Mapper.toUserResponseDTO(savedUser);
     }
@@ -37,13 +41,22 @@ public class UserRegisterUseCase {
             throw new EmailAlreadyExistsException();
         }
 
-        if (dto.cpf() != null && !dto.cpf().isBlank() && userRepository.existsByCpf(dto.cpf())) {
+        String normalizedCpf = com.ufal.smartagro.domain.util.CpfNormalizer.digitsOnly(dto.cpf());
+        if (normalizedCpf != null && userRepository.existsByCpf(normalizedCpf)) {
             throw new CpfAlreadyExistsException();
         }
 
         String encodedPassword = passwordEncoder.encode(dto.password());
 
-        User newUser = Mapper.toUser(dto, encodedPassword);
+        User baseUser = Mapper.toUser(dto, encodedPassword);
+        User newUser = new User(
+                baseUser.getId(),
+                baseUser.getFullName(),
+                baseUser.getEmail(),
+                baseUser.getPassword(),
+                normalizedCpf,
+                baseUser.getRole()
+        );
         return userRepository.save(newUser);
     }
 }
