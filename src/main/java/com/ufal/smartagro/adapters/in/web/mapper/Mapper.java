@@ -1,3 +1,4 @@
+import com.ufal.smartagro.adapters.in.web.dto.farmer.family.FamilyCompositionResponseDTO;
 package com.ufal.smartagro.adapters.in.web.mapper;
 
 import com.ufal.smartagro.adapters.in.web.dto.auth.LoginResponseDTO;
@@ -235,6 +236,19 @@ public class Mapper {
                 technician.getUpdatedAt()
         );
     }
+    public static FamilyCompositionResponseDTO toFamilyCompositionResponseDTO(com.ufal.smartagro.domain.model.FamilyComposition comp) {
+        if (comp == null) return null;
+        return new FamilyCompositionResponseDTO(
+                comp.getId(),
+                comp.getFarmer() != null ? comp.getFarmer().getId() : null,
+                comp.getName(),
+                comp.getKinship(),
+                comp.getAge(),
+                comp.getCreatedAt(),
+                comp.getUpdatedAt()
+        );
+    }
+
     public static TechnicalAssistanceResponseDTO toTechnicalAssistanceResponseDTO(TechnicalAssistance assistance) {
         if (assistance == null) return null;
         return new TechnicalAssistanceResponseDTO(
