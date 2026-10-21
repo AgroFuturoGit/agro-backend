@@ -35,6 +35,22 @@ class ProductionEnumsTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> HarvestType.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> MeasurementUnit.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> TimelineGranularity.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> PlanProgressStatus.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test void planProgressStatusDeveConterValoresEDescricoesEsperados() {
+        assertThat(PlanProgressStatus.values()).containsExactly(
+                PlanProgressStatus.GOAL_REACHED,
+                PlanProgressStatus.ON_TRACK,
+                PlanProgressStatus.BELOW_EXPECTED,
+                PlanProgressStatus.DELAYED,
+                PlanProgressStatus.NOT_STARTED
+        );
+        assertThat(PlanProgressStatus.GOAL_REACHED.getDescription()).isEqualTo("Meta Atingida");
+        assertThat(PlanProgressStatus.ON_TRACK.getDescription()).isEqualTo("No Ritmo");
+        assertThat(PlanProgressStatus.BELOW_EXPECTED.getDescription()).isEqualTo("Abaixo do Esperado");
+        assertThat(PlanProgressStatus.DELAYED.getDescription()).isEqualTo("Atrasado");
+        assertThat(PlanProgressStatus.NOT_STARTED.getDescription()).isEqualTo("Não Iniciado");
     }
 
     @Test void timelineGranularityDeveConterValoresEDescricoesEsperados() {
