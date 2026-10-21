@@ -10,7 +10,8 @@ import java.time.LocalDateTime;
 /** Dados de um apontamento de colheita; o estado inicial de validação é definido pelo serviço. */
 public record ProductionExecutionRegisterDTO(
         @NotNull(message = "A quantidade colhida é obrigatória.") @DecimalMin("0.01") BigDecimal quantity,
-        @NotNull(message = "A quantidade em kg é obrigatória.") @DecimalMin("0.01") BigDecimal quantityKg,
+        /** Peso normalizado opcional; o servidor calcula a partir da unidade e do peso cadastrado da cultura. */
+        @DecimalMin(value = "0.01", message = "A quantidade em kg deve ser maior que zero.") BigDecimal quantityKg,
         @NotNull(message = "A data da colheita é obrigatória.") LocalDate harvestedAt,
         String notes,
 

@@ -32,6 +32,15 @@ class ProductionExecutionTest {
         ProductionExecution execution = execution(ExecutionStatus.PENDING, BigDecimal.ONE, new BigDecimal("75"), LocalDate.now(), null, null, null);
         assertThat(execution.getActualYield()).isEqualByComparingTo("75");
     }
+    @Test void deveManterRejectionReason() {
+        ProductionExecution execution = new ProductionExecution(
+                UUID.randomUUID(), null, BigDecimal.ONE, BigDecimal.ONE, LocalDate.now(),
+                ExecutionStatus.REJECTED, null, null, "Observações gerais", "Produto fora do padrão",
+                null, null, null, null, null, null, null
+        );
+        assertThat(execution.getRejectionReason()).isEqualTo("Produto fora do padrão");
+        assertThat(execution.getNotes()).isEqualTo("Observações gerais");
+    }
     private ProductionExecution execution(ExecutionStatus status, BigDecimal quantity, BigDecimal kg, LocalDate date, User validator, LocalDateTime at, String notes) {
         return new ProductionExecution(UUID.randomUUID(), null, quantity, kg, date, status, validator, at, notes,
                 null, null, null, null, null, null, null);

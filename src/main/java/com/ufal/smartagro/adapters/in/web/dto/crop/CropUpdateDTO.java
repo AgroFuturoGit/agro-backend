@@ -1,22 +1,23 @@
 package com.ufal.smartagro.adapters.in.web.dto.crop;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import com.ufal.smartagro.domain.model.enums.HarvestType;
+import com.ufal.smartagro.domain.model.enums.MeasurementUnit;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-/** Dados editáveis de uma cultura; os campos agrícolas complementam nome e variedade. */
+import java.math.BigDecimal;
+
+/** Dados editáveis de uma cultura para atualização parcial (PATCH). */
 public record CropUpdateDTO(
-        @NotBlank(message = "O nome é obrigatório")
         String name,
-
-        @NotBlank(message = "A variedade é obrigatória")
         String variety,
-
-        @NotNull(message = "O campo isPriority é obrigatório")
         Boolean isPriority,
         Integer cycleDays,
-        java.math.BigDecimal expectedProductivity,
-        com.ufal.smartagro.domain.model.enums.HarvestType harvestType,
-        com.ufal.smartagro.domain.model.enums.MeasurementUnit unit,
-        java.math.BigDecimal unitWeightKg
+
+        @Schema(description = "Produtividade esperada em kg/ha", example = "12000.00")
+        BigDecimal expectedProductivity,
+
+        HarvestType harvestType,
+        MeasurementUnit unit,
+        BigDecimal unitWeightKg
 ) {
 }

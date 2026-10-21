@@ -28,19 +28,31 @@ public class CropUpdateUseCase {
         Crop existingCrop = cropRepository.findById(id)
                 .orElseThrow(CropNotFoundException::new);
 
-        boolean isNameOrVarietyChanged = !existingCrop.getName().equals(updatedCropData.getName()) ||
-                !existingCrop.getVariety().equals(updatedCropData.getVariety());
+        String targetName = (updatedCropData.getName() != null && !updatedCropData.getName().isBlank())
+                ? updatedCropData.getName()
+                : existingCrop.getName();
 
-        if (isNameOrVarietyChanged && cropRepository.existsByNameAndVariety(updatedCropData.getName(), updatedCropData.getVariety())) {
+        String targetVariety = (updatedCropData.getVariety() != null && !updatedCropData.getVariety().isBlank())
+                ? updatedCropData.getVariety()
+                : existingCrop.getVariety();
+
+        boolean isNameOrVarietyChanged = !existingCrop.getName().equals(targetName) ||
+                !existingCrop.getVariety().equals(targetVariety);
+
+        if (isNameOrVarietyChanged && cropRepository.existsByNameAndVariety(targetName, targetVariety)) {
             throw new CropAlreadyExistsException();
         }
 
         Crop cropToSave = new Crop(
                 existingCrop.getId(),
-                updatedCropData.getName(),
-                updatedCropData.getVariety(),
-                updatedCropData.getIsPriority(), updatedCropData.getCycleDays(), updatedCropData.getExpectedProductivity(),
-                updatedCropData.getHarvestType(), updatedCropData.getUnit(), updatedCropData.getUnitWeightKg()
+                targetName,
+                targetVariety,
+                updatedCropData.getIsPriority() != null ? updatedCropData.getIsPriority() : existingCrop.getIsPriority(),
+                updatedCropData.getCycleDays() != null ? updatedCropData.getCycleDays() : existingCrop.getCycleDays(),
+                updatedCropData.getExpectedProductivity() != null ? updatedCropData.getExpectedProductivity() : existingCrop.getExpectedProductivity(),
+                updatedCropData.getHarvestType() != null ? updatedCropData.getHarvestType() : existingCrop.getHarvestType(),
+                updatedCropData.getUnit() != null ? updatedCropData.getUnit() : existingCrop.getUnit(),
+                updatedCropData.getUnitWeightKg() != null ? updatedCropData.getUnitWeightKg() : existingCrop.getUnitWeightKg()
         );
 
         return cropRepository.save(cropToSave);

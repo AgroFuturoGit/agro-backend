@@ -14,6 +14,7 @@ import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CommunityRepository;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
+import com.ufal.smartagro.domain.util.CpfNormalizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +36,8 @@ public class RegisterFarmerUseCase {
             throw new AccessDeniedException();
         }
 
-        if (farmerRepository.existsByCpf(dto.cpf())) {
+        String normalizedCpf = CpfNormalizer.digitsOnly(dto.cpf());
+        if (farmerRepository.existsByCpf(normalizedCpf)) {
             throw new CpfAlreadyExistsException();
         }
 
@@ -58,7 +60,7 @@ public class RegisterFarmerUseCase {
         User savedUser = null;
         if (dto.email() != null && !dto.email().isBlank() && dto.password() != null && !dto.password().isBlank()) {
             UserRegisterDTO userDto = new UserRegisterDTO(
-                    dto.fullName(), dto.email(), dto.password(), dto.cpf(), Role.FARMER
+                    dto.fullName(), dto.email(), dto.password(), normalizedCpf, Role.FARMER
             );
             savedUser = userRegisterUseCase.createBaseUser(userDto);
         }
@@ -71,7 +73,7 @@ public class RegisterFarmerUseCase {
                 .user(savedUser)
                 .community(community)
                 .fullName(dto.fullName())
-                .cpf(dto.cpf())
+                .cpf(normalizedCpf)
                 .dateOfBirth(dto.dateOfBirth())
                 .motherName(dto.motherName())
                 .origin(dto.origin())

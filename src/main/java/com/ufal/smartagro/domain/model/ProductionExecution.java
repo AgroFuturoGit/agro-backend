@@ -1,6 +1,7 @@
 package com.ufal.smartagro.domain.model;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -11,6 +12,7 @@ import com.ufal.smartagro.domain.model.enums.ExecutionStatus;
 
 /** Apontamento individual de colheita, com quantidades, posição e trilha de validação. */
 @Getter
+@Builder
 @AllArgsConstructor
 public class ProductionExecution {
     private UUID id;
@@ -26,6 +28,8 @@ public class ProductionExecution {
     private User validatedBy;
     private LocalDateTime validatedAt;
     private String notes;
+    /** Justificativa formal informada pelo revisor ao rejeitar o apontamento. */
+    private String rejectionReason;
     /** Onde o apontamento foi feito. Ausente quando o GPS não respondeu. */
     private BigDecimal latitude;
     private BigDecimal longitude;
@@ -37,6 +41,16 @@ public class ProductionExecution {
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
+    /** Construtor de compatibilidade para chamadas com 16 argumentos (rejectionReason = null). */
+    public ProductionExecution(UUID id, ProductionPlan productionPlan, BigDecimal quantity, BigDecimal quantityKg,
+                               LocalDate harvestedAt, ExecutionStatus status, User validatedBy, LocalDateTime validatedAt,
+                               String notes, BigDecimal latitude, BigDecimal longitude, BigDecimal locationAccuracy,
+                               LocalDateTime locationRecordedAt, LocalDateTime createdAt, LocalDateTime updatedAt,
+                               LocalDateTime deletedAt) {
+        this(id, productionPlan, quantity, quantityKg, harvestedAt, status, validatedBy, validatedAt, notes, null,
+                latitude, longitude, locationAccuracy, locationRecordedAt, createdAt, updatedAt, deletedAt);
+    }
+
     /** Construtor legado que adapta rendimento e data antiga para os novos campos. */
     public ProductionExecution(UUID id, ProductionPlan productionPlan, BigDecimal actualYield, java.time.LocalDate harvestDate,
                                BigDecimal latitude, BigDecimal longitude, BigDecimal locationAccuracy,
@@ -44,7 +58,7 @@ public class ProductionExecution {
                                LocalDateTime deletedAt) {
         this(id, productionPlan, actualYield, actualYield,
                 harvestDate, ExecutionStatus.PENDING,
-                null, null, null, latitude, longitude, locationAccuracy, locationRecordedAt,
+                null, null, null, null, latitude, longitude, locationAccuracy, locationRecordedAt,
                 createdAt, updatedAt, deletedAt);
     }
 

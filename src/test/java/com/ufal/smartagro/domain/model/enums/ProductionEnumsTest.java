@@ -34,5 +34,47 @@ class ProductionEnumsTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> PlanStatus.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> HarvestType.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> MeasurementUnit.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> TimelineGranularity.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> PlanProgressStatus.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test void planProgressStatusDeveConterValoresEDescricoesEsperados() {
+        assertThat(PlanProgressStatus.values()).containsExactly(
+                PlanProgressStatus.GOAL_REACHED,
+                PlanProgressStatus.ON_TRACK,
+                PlanProgressStatus.BELOW_EXPECTED,
+                PlanProgressStatus.DELAYED,
+                PlanProgressStatus.NOT_STARTED
+        );
+        assertThat(PlanProgressStatus.GOAL_REACHED.getDescription()).isEqualTo("Meta Atingida");
+        assertThat(PlanProgressStatus.ON_TRACK.getDescription()).isEqualTo("No Ritmo");
+        assertThat(PlanProgressStatus.BELOW_EXPECTED.getDescription()).isEqualTo("Abaixo do Esperado");
+        assertThat(PlanProgressStatus.DELAYED.getDescription()).isEqualTo("Atrasado");
+        assertThat(PlanProgressStatus.NOT_STARTED.getDescription()).isEqualTo("Não Iniciado");
+    }
+
+    @Test void timelineGranularityDeveConterValoresEDescricoesEsperados() {
+        assertThat(TimelineGranularity.values()).containsExactly(TimelineGranularity.WEEK, TimelineGranularity.MONTH);
+        assertThat(TimelineGranularity.WEEK.getDescription()).isEqualTo("Semana");
+        assertThat(TimelineGranularity.MONTH.getDescription()).isEqualTo("Mês");
+    }
+
+    @Test void timelineGranularityFromStringDeveFazerParseCaseInsensitiveERetornarPadrao() {
+        assertThat(TimelineGranularity.fromString(null)).isEqualTo(TimelineGranularity.WEEK);
+        assertThat(TimelineGranularity.fromString("")).isEqualTo(TimelineGranularity.WEEK);
+        assertThat(TimelineGranularity.fromString("   ")).isEqualTo(TimelineGranularity.WEEK);
+        assertThat(TimelineGranularity.fromString("week")).isEqualTo(TimelineGranularity.WEEK);
+        assertThat(TimelineGranularity.fromString("WEEK")).isEqualTo(TimelineGranularity.WEEK);
+        assertThat(TimelineGranularity.fromString("month")).isEqualTo(TimelineGranularity.MONTH);
+        assertThat(TimelineGranularity.fromString("MONTH")).isEqualTo(TimelineGranularity.MONTH);
+        assertThat(TimelineGranularity.fromString("Semana")).isEqualTo(TimelineGranularity.WEEK);
+        assertThat(TimelineGranularity.fromString("Mês")).isEqualTo(TimelineGranularity.MONTH);
+        assertThat(TimelineGranularity.fromString("mes")).isEqualTo(TimelineGranularity.MONTH);
+    }
+
+    @Test void timelineGranularityFromStringDeveRejeitarValorInvalido() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> TimelineGranularity.fromString("YEAR"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Granularidade inválida: 'YEAR'");
     }
 }
