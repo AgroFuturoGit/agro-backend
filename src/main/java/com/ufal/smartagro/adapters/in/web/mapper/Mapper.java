@@ -1,5 +1,3 @@
-import com.ufal.smartagro.adapters.in.web.dto.farmer.family.FamilyCompositionResponseDTO;
-import com.ufal.smartagro.adapters.in.web.dto.farmer.financing.FinancingResponseDTO;
 package com.ufal.smartagro.adapters.in.web.mapper;
 
 import com.ufal.smartagro.adapters.in.web.dto.auth.LoginResponseDTO;
@@ -8,6 +6,9 @@ import com.ufal.smartagro.adapters.in.web.dto.crop.CropResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.crop.CropUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionExecutionResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionPlanResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.production.occurrence.FieldOccurrenceResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.farmer.family.FamilyCompositionResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.farmer.financing.FinancingResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestRegisterDTO;
@@ -260,6 +261,20 @@ public class Mapper {
                 comp.getAge(),
                 comp.getCreatedAt(),
                 comp.getUpdatedAt()
+        );
+    }
+
+    public static FieldOccurrenceResponseDTO toFieldOccurrenceResponseDTO(com.ufal.smartagro.domain.model.FieldOccurrence occ) {
+        if (occ == null) return null;
+        return new FieldOccurrenceResponseDTO(
+                occ.getId(),
+                occ.getExecution() != null ? occ.getExecution().getId() : null,
+                occ.getLogType(),
+                occ.getDescription(),
+                occ.getWeatherObservation(),
+                occ.getEvidenceUrl(),
+                occ.getCreatedAt(),
+                occ.getUpdatedAt()
         );
     }
 
