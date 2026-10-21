@@ -2,6 +2,7 @@ package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.AuditAction;
@@ -33,7 +34,7 @@ public class ValidateProductionExecutionUseCase {
         }
 
         ProductionExecution execution = productionExecutionRepository.findById(executionId)
-                .orElseThrow(() -> new IllegalArgumentException("Execução de produção não encontrada."));
+                .orElseThrow(() -> new EntityNotFoundException("Execução de produção não encontrada."));
 
         if (execution.getProductionPlan() != null) {
             accessValidator.validateWriteAccess(execution.getProductionPlan().getFarmer(), loggedUser);

@@ -4,6 +4,7 @@ import com.ufal.smartagro.adapters.in.web.dto.production.ProductionExecutionUpda
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.port.out.ProductionExecutionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,14 +27,14 @@ public class UpdateProductionExecutionUseCase {
     /** Mantém campos omitidos, valida acesso/versão e persiste as alterações recebidas. */
     public ProductionExecution update(UUID executionId, ProductionExecutionUpdateDTO dto, User loggedUser) {
         ProductionExecution existingExecution = productionExecutionRepository.findById(executionId)
-                .orElseThrow(() -> new IllegalArgumentException("Execução de produção não encontrada."));
+                .orElseThrow(() -> new EntityNotFoundException("Execução de produção não encontrada."));
 
         if (existingExecution.getProductionPlan() != null) {
             accessValidator.validateWriteAccess(existingExecution.getProductionPlan().getFarmer(), loggedUser);
         }
 
         if (loggedUser.getRole() == com.ufal.smartagro.domain.model.enums.Role.FARMER) {
-            if (dto.status() != null && dto.status() != existingExecution.getStatus() && dto.status() != com.ufal.smartagro.domain.model.enums.ExecutionStatus.PENDING) {
+            if (dto.status() != null) {
                 throw new com.ufal.smartagro.domain.exception.AccessDeniedException("O agricultor não tem permissão para alterar o status do apontamento.");
             }
         }

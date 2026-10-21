@@ -183,7 +183,7 @@ class ValidateProductionExecutionUseCaseTest {
         when(productionExecutionRepository.findById(id)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.validate(id, admin))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(com.ufal.smartagro.domain.exception.EntityNotFoundException.class)
                 .hasMessage("Execução de produção não encontrada.");
     }
 }

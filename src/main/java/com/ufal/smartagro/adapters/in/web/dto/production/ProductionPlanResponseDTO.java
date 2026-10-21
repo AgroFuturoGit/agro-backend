@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /** Resposta do plano com produtividade snapshot; a meta é derivada da área vezes essa produtividade. */
 public record ProductionPlanResponseDTO(
@@ -16,11 +17,11 @@ public record ProductionPlanResponseDTO(
         FarmerResponseDTO farmer,
         HarvestResponseDTO harvest,
         CropResponseDTO crop,
-        BigDecimal plantedArea,
+        @Schema(description = "Área plantada em hectares (ha).") BigDecimal plantedArea,
         com.ufal.smartagro.domain.model.enums.PlanStatus status,
         LocalDate expectedHarvestStart,
         LocalDate expectedHarvestEnd,
-        BigDecimal expectedProductivity,
+        @Schema(description = "Produtividade esperada em quilogramas por hectare (kg/ha). A meta derivada é plantedArea × expectedProductivity, em kg, comparável à soma de quantityKg.") BigDecimal expectedProductivity,
         String locationDescription,
         BigDecimal latitude,
         BigDecimal longitude,
@@ -30,5 +31,6 @@ public record ProductionPlanResponseDTO(
         LocalDateTime updatedAt
 ) {
     /** Valor derivado mantido para compatibilidade: não corresponde a uma coluna persistida. */
+    @Schema(description = "Meta de produção derivada em quilogramas (kg): área em ha × produtividade em kg/ha.")
     public BigDecimal expectedYield() { return plantedArea.multiply(expectedProductivity); }
 }

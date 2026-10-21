@@ -318,14 +318,13 @@ public class ProductionController {
     @PostMapping("/production-executions/{executionId}/reject")
     public ResponseEntity<ProductionExecutionResponseDTO> rejectProductionExecution(
             @PathVariable UUID executionId,
-            @RequestBody(required = false) RejectExecutionDTO dto,
+            @Valid @RequestBody RejectExecutionDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
 
-        String reason = dto != null ? dto.reason() : null;
-        ProductionExecution execution = rejectProductionExecutionUseCase.reject(executionId, reason, loggedUser);
+        ProductionExecution execution = rejectProductionExecutionUseCase.reject(executionId, dto.reason(), loggedUser);
         ProductionExecutionResponseDTO response = Mapper.toProductionExecutionResponseDTO(execution);
         return ResponseEntity.ok(response);
     }

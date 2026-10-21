@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /** Dados recebidos para planejar uma cultura em uma safra e registrar sua área e localização. */
 public record ProductionPlanRegisterDTO(
@@ -16,6 +17,7 @@ public record ProductionPlanRegisterDTO(
         UUID cropId,
 
         @NotNull(message = "A área de plantio é obrigatória.")
+        @Schema(description = "Área plantada em hectares (ha). A meta de produção é calculada em kg a partir desta área e da produtividade em kg/ha.", example = "2.5")
         @DecimalMin(value = "0.01", message = "A área de plantio deve ser maior que zero.")
         BigDecimal plantedArea,
 
