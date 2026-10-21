@@ -2,9 +2,13 @@ package com.ufal.smartagro.adapters.out.persistence.adapter;
 
 import com.ufal.smartagro.adapters.out.persistence.mapper.ProductionPlanMapper;
 import com.ufal.smartagro.adapters.out.persistence.projection.FarmerPlanSummaryProjection;
+import com.ufal.smartagro.adapters.out.persistence.projection.TechnicianAssistedFarmerProjection;
+import com.ufal.smartagro.adapters.out.persistence.projection.TechnicianPlanSummaryProjection;
 import com.ufal.smartagro.adapters.out.persistence.repository.JpaProductionPlanRepository;
 import com.ufal.smartagro.domain.model.FarmerPlanSummary;
 import com.ufal.smartagro.domain.model.ProductionPlan;
+import com.ufal.smartagro.domain.model.TechnicianAssistedFarmerRow;
+import com.ufal.smartagro.domain.model.TechnicianPlanSummary;
 import com.ufal.smartagro.domain.model.enums.HarvestType;
 import com.ufal.smartagro.domain.model.enums.PlanStatus;
 import com.ufal.smartagro.domain.port.out.ProductionPlanRepository;
@@ -107,6 +111,97 @@ public class ProductionPlanRepositoryImpl implements ProductionPlanRepository {
                 targetKg,
                 realizedKg,
                 pendingKg,
+                p.getPlantingDate(),
+                p.getExpectedHarvestStart(),
+                p.getExpectedHarvestEnd(),
+                p.getLastExecutionDate()
+        );
+    }
+
+    @Override
+    public List<TechnicianAssistedFarmerRow> findAssistedFarmersByTechnician(UUID technicianId, UUID communityId) {
+        return jpaRepository.findAssistedFarmersByTechnician(technicianId, communityId).stream()
+                .map(this::toTechnicianAssistedFarmerRow)
+                .toList();
+    }
+
+    @Override
+    public List<TechnicianPlanSummary> findPlanSummariesByTechnician(
+            UUID technicianId,
+            UUID communityId,
+            UUID cropId,
+            UUID harvestId,
+            boolean includeActiveContinuous
+    ) {
+        return jpaRepository.findPlanSummariesByTechnician(technicianId, communityId, cropId, harvestId, includeActiveContinuous).stream()
+                .map(this::toTechnicianPlanSummary)
+                .toList();
+    }
+
+    @Override
+    public List<TechnicianPlanSummary> findPlanSummariesByTechnician(
+            UUID technicianId,
+            UUID communityId,
+            UUID cropId,
+            UUID harvestId
+    ) {
+        return findPlanSummariesByTechnician(technicianId, communityId, cropId, harvestId, false);
+    }
+
+    private TechnicianAssistedFarmerRow toTechnicianAssistedFarmerRow(TechnicianAssistedFarmerProjection p) {
+        return new TechnicianAssistedFarmerRow(
+                p.getCommunityId(),
+                p.getCommunityName(),
+                p.getFarmerId(),
+                p.getFarmerName(),
+                p.getIsCompliant()
+        );
+    }
+
+    private TechnicianPlanSummary toTechnicianPlanSummary(TechnicianPlanSummaryProjection p) {
+        HarvestType harvestType = HarvestType.SINGLE;
+        if (p.getHarvestType() != null && !p.getHarvestType().isBlank()) {
+            try {
+                harvestType = HarvestType.valueOf(p.getHarvestType().trim());
+            } catch (IllegalArgumentException ignored) {
+                harvestType = HarvestType.SINGLE;
+            }
+        }
+
+        String unit = (p.getUnit() != null && !p.getUnit().isBlank()) ? p.getUnit().trim() : "KG";
+
+        PlanStatus status = PlanStatus.PLANNED;
+        if (p.getStatus() != null && !p.getStatus().isBlank()) {
+            try {
+                status = PlanStatus.valueOf(p.getStatus().trim());
+            } catch (IllegalArgumentException ignored) {
+                status = PlanStatus.PLANNED;
+            }
+        }
+
+        BigDecimal plantedAreaHa = p.getPlantedAreaHa() != null ? p.getPlantedAreaHa() : BigDecimal.ZERO;
+        BigDecimal targetKg = p.getTargetKg() != null ? p.getTargetKg() : BigDecimal.ZERO;
+        BigDecimal realizedKg = p.getRealizedKg() != null ? p.getRealizedKg() : BigDecimal.ZERO;
+        BigDecimal pendingKg = p.getPendingKg() != null ? p.getPendingKg() : BigDecimal.ZERO;
+        long pendingExecutionsCount = p.getPendingExecutionsCount() != null ? p.getPendingExecutionsCount() : 0L;
+
+        return new TechnicianPlanSummary(
+                p.getPlanId(),
+                p.getFarmerId(),
+                p.getFarmerName(),
+                p.getCommunityId(),
+                p.getCommunityName(),
+                p.getCropId(),
+                p.getCropName(),
+                p.getCropVariety(),
+                harvestType,
+                unit,
+                status,
+                plantedAreaHa,
+                targetKg,
+                realizedKg,
+                pendingKg,
+                pendingExecutionsCount,
                 p.getPlantingDate(),
                 p.getExpectedHarvestStart(),
                 p.getExpectedHarvestEnd(),
