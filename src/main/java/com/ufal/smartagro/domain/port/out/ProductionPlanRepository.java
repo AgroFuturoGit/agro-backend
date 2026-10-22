@@ -2,6 +2,8 @@ package com.ufal.smartagro.domain.port.out;
 
 import com.ufal.smartagro.domain.model.FarmerPlanSummary;
 import com.ufal.smartagro.domain.model.ProductionPlan;
+import com.ufal.smartagro.domain.model.TechnicianAssistedFarmerRow;
+import com.ufal.smartagro.domain.model.TechnicianPlanSummary;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,4 +21,24 @@ public interface ProductionPlanRepository {
     default List<FarmerPlanSummary> findPlanSummariesByFarmer(UUID farmerId, UUID harvestId) {
         return findPlanSummariesByFarmer(farmerId, harvestId, false);
     }
+
+    List<TechnicianAssistedFarmerRow> findAssistedFarmersByTechnician(UUID technicianId, UUID communityId);
+
+    List<TechnicianPlanSummary> findPlanSummariesByTechnician(
+            UUID technicianId,
+            UUID communityId,
+            UUID cropId,
+            UUID harvestId,
+            boolean includeActiveContinuous
+    );
+
+    default List<TechnicianPlanSummary> findPlanSummariesByTechnician(
+            UUID technicianId,
+            UUID communityId,
+            UUID cropId,
+            UUID harvestId
+    ) {
+        return findPlanSummariesByTechnician(technicianId, communityId, cropId, harvestId, false);
+    }
 }
+
