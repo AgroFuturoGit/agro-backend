@@ -38,6 +38,7 @@ class ProductionEnumsTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> PlanProgressStatus.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> TechnicianWarningType.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> WarningSeverity.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> ManagementDashboardScope.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test void planProgressStatusDeveConterValoresEDescricoesEsperados() {
@@ -98,6 +99,15 @@ class ProductionEnumsTest {
         );
         assertThat(WarningSeverity.MEDIUM.getDescription()).isEqualTo("Média");
         assertThat(WarningSeverity.HIGH.getDescription()).isEqualTo("Alta");
+    }
+
+    @Test void managementDashboardScopeDeveConterValoresEDescricoesEsperados() {
+        assertThat(ManagementDashboardScope.values()).containsExactly(
+                ManagementDashboardScope.ORGANIZATION,
+                ManagementDashboardScope.GLOBAL
+        );
+        assertThat(ManagementDashboardScope.ORGANIZATION.getDescription()).isEqualTo("Organização");
+        assertThat(ManagementDashboardScope.GLOBAL.getDescription()).isEqualTo("Global");
     }
 }
 
