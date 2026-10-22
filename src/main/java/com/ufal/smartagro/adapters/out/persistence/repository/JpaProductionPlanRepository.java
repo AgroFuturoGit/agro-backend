@@ -2,6 +2,8 @@ package com.ufal.smartagro.adapters.out.persistence.repository;
 
 import com.ufal.smartagro.adapters.out.persistence.entity.ProductionPlanEntity;
 import com.ufal.smartagro.adapters.out.persistence.projection.FarmerPlanSummaryProjection;
+import com.ufal.smartagro.adapters.out.persistence.projection.ManagementCommunityCensusProjection;
+import com.ufal.smartagro.adapters.out.persistence.projection.ManagementOrgHarvestSummaryProjection;
 import com.ufal.smartagro.adapters.out.persistence.projection.TechnicianAssistedFarmerProjection;
 import com.ufal.smartagro.adapters.out.persistence.projection.TechnicianPlanSummaryProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -137,6 +139,61 @@ public interface JpaProductionPlanRepository extends JpaRepository<ProductionPla
             @Param("cropId") UUID cropId,
             @Param("harvestId") UUID harvestId,
             @Param("includeActiveContinuous") boolean includeActiveContinuous
+    );
+
+    @Query(value = """
+            SELECT
+                org.id                                                           AS "organizationId",
+                org.name                                                         AS "organizationName",
+                comm.id                                                          AS "communityId",
+                comm.name                                                        AS "communityName",
+                COUNT(DISTINCT af.id)                                            AS "activeFarmersCount",
+                COUNT(DISTINCT af.id) FILTER (WHERE af.is_compliant = true)      AS "compliantFarmersCount"
+            FROM organizations org
+            JOIN communities comm
+                   ON comm.organization_id = org.id AND comm.deleted_at IS NULL
+            LEFT JOIN vw_active_farmers af
+                   ON af.community_id = comm.id
+            WHERE org.deleted_at IS NULL
+              AND (CAST(:organizationId AS uuid) IS NULL OR org.id = CAST(:organizationId AS uuid))
+              AND (CAST(:communityId AS uuid) IS NULL OR comm.id = CAST(:communityId AS uuid))
+            GROUP BY org.id, org.name, comm.id, comm.name
+            ORDER BY org.name ASC, comm.name ASC
+            """, nativeQuery = true)
+    List<ManagementCommunityCensusProjection> findCommunityCensus(
+            @Param("organizationId") UUID organizationId,
+            @Param("communityId") UUID communityId
+    );
+
+    @Query(value = """
+            SELECT
+                mv.organization_id     AS "organizationId",
+                org.name               AS "organizationName",
+                mv.community_id        AS "communityId",
+                comm.name              AS "communityName",
+                mv.crop_id             AS "cropId",
+                c.name                 AS "cropName",
+                c.variety              AS "cropVariety",
+                c.unit                 AS "unit",
+                mv.harvest_id          AS "harvestId",
+                mv.plan_count          AS "planCount",
+                mv.farmer_count        AS "farmerCount",
+                mv.planted_area_ha     AS "plantedAreaHa",
+                mv.target_kg           AS "targetKg",
+                mv.realized_kg         AS "realizedKg",
+                mv.last_execution_date AS "lastExecutionDate"
+            FROM mv_org_harvest_summary mv
+            JOIN organizations org ON org.id = mv.organization_id AND org.deleted_at IS NULL
+            JOIN communities comm  ON comm.id = mv.community_id AND comm.deleted_at IS NULL
+            JOIN crop c            ON c.id = mv.crop_id AND c.deleted_at IS NULL
+            WHERE (CAST(:organizationId AS uuid) IS NULL OR mv.organization_id = CAST(:organizationId AS uuid))
+              AND (CAST(:communityId AS uuid) IS NULL OR mv.community_id = CAST(:communityId AS uuid))
+              AND (CAST(:harvestId AS uuid) IS NULL OR mv.harvest_id = CAST(:harvestId AS uuid))
+            """, nativeQuery = true)
+    List<ManagementOrgHarvestSummaryProjection> findManagementHarvestSummary(
+            @Param("organizationId") UUID organizationId,
+            @Param("communityId") UUID communityId,
+            @Param("harvestId") UUID harvestId
     );
 }
 

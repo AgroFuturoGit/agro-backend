@@ -3,10 +3,14 @@ package com.ufal.smartagro.adapters.out.persistence.adapter;
 import com.ufal.smartagro.adapters.out.persistence.entity.ProductionPlanEntity;
 import com.ufal.smartagro.adapters.out.persistence.mapper.ProductionPlanMapper;
 import com.ufal.smartagro.adapters.out.persistence.projection.FarmerPlanSummaryProjection;
+import com.ufal.smartagro.adapters.out.persistence.projection.ManagementCommunityCensusProjection;
+import com.ufal.smartagro.adapters.out.persistence.projection.ManagementOrgHarvestSummaryProjection;
 import com.ufal.smartagro.adapters.out.persistence.projection.TechnicianAssistedFarmerProjection;
 import com.ufal.smartagro.adapters.out.persistence.projection.TechnicianPlanSummaryProjection;
 import com.ufal.smartagro.adapters.out.persistence.repository.JpaProductionPlanRepository;
 import com.ufal.smartagro.domain.model.FarmerPlanSummary;
+import com.ufal.smartagro.domain.model.ManagementCommunityCensusRow;
+import com.ufal.smartagro.domain.model.ManagementOrgHarvestSummaryRow;
 import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.TechnicianAssistedFarmerRow;
 import com.ufal.smartagro.domain.model.TechnicianPlanSummary;
@@ -350,5 +354,142 @@ class ProductionPlanRepositoryImplTest {
         assertThat(summary.realizedKg()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(summary.pendingKg()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(summary.pendingExecutionsCount()).isZero();
+    }
+
+    @Test
+    @DisplayName("findCommunityCensus: deve mapear campos da projeção para ManagementCommunityCensusRow")
+    void findCommunityCensus_deveMapearCamposCorretamente() {
+        UUID organizationId = UUID.randomUUID();
+        ManagementCommunityCensusProjection projection = new ManagementCommunityCensusProjection() {
+            @Override public UUID getOrganizationId() { return organizationId; }
+            @Override public String getOrganizationName() { return "COOPAFAL"; }
+            @Override public UUID getCommunityId() { return communityId; }
+            @Override public String getCommunityName() { return "Comunidade São José"; }
+            @Override public Long getActiveFarmersCount() { return 18L; }
+            @Override public Long getCompliantFarmersCount() { return 17L; }
+        };
+
+        when(jpaRepository.findCommunityCensus(organizationId, communityId))
+                .thenReturn(List.of(projection));
+
+        List<ManagementCommunityCensusRow> result = repository.findCommunityCensus(organizationId, communityId);
+
+        assertThat(result).hasSize(1);
+        ManagementCommunityCensusRow row = result.get(0);
+        assertThat(row.organizationId()).isEqualTo(organizationId);
+        assertThat(row.organizationName()).isEqualTo("COOPAFAL");
+        assertThat(row.communityId()).isEqualTo(communityId);
+        assertThat(row.communityName()).isEqualTo("Comunidade São José");
+        assertThat(row.activeFarmersCount()).isEqualTo(18L);
+        assertThat(row.compliantFarmersCount()).isEqualTo(17L);
+    }
+
+    @Test
+    @DisplayName("findCommunityCensus: deve aplicar fallback para contagens nulas")
+    void findCommunityCensus_deveAplicarFallbackNulos() {
+        UUID organizationId = UUID.randomUUID();
+        ManagementCommunityCensusProjection projection = new ManagementCommunityCensusProjection() {
+            @Override public UUID getOrganizationId() { return organizationId; }
+            @Override public String getOrganizationName() { return "COOPAFAL"; }
+            @Override public UUID getCommunityId() { return communityId; }
+            @Override public String getCommunityName() { return "Comunidade São José"; }
+            @Override public Long getActiveFarmersCount() { return null; }
+            @Override public Long getCompliantFarmersCount() { return null; }
+        };
+
+        when(jpaRepository.findCommunityCensus(organizationId, null))
+                .thenReturn(List.of(projection));
+
+        List<ManagementCommunityCensusRow> result = repository.findCommunityCensus(organizationId, null);
+
+        assertThat(result).hasSize(1);
+        ManagementCommunityCensusRow row = result.get(0);
+        assertThat(row.activeFarmersCount()).isZero();
+        assertThat(row.compliantFarmersCount()).isZero();
+    }
+
+    @Test
+    @DisplayName("findManagementHarvestSummary: deve mapear campos da projeção para ManagementOrgHarvestSummaryRow")
+    void findManagementHarvestSummary_deveMapearCamposCorretamente() {
+        UUID organizationId = UUID.randomUUID();
+        LocalDate lastExec = LocalDate.of(2026, 9, 15);
+        ManagementOrgHarvestSummaryProjection projection = new ManagementOrgHarvestSummaryProjection() {
+            @Override public UUID getOrganizationId() { return organizationId; }
+            @Override public String getOrganizationName() { return "COOPAFAL"; }
+            @Override public UUID getCommunityId() { return communityId; }
+            @Override public String getCommunityName() { return "Comunidade São José"; }
+            @Override public UUID getCropId() { return cropId; }
+            @Override public String getCropName() { return "Mandioca"; }
+            @Override public String getCropVariety() { return "Branca"; }
+            @Override public String getUnit() { return "TONELADA"; }
+            @Override public UUID getHarvestId() { return harvestId; }
+            @Override public Long getPlanCount() { return 25L; }
+            @Override public Long getFarmerCount() { return 15L; }
+            @Override public BigDecimal getPlantedAreaHa() { return new BigDecimal("50.00"); }
+            @Override public BigDecimal getTargetKg() { return new BigDecimal("100000.00"); }
+            @Override public BigDecimal getRealizedKg() { return new BigDecimal("85000.00"); }
+            @Override public LocalDate getLastExecutionDate() { return lastExec; }
+        };
+
+        when(jpaRepository.findManagementHarvestSummary(organizationId, communityId, harvestId))
+                .thenReturn(List.of(projection));
+
+        List<ManagementOrgHarvestSummaryRow> result = repository.findManagementHarvestSummary(organizationId, communityId, harvestId);
+
+        assertThat(result).hasSize(1);
+        ManagementOrgHarvestSummaryRow row = result.get(0);
+        assertThat(row.organizationId()).isEqualTo(organizationId);
+        assertThat(row.organizationName()).isEqualTo("COOPAFAL");
+        assertThat(row.communityId()).isEqualTo(communityId);
+        assertThat(row.communityName()).isEqualTo("Comunidade São José");
+        assertThat(row.cropId()).isEqualTo(cropId);
+        assertThat(row.cropName()).isEqualTo("Mandioca");
+        assertThat(row.cropVariety()).isEqualTo("Branca");
+        assertThat(row.unit()).isEqualTo("TONELADA");
+        assertThat(row.harvestId()).isEqualTo(harvestId);
+        assertThat(row.planCount()).isEqualTo(25L);
+        assertThat(row.farmerCount()).isEqualTo(15L);
+        assertThat(row.plantedAreaHa()).isEqualByComparingTo("50.00");
+        assertThat(row.targetKg()).isEqualByComparingTo("100000.00");
+        assertThat(row.realizedKg()).isEqualByComparingTo("85000.00");
+        assertThat(row.lastExecutionDate()).isEqualTo(lastExec);
+    }
+
+    @Test
+    @DisplayName("findManagementHarvestSummary: deve aplicar fallbacks para campos nulos")
+    void findManagementHarvestSummary_deveAplicarFallbacks() {
+        UUID organizationId = UUID.randomUUID();
+        ManagementOrgHarvestSummaryProjection projection = new ManagementOrgHarvestSummaryProjection() {
+            @Override public UUID getOrganizationId() { return organizationId; }
+            @Override public String getOrganizationName() { return "COOPAFAL"; }
+            @Override public UUID getCommunityId() { return communityId; }
+            @Override public String getCommunityName() { return "Comunidade São José"; }
+            @Override public UUID getCropId() { return cropId; }
+            @Override public String getCropName() { return "Milho"; }
+            @Override public String getCropVariety() { return null; }
+            @Override public String getUnit() { return null; }
+            @Override public UUID getHarvestId() { return harvestId; }
+            @Override public Long getPlanCount() { return null; }
+            @Override public Long getFarmerCount() { return null; }
+            @Override public BigDecimal getPlantedAreaHa() { return null; }
+            @Override public BigDecimal getTargetKg() { return null; }
+            @Override public BigDecimal getRealizedKg() { return null; }
+            @Override public LocalDate getLastExecutionDate() { return null; }
+        };
+
+        when(jpaRepository.findManagementHarvestSummary(organizationId, null, null))
+                .thenReturn(List.of(projection));
+
+        List<ManagementOrgHarvestSummaryRow> result = repository.findManagementHarvestSummary(organizationId, null, null);
+
+        assertThat(result).hasSize(1);
+        ManagementOrgHarvestSummaryRow row = result.get(0);
+        assertThat(row.unit()).isEqualTo("KG");
+        assertThat(row.planCount()).isZero();
+        assertThat(row.farmerCount()).isZero();
+        assertThat(row.plantedAreaHa()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(row.targetKg()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(row.realizedKg()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(row.lastExecutionDate()).isNull();
     }
 }
