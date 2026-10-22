@@ -2,10 +2,14 @@ package com.ufal.smartagro.adapters.out.persistence.adapter;
 
 import com.ufal.smartagro.adapters.out.persistence.mapper.ProductionPlanMapper;
 import com.ufal.smartagro.adapters.out.persistence.projection.FarmerPlanSummaryProjection;
+import com.ufal.smartagro.adapters.out.persistence.projection.ManagementCommunityCensusProjection;
+import com.ufal.smartagro.adapters.out.persistence.projection.ManagementOrgHarvestSummaryProjection;
 import com.ufal.smartagro.adapters.out.persistence.projection.TechnicianAssistedFarmerProjection;
 import com.ufal.smartagro.adapters.out.persistence.projection.TechnicianPlanSummaryProjection;
 import com.ufal.smartagro.adapters.out.persistence.repository.JpaProductionPlanRepository;
 import com.ufal.smartagro.domain.model.FarmerPlanSummary;
+import com.ufal.smartagro.domain.model.ManagementCommunityCensusRow;
+import com.ufal.smartagro.domain.model.ManagementOrgHarvestSummaryRow;
 import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.TechnicianAssistedFarmerRow;
 import com.ufal.smartagro.domain.model.TechnicianPlanSummary;
@@ -205,6 +209,64 @@ public class ProductionPlanRepositoryImpl implements ProductionPlanRepository {
                 p.getPlantingDate(),
                 p.getExpectedHarvestStart(),
                 p.getExpectedHarvestEnd(),
+                p.getLastExecutionDate()
+        );
+    }
+
+    @Override
+    public List<ManagementCommunityCensusRow> findCommunityCensus(UUID organizationId, UUID communityId) {
+        return jpaRepository.findCommunityCensus(organizationId, communityId).stream()
+                .map(this::toManagementCommunityCensusRow)
+                .toList();
+    }
+
+    @Override
+    public List<ManagementOrgHarvestSummaryRow> findManagementHarvestSummary(
+            UUID organizationId,
+            UUID communityId,
+            UUID harvestId
+    ) {
+        return jpaRepository.findManagementHarvestSummary(organizationId, communityId, harvestId).stream()
+                .map(this::toManagementOrgHarvestSummaryRow)
+                .toList();
+    }
+
+    private ManagementCommunityCensusRow toManagementCommunityCensusRow(ManagementCommunityCensusProjection p) {
+        long activeFarmers = p.getActiveFarmersCount() != null ? p.getActiveFarmersCount() : 0L;
+        long compliantFarmers = p.getCompliantFarmersCount() != null ? p.getCompliantFarmersCount() : 0L;
+        return new ManagementCommunityCensusRow(
+                p.getOrganizationId(),
+                p.getOrganizationName(),
+                p.getCommunityId(),
+                p.getCommunityName(),
+                activeFarmers,
+                compliantFarmers
+        );
+    }
+
+    private ManagementOrgHarvestSummaryRow toManagementOrgHarvestSummaryRow(ManagementOrgHarvestSummaryProjection p) {
+        long planCount = p.getPlanCount() != null ? p.getPlanCount() : 0L;
+        long farmerCount = p.getFarmerCount() != null ? p.getFarmerCount() : 0L;
+        BigDecimal plantedAreaHa = p.getPlantedAreaHa() != null ? p.getPlantedAreaHa() : BigDecimal.ZERO;
+        BigDecimal targetKg = p.getTargetKg() != null ? p.getTargetKg() : BigDecimal.ZERO;
+        BigDecimal realizedKg = p.getRealizedKg() != null ? p.getRealizedKg() : BigDecimal.ZERO;
+        String unit = (p.getUnit() != null && !p.getUnit().isBlank()) ? p.getUnit().trim() : "KG";
+
+        return new ManagementOrgHarvestSummaryRow(
+                p.getOrganizationId(),
+                p.getOrganizationName(),
+                p.getCommunityId(),
+                p.getCommunityName(),
+                p.getCropId(),
+                p.getCropName(),
+                p.getCropVariety(),
+                unit,
+                p.getHarvestId(),
+                planCount,
+                farmerCount,
+                plantedAreaHa,
+                targetKg,
+                realizedKg,
                 p.getLastExecutionDate()
         );
     }

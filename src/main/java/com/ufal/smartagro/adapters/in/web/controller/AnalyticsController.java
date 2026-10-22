@@ -2,9 +2,11 @@ package com.ufal.smartagro.adapters.in.web.controller;
 
 import com.ufal.smartagro.adapters.in.web.dto.analytics.FarmerDashboardSummaryDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.HarvestTimelineDTO;
+import com.ufal.smartagro.adapters.in.web.dto.analytics.ManagementDashboardSummaryDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.TechnicianDashboardSummaryDTO;
 import com.ufal.smartagro.application.service.production.GetFarmerDashboardSummaryUseCase;
 import com.ufal.smartagro.application.service.production.GetHarvestTimelineUseCase;
+import com.ufal.smartagro.application.service.production.GetManagementDashboardSummaryUseCase;
 import com.ufal.smartagro.application.service.production.GetTechnicianDashboardSummaryUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
@@ -38,6 +40,7 @@ public class AnalyticsController {
     private final GetHarvestTimelineUseCase getHarvestTimelineUseCase;
     private final GetFarmerDashboardSummaryUseCase getFarmerDashboardSummaryUseCase;
     private final GetTechnicianDashboardSummaryUseCase getTechnicianDashboardSummaryUseCase;
+    private final GetManagementDashboardSummaryUseCase getManagementDashboardSummaryUseCase;
     private final UserRepository userRepository;
 
     @Operation(
@@ -121,6 +124,94 @@ public class AnalyticsController {
 
         TechnicianDashboardSummaryDTO summary = getTechnicianDashboardSummaryUseCase
                 .execute(harvestId, communityId, cropId, loggedUser);
+        return ResponseEntity.ok(summary);
+    }
+
+    @Operation(
+            summary = "Dashboard macro-gerencial da organização do gestor autenticado",
+            description = "Consolida os indicadores de desempenho, ranking de culturas e comparativo de comunidades da organização do gestor logado.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Resumo analítico macro-gerencial retornado com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado (apenas gestores com organização vinculada possuem acesso)"),
+            @ApiResponse(responseCode = "404", description = "Safra ou comunidade informada não encontrada")
+    })
+    @PreAuthorize("hasRole('MANAGER')")
+    @GetMapping("/organizations/me/summary")
+    public ResponseEntity<ManagementDashboardSummaryDTO> getCurrentManagerDashboardSummary(
+            @Parameter(description = "ID opcional da safra desejada. Se omitido, busca automaticamente a safra vigente.")
+            @RequestParam(name = "harvestId", required = false) UUID harvestId,
+            @Parameter(description = "ID opcional da comunidade para filtrar o desempenho.")
+            @RequestParam(name = "communityId", required = false) UUID communityId,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
+    ) {
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+
+        ManagementDashboardSummaryDTO summary = getManagementDashboardSummaryUseCase
+                .executeForCurrentManager(harvestId, communityId, loggedUser);
+        return ResponseEntity.ok(summary);
+    }
+
+    @Operation(
+            summary = "Dashboard macro-gerencial de uma organização específica",
+            description = "Consolida os indicadores de desempenho de uma organização. Administradores podem consultar qualquer organização; Gestores apenas a sua.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Resumo analítico retornado com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado (gestor tentando acessar outra organização)"),
+            @ApiResponse(responseCode = "404", description = "Organização, safra ou comunidade informada não encontrada")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @GetMapping("/organizations/{organizationId}/summary")
+    public ResponseEntity<ManagementDashboardSummaryDTO> getOrganizationDashboardSummary(
+            @Parameter(description = "ID da organização consultada.", required = true)
+            @PathVariable(name = "organizationId") UUID organizationId,
+            @Parameter(description = "ID opcional da safra desejada. Se omitido, busca automaticamente a safra vigente.")
+            @RequestParam(name = "harvestId", required = false) UUID harvestId,
+            @Parameter(description = "ID opcional da comunidade pertencente à organização para restringir a agregação.")
+            @RequestParam(name = "communityId", required = false) UUID communityId,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
+    ) {
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+
+        ManagementDashboardSummaryDTO summary = getManagementDashboardSummaryUseCase
+                .executeForOrganization(organizationId, harvestId, communityId, loggedUser);
+        return ResponseEntity.ok(summary);
+    }
+
+    @Operation(
+            summary = "Dashboard macro-gerencial global do sistema (Visão do Administrador)",
+            description = "Consolida todos os dados produtivos e cadastrais do sistema em nível nacional/estadual, com comparativo entre organizações.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Resumo analítico global retornado com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado (apenas administradores globais possuem acesso)"),
+            @ApiResponse(responseCode = "404", description = "Organização, safra ou comunidade informada não encontrada")
+    })
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/global/summary")
+    public ResponseEntity<ManagementDashboardSummaryDTO> getGlobalDashboardSummary(
+            @Parameter(description = "ID opcional da safra desejada. Se omitido, busca automaticamente a safra vigente.")
+            @RequestParam(name = "harvestId", required = false) UUID harvestId,
+            @Parameter(description = "ID opcional da organização para filtrar os dados na visão de administrador.")
+            @RequestParam(name = "organizationId", required = false) UUID organizationId,
+            @Parameter(description = "ID opcional da comunidade para filtrar os dados na visão de administrador.")
+            @RequestParam(name = "communityId", required = false) UUID communityId,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
+    ) {
+        User loggedUser = userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
+
+        ManagementDashboardSummaryDTO summary = getManagementDashboardSummaryUseCase
+                .executeGlobal(harvestId, organizationId, communityId, loggedUser);
         return ResponseEntity.ok(summary);
     }
 }
