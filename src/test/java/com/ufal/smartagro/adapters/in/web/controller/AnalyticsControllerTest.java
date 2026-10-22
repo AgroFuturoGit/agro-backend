@@ -4,6 +4,10 @@ import com.ufal.smartagro.adapters.in.web.dto.analytics.FarmerDashboardSummaryDT
 import com.ufal.smartagro.adapters.in.web.dto.analytics.FarmerPlanSummaryCardDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.HarvestSummaryInfoDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.HarvestTimelineDTO;
+import com.ufal.smartagro.adapters.in.web.dto.analytics.ManagementCommunityPerformanceDTO;
+import com.ufal.smartagro.adapters.in.web.dto.analytics.ManagementCropRankingItemDTO;
+import com.ufal.smartagro.adapters.in.web.dto.analytics.ManagementDashboardSummaryDTO;
+import com.ufal.smartagro.adapters.in.web.dto.analytics.ManagementOrganizationSummaryDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.TechnicianCommunitySummaryDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.TechnicianDashboardSummaryDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.TechnicianFarmerSummaryDTO;
@@ -12,6 +16,7 @@ import com.ufal.smartagro.adapters.in.web.dto.analytics.TimelinePointDTO;
 import com.ufal.smartagro.adapters.out.persistence.entity.UserEntity;
 import com.ufal.smartagro.application.service.production.GetFarmerDashboardSummaryUseCase;
 import com.ufal.smartagro.application.service.production.GetHarvestTimelineUseCase;
+import com.ufal.smartagro.application.service.production.GetManagementDashboardSummaryUseCase;
 import com.ufal.smartagro.application.service.production.GetTechnicianDashboardSummaryUseCase;
 import com.ufal.smartagro.config.security.SecurityConfig;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
@@ -72,6 +77,9 @@ class AnalyticsControllerTest {
 
     @MockitoBean
     private GetTechnicianDashboardSummaryUseCase getTechnicianDashboardSummaryUseCase;
+
+    @MockitoBean
+    private GetManagementDashboardSummaryUseCase getManagementDashboardSummaryUseCase;
 
     @MockitoBean
     private UserRepository userRepository;
@@ -473,6 +481,149 @@ class AnalyticsControllerTest {
     @DisplayName("GET /technicians/me/summary: deve rejeitar requisição não autenticada com HTTP 403")
     void deveRejeitarRequisicaoNaoAutenticadaParaTecnico() throws Exception {
         mockMvc.perform(get("/analytics/technicians/me/summary"))
+                .andExpect(status().isForbidden());
+    }
+
+    // ==========================================
+    // Testes do Dashboard Macro-Gerencial (Feature 6.3)
+    // ==========================================
+
+    @Test
+    @DisplayName("GET /organizations/me/summary: deve retornar HTTP 200 com resumo da organização do gestor")
+    void deveRetornarResumoOrganizacaoDoGestor() throws Exception {
+        User managerUser = UserTestFactory.user().role(Role.MANAGER).build();
+        UserDetailsImpl managerUserDetails = userDetails(managerUser);
+        when(userRepository.findById(managerUser.getId())).thenReturn(Optional.of(managerUser));
+
+        UUID orgId = UUID.randomUUID();
+        ManagementDashboardSummaryDTO summary = ManagementDashboardSummaryDTO.empty(
+                com.ufal.smartagro.domain.model.enums.ManagementDashboardScope.ORGANIZATION,
+                orgId,
+                "COOPAFAL",
+                null,
+                null
+        );
+        when(getManagementDashboardSummaryUseCase.executeForCurrentManager(null, null, managerUser))
+                .thenReturn(summary);
+
+        mockMvc.perform(get("/analytics/organizations/me/summary")
+                        .with(user(managerUserDetails)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.scope").value("ORGANIZATION"))
+                .andExpect(jsonPath("$.organizationId").value(orgId.toString()))
+                .andExpect(jsonPath("$.organizationName").value("COOPAFAL"))
+                .andExpect(jsonPath("$.isEmpty").value(true));
+    }
+
+    @Test
+    @DisplayName("GET /organizations/me/summary: deve retornar HTTP 403 quando usuário logado for TECHNICIAN")
+    void deveRetornarHttp403ParaTecnicoTentandoAcessarDashboardGerencial() throws Exception {
+        User technicianUser = UserTestFactory.user().role(Role.TECHNICIAN).build();
+        UserDetailsImpl technicianUserDetails = userDetails(technicianUser);
+        when(userRepository.findById(technicianUser.getId())).thenReturn(Optional.of(technicianUser));
+
+        mockMvc.perform(get("/analytics/organizations/me/summary")
+                        .with(user(technicianUserDetails)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("GET /organizations/{organizationId}/summary: gestor deve conseguir consultar sua própria organização")
+    void gestorDeveConsultarSuaPropriaOrganizacao() throws Exception {
+        User managerUser = UserTestFactory.user().role(Role.MANAGER).build();
+        UserDetailsImpl managerUserDetails = userDetails(managerUser);
+        when(userRepository.findById(managerUser.getId())).thenReturn(Optional.of(managerUser));
+
+        UUID orgId = UUID.randomUUID();
+        ManagementDashboardSummaryDTO summary = ManagementDashboardSummaryDTO.empty(
+                com.ufal.smartagro.domain.model.enums.ManagementDashboardScope.ORGANIZATION,
+                orgId,
+                "COOPAFAL",
+                null,
+                null
+        );
+        when(getManagementDashboardSummaryUseCase.executeForOrganization(orgId, null, null, managerUser))
+                .thenReturn(summary);
+
+        mockMvc.perform(get("/analytics/organizations/{organizationId}/summary", orgId)
+                        .with(user(managerUserDetails)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.organizationId").value(orgId.toString()));
+    }
+
+    @Test
+    @DisplayName("GET /organizations/{organizationId}/summary: gestor tentando acessar outra organização deve tomar HTTP 403")
+    void gestorTentandoAcessarOutraOrganizacaoDeveTomarHttp403() throws Exception {
+        User managerUser = UserTestFactory.user().role(Role.MANAGER).build();
+        UserDetailsImpl managerUserDetails = userDetails(managerUser);
+        when(userRepository.findById(managerUser.getId())).thenReturn(Optional.of(managerUser));
+
+        UUID otherOrgId = UUID.randomUUID();
+        when(getManagementDashboardSummaryUseCase.executeForOrganization(otherOrgId, null, null, managerUser))
+                .thenThrow(new AccessDeniedException("Acesso negado: gestor não tem permissão para visualizar dados de outra organização."));
+
+        mockMvc.perform(get("/analytics/organizations/{organizationId}/summary", otherOrgId)
+                        .with(user(managerUserDetails)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.message").value("Acesso negado: gestor não tem permissão para visualizar dados de outra organização."));
+    }
+
+    @Test
+    @DisplayName("GET /organizations/{organizationId}/summary: deve retornar HTTP 404 quando organização não existir")
+    void deveRetornarHttp404QuandoOrganizacaoNaoExistir() throws Exception {
+        UUID nonExistentOrgId = UUID.randomUUID();
+        when(getManagementDashboardSummaryUseCase.executeForOrganization(nonExistentOrgId, null, null, adminUser))
+                .thenThrow(new EntityNotFoundException("Organização não encontrada."));
+
+        mockMvc.perform(get("/analytics/organizations/{organizationId}/summary", nonExistentOrgId)
+                        .with(user(adminUserDetails)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Organização não encontrada."));
+    }
+
+    @Test
+    @DisplayName("GET /global/summary: admin deve conseguir acessar o dashboard global")
+    void adminDeveAcessarDashboardGlobal() throws Exception {
+        ManagementDashboardSummaryDTO summary = ManagementDashboardSummaryDTO.empty(
+                com.ufal.smartagro.domain.model.enums.ManagementDashboardScope.GLOBAL,
+                null,
+                null,
+                null,
+                null
+        );
+        when(getManagementDashboardSummaryUseCase.executeGlobal(null, null, null, adminUser))
+                .thenReturn(summary);
+
+        mockMvc.perform(get("/analytics/global/summary")
+                        .with(user(adminUserDetails)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.scope").value("GLOBAL"))
+                .andExpect(jsonPath("$.isEmpty").value(true));
+    }
+
+    @Test
+    @DisplayName("GET /global/summary: gestor deve tomar HTTP 403 ao tentar acessar dashboard global")
+    void gestorTentandoAcessarGlobalSummaryDeveTomarHttp403() throws Exception {
+        User managerUser = UserTestFactory.user().role(Role.MANAGER).build();
+        UserDetailsImpl managerUserDetails = userDetails(managerUser);
+        when(userRepository.findById(managerUser.getId())).thenReturn(Optional.of(managerUser));
+
+        mockMvc.perform(get("/analytics/global/summary")
+                        .with(user(managerUserDetails)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("GET /global/summary: técnico deve tomar HTTP 403 ao tentar acessar dashboard global")
+    void tecnicoTentandoAcessarGlobalSummaryDeveTomarHttp403() throws Exception {
+        User technicianUser = UserTestFactory.user().role(Role.TECHNICIAN).build();
+        UserDetailsImpl technicianUserDetails = userDetails(technicianUser);
+        when(userRepository.findById(technicianUser.getId())).thenReturn(Optional.of(technicianUser));
+
+        mockMvc.perform(get("/analytics/global/summary")
+                        .with(user(technicianUserDetails)))
                 .andExpect(status().isForbidden());
     }
 }
