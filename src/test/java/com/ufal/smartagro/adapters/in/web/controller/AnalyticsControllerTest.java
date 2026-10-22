@@ -4,13 +4,20 @@ import com.ufal.smartagro.adapters.in.web.dto.analytics.FarmerDashboardSummaryDT
 import com.ufal.smartagro.adapters.in.web.dto.analytics.FarmerPlanSummaryCardDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.HarvestSummaryInfoDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.HarvestTimelineDTO;
+import com.ufal.smartagro.adapters.in.web.dto.analytics.TechnicianCommunitySummaryDTO;
+import com.ufal.smartagro.adapters.in.web.dto.analytics.TechnicianDashboardSummaryDTO;
+import com.ufal.smartagro.adapters.in.web.dto.analytics.TechnicianFarmerSummaryDTO;
+import com.ufal.smartagro.adapters.in.web.dto.analytics.TechnicianPlanWarningDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.TimelinePointDTO;
 import com.ufal.smartagro.adapters.out.persistence.entity.UserEntity;
 import com.ufal.smartagro.application.service.production.GetFarmerDashboardSummaryUseCase;
 import com.ufal.smartagro.application.service.production.GetHarvestTimelineUseCase;
+import com.ufal.smartagro.application.service.production.GetTechnicianDashboardSummaryUseCase;
 import com.ufal.smartagro.config.security.SecurityConfig;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.config.security.filter.JwtAuthenticationFilter;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.CropNotFoundException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.exception.HarvestNotFoundException;
 import com.ufal.smartagro.domain.model.User;
@@ -18,7 +25,9 @@ import com.ufal.smartagro.domain.model.enums.HarvestType;
 import com.ufal.smartagro.domain.model.enums.PlanProgressStatus;
 import com.ufal.smartagro.domain.model.enums.PlanStatus;
 import com.ufal.smartagro.domain.model.enums.Role;
+import com.ufal.smartagro.domain.model.enums.TechnicianWarningType;
 import com.ufal.smartagro.domain.model.enums.TimelineGranularity;
+import com.ufal.smartagro.domain.model.enums.WarningSeverity;
 import com.ufal.smartagro.domain.port.out.UserRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
 import jakarta.servlet.FilterChain;
@@ -60,6 +69,9 @@ class AnalyticsControllerTest {
 
     @MockitoBean
     private GetFarmerDashboardSummaryUseCase getFarmerDashboardSummaryUseCase;
+
+    @MockitoBean
+    private GetTechnicianDashboardSummaryUseCase getTechnicianDashboardSummaryUseCase;
 
     @MockitoBean
     private UserRepository userRepository;
@@ -308,6 +320,159 @@ class AnalyticsControllerTest {
     @DisplayName("GET /farmers/me/summary: deve rejeitar requisição não autenticada com HTTP 403")
     void deveRejeitarRequisicaoNaoAutenticada() throws Exception {
         mockMvc.perform(get("/analytics/farmers/me/summary"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("GET /technicians/me/summary: deve retornar HTTP 200 com resumo consolidado do técnico autenticado")
+    void deveRetornarHttp200ComResumoDoTecnicoAutenticado() throws Exception {
+        User technicianUser = UserTestFactory.user().role(Role.TECHNICIAN).build();
+        UserDetailsImpl technicianUserDetails = userDetails(technicianUser);
+        when(userRepository.findById(technicianUser.getId())).thenReturn(Optional.of(technicianUser));
+
+        UUID techId = UUID.randomUUID();
+        UUID commId = UUID.randomUUID();
+        UUID farmerId = UUID.randomUUID();
+        UUID planId = UUID.randomUUID();
+        UUID cropId = UUID.randomUUID();
+
+        HarvestSummaryInfoDTO harvestDto = new HarvestSummaryInfoDTO(
+                UUID.randomUUID(), "Safra 2026", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31)
+        );
+
+        TechnicianPlanWarningDTO warningDto = new TechnicianPlanWarningDTO(
+                planId, farmerId, "Severino", commId, "Comunidade São José",
+                cropId, "Tomate", "Cereja", PlanStatus.ACTIVE, PlanProgressStatus.BELOW_EXPECTED,
+                List.of(TechnicianWarningType.INACTIVE_EXECUTIONS), WarningSeverity.HIGH,
+                "Sem apontamentos há 19 dias",
+                new BigDecimal("5000.00"), new BigDecimal("1450.00"), new BigDecimal("200.00"),
+                new BigDecimal("2500.00"), new BigDecimal("29.00"),
+                LocalDate.of(2026, 10, 2), 19, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 11, 30)
+        );
+
+        TechnicianCommunitySummaryDTO commDto = new TechnicianCommunitySummaryDTO(
+                commId, "Comunidade São José", 8, 7, 10,
+                new BigDecimal("18.00"), new BigDecimal("36000.00"), new BigDecimal("25200.00"),
+                new BigDecimal("1800.00"), new BigDecimal("70.00"), 1
+        );
+
+        TechnicianFarmerSummaryDTO farmerDto = new TechnicianFarmerSummaryDTO(
+                farmerId, "Severino", commId, "Comunidade São José", true,
+                2, 2, new BigDecimal("4.50"), new BigDecimal("9000.00"), new BigDecimal("6450.00"),
+                new BigDecimal("200.00"), new BigDecimal("71.67"), LocalDate.of(2026, 10, 2), 1
+        );
+
+        TechnicianDashboardSummaryDTO summaryDto = new TechnicianDashboardSummaryDTO(
+                techId, "Carlos Eduardo Mendes", harvestDto, null, null, false,
+                1, 1, 2, 2, new BigDecimal("4.50"), new BigDecimal("9000.00"),
+                new BigDecimal("6450.00"), new BigDecimal("200.00"), 1, new BigDecimal("71.67"),
+                1, List.of(warningDto), List.of(commDto), List.of(farmerDto)
+        );
+
+        when(getTechnicianDashboardSummaryUseCase.execute(null, null, null, technicianUser))
+                .thenReturn(summaryDto);
+
+        mockMvc.perform(get("/analytics/technicians/me/summary")
+                        .with(user(technicianUserDetails))
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.technicianId").value(techId.toString()))
+                .andExpect(jsonPath("$.technicianName").value("Carlos Eduardo Mendes"))
+                .andExpect(jsonPath("$.currentHarvest.label").value("Safra 2026"))
+                .andExpect(jsonPath("$.isEmpty").value(false))
+                .andExpect(jsonPath("$.totalAssistedCommunitiesCount").value(1))
+                .andExpect(jsonPath("$.totalAssistedFarmersCount").value(1))
+                .andExpect(jsonPath("$.totalPlansCount").value(2))
+                .andExpect(jsonPath("$.totalTargetKg").value(9000.00))
+                .andExpect(jsonPath("$.warnings[0].planId").value(planId.toString()))
+                .andExpect(jsonPath("$.warnings[0].severity").value("HIGH"))
+                .andExpect(jsonPath("$.communities[0].communityName").value("Comunidade São José"))
+                .andExpect(jsonPath("$.farmers[0].farmerName").value("Severino"));
+    }
+
+    @Test
+    @DisplayName("GET /technicians/me/summary: deve repassar harvestId, communityId e cropId quando fornecidos")
+    void deveRepassarFiltrosOpcionaisParaOTecnico() throws Exception {
+        User technicianUser = UserTestFactory.user().role(Role.TECHNICIAN).build();
+        UserDetailsImpl technicianUserDetails = userDetails(technicianUser);
+        when(userRepository.findById(technicianUser.getId())).thenReturn(Optional.of(technicianUser));
+
+        UUID harvestId = UUID.randomUUID();
+        UUID communityId = UUID.randomUUID();
+        UUID cropId = UUID.randomUUID();
+
+        TechnicianDashboardSummaryDTO emptyDto = TechnicianDashboardSummaryDTO.empty(
+                technicianUser.getId(), technicianUser.getFullName(), null, communityId, cropId
+        );
+
+        when(getTechnicianDashboardSummaryUseCase.execute(harvestId, communityId, cropId, technicianUser))
+                .thenReturn(emptyDto);
+
+        mockMvc.perform(get("/analytics/technicians/me/summary")
+                        .param("harvestId", harvestId.toString())
+                        .param("communityId", communityId.toString())
+                        .param("cropId", cropId.toString())
+                        .with(user(technicianUserDetails)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isEmpty").value(true))
+                .andExpect(jsonPath("$.appliedCommunityId").value(communityId.toString()))
+                .andExpect(jsonPath("$.appliedCropId").value(cropId.toString()));
+    }
+
+    @Test
+    @DisplayName("GET /technicians/me/summary: deve retornar HTTP 403 quando communityId não for assistida")
+    void deveRetornarHttp403QuandoComunidadeNaoAssistida() throws Exception {
+        User technicianUser = UserTestFactory.user().role(Role.TECHNICIAN).build();
+        UserDetailsImpl technicianUserDetails = userDetails(technicianUser);
+        when(userRepository.findById(technicianUser.getId())).thenReturn(Optional.of(technicianUser));
+
+        UUID unassistedCommunityId = UUID.randomUUID();
+        when(getTechnicianDashboardSummaryUseCase.execute(null, unassistedCommunityId, null, technicianUser))
+                .thenThrow(new AccessDeniedException("Comunidade não assistida pelo técnico logado."));
+
+        mockMvc.perform(get("/analytics/technicians/me/summary")
+                        .param("communityId", unassistedCommunityId.toString())
+                        .with(user(technicianUserDetails)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.message").value("Comunidade não assistida pelo técnico logado."));
+    }
+
+    @Test
+    @DisplayName("GET /technicians/me/summary: deve retornar HTTP 404 quando cropId informado não existir")
+    void deveRetornarHttp404QuandoCulturaNaoEncontrada() throws Exception {
+        User technicianUser = UserTestFactory.user().role(Role.TECHNICIAN).build();
+        UserDetailsImpl technicianUserDetails = userDetails(technicianUser);
+        when(userRepository.findById(technicianUser.getId())).thenReturn(Optional.of(technicianUser));
+
+        UUID nonExistentCropId = UUID.randomUUID();
+        when(getTechnicianDashboardSummaryUseCase.execute(null, null, nonExistentCropId, technicianUser))
+                .thenThrow(new CropNotFoundException("Cultura não encontrada."));
+
+        mockMvc.perform(get("/analytics/technicians/me/summary")
+                        .param("cropId", nonExistentCropId.toString())
+                        .with(user(technicianUserDetails)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Cultura não encontrada."));
+    }
+
+    @Test
+    @DisplayName("GET /technicians/me/summary: deve retornar HTTP 403 quando usuário logado for FARMER")
+    void deveRetornarHttp403QuandoUsuarioForFarmer() throws Exception {
+        User farmerUser = UserTestFactory.user().role(Role.FARMER).build();
+        UserDetailsImpl farmerUserDetails = userDetails(farmerUser);
+        when(userRepository.findById(farmerUser.getId())).thenReturn(Optional.of(farmerUser));
+
+        mockMvc.perform(get("/analytics/technicians/me/summary")
+                        .with(user(farmerUserDetails)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("GET /technicians/me/summary: deve rejeitar requisição não autenticada com HTTP 403")
+    void deveRejeitarRequisicaoNaoAutenticadaParaTecnico() throws Exception {
+        mockMvc.perform(get("/analytics/technicians/me/summary"))
                 .andExpect(status().isForbidden());
     }
 }
