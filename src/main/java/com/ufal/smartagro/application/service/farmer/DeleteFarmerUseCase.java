@@ -5,6 +5,7 @@ import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
+import com.ufal.smartagro.domain.port.out.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ import java.util.UUID;
 public class DeleteFarmerUseCase {
 
     private final FarmerRepository farmerRepository;
+    private final UserRepository userRepository;
     private final ProductionAccessValidator accessValidator;
 
     @Transactional
@@ -33,5 +35,9 @@ public class DeleteFarmerUseCase {
         }
 
         farmerRepository.delete(id);
+
+        if (existingFarmer.getUser() != null && existingFarmer.getUser().getId() != null) {
+            userRepository.softDelete(existingFarmer.getUser().getId());
+        }
     }
 }

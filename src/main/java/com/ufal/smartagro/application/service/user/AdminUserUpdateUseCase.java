@@ -26,6 +26,10 @@ public class AdminUserUpdateUseCase {
             throw new AccessDeniedException();
         }
 
+        if (loggedUser.getId() != null && loggedUser.getId().equals(userId) && dto.role() != Role.ADMIN) {
+            throw new IllegalArgumentException("O administrador não pode rebaixar o próprio papel.");
+        }
+
         User existingUser = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
 
