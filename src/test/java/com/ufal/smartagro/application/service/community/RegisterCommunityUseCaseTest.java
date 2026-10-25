@@ -83,7 +83,7 @@ class RegisterCommunityUseCaseTest {
         User managerUser = UserTestFactory.user().role(Role.MANAGER).build();
         UUID orgId = UUID.randomUUID();
         Organization org = new Organization(orgId, "Associação Regional", "98765432000188", OrganizationType.ASSOC, null, null, null);
-        Manager manager = new Manager(UUID.randomUUID(), managerUser, org, "Gestor", null, null, null, null, null);
+        Manager manager = new Manager(UUID.randomUUID(), managerUser, org, null, null, null);
         CommunityRegisterDTO dto = new CommunityRegisterDTO("Comunidade Vale Verde");
 
         when(organizationRepository.findById(orgId)).thenReturn(Optional.of(org));
@@ -115,7 +115,7 @@ class RegisterCommunityUseCaseTest {
         UUID managerOrgId = UUID.randomUUID();
         Organization targetOrg = new Organization(targetOrgId, "Org Alvo", "98765432000188", OrganizationType.ASSOC, null, null, null);
         Organization managerOrg = new Organization(managerOrgId, "Org do Gestor", "11111111000111", OrganizationType.COOP, null, null, null);
-        Manager manager = new Manager(UUID.randomUUID(), managerUser, managerOrg, "Gestor", null, null, null, null, null);
+        Manager manager = new Manager(UUID.randomUUID(), managerUser, managerOrg, null, null, null);
         CommunityRegisterDTO dto = new CommunityRegisterDTO("Comunidade Indevida");
 
         when(organizationRepository.findById(targetOrgId)).thenReturn(Optional.of(targetOrg));

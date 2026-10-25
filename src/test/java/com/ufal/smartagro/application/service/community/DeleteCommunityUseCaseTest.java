@@ -81,7 +81,7 @@ class DeleteCommunityUseCaseTest {
         Organization orgA = new Organization(UUID.randomUUID(), "Org A", "11111111000111", OrganizationType.COOP, null, null, null);
         Organization orgB = new Organization(UUID.randomUUID(), "Org B", "22222222000122", OrganizationType.ASSOC, null, null, null);
         Community community = new Community(communityId, "Comunidade B", orgB, null, null, null);
-        Manager manager = new Manager(UUID.randomUUID(), managerUser, orgA, "Gestor A", null, null, null, null, null);
+        Manager manager = new Manager(UUID.randomUUID(), managerUser, orgA, null, null, null);
 
         when(communityRepository.findById(communityId)).thenReturn(Optional.of(community));
         when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
