@@ -2,6 +2,8 @@ package com.ufal.smartagro.application.service.harvest;
 
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityInUseException;
+import com.ufal.smartagro.domain.exception.HarvestNotFoundException;
+import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.HarvestRepository;
 import com.ufal.smartagro.domain.port.out.ProductionPlanRepository;
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,15 +38,29 @@ class HarvestDeleteUseCaseTest {
     }
 
     @Test
-    @DisplayName("Quando existem planos vinculados à safra, lança EntityInUseException e não deleta")
+    @DisplayName("Quando existem planos vinculados à safra, lança EntityInUseException com a contagem e não deleta")
     void givenHarvestWithPlans_whenDelete_thenThrowsEntityInUseException() {
         User admin = UserTestFactory.user().admin().build();
         UUID harvestId = UUID.randomUUID();
-        when(productionPlanRepository.existsByHarvestId(harvestId)).thenReturn(true);
+        when(harvestRepository.findById(harvestId)).thenReturn(Optional.of(mock(Harvest.class)));
+        when(productionPlanRepository.countByHarvestId(harvestId)).thenReturn(2L);
 
         assertThatThrownBy(() -> useCase.execute(harvestId, admin))
                 .isInstanceOf(EntityInUseException.class)
-                .hasMessageContaining("planos de produção vinculados");
+                .hasMessageContaining("2 planos de produção vinculados");
+
+        verify(harvestRepository, never()).deleteById(any());
+    }
+
+    @Test
+    @DisplayName("Quando a safra não existe, lança HarvestNotFoundException")
+    void givenNonExistentHarvest_whenDelete_thenThrowsHarvestNotFoundException() {
+        User admin = UserTestFactory.user().admin().build();
+        UUID harvestId = UUID.randomUUID();
+        when(harvestRepository.findById(harvestId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> useCase.execute(harvestId, admin))
+                .isInstanceOf(HarvestNotFoundException.class);
 
         verify(harvestRepository, never()).deleteById(any());
     }
@@ -53,6 +70,8 @@ class HarvestDeleteUseCaseTest {
     void givenHarvestWithoutPlans_whenDelete_thenDeletesSuccessfully() {
         User admin = UserTestFactory.user().admin().build();
         UUID harvestId = UUID.randomUUID();
+        when(harvestRepository.findById(harvestId)).thenReturn(Optional.of(mock(Harvest.class)));
+        when(productionPlanRepository.countByHarvestId(harvestId)).thenReturn(0L);
         when(productionPlanRepository.existsByHarvestId(harvestId)).thenReturn(false);
 
         useCase.execute(harvestId, admin);

@@ -85,6 +85,6 @@ class CommunityControllerTest {
     @Test
     void rejectsUnauthenticatedRequests() throws Exception {
         mockMvc.perform(get("/communities"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 }

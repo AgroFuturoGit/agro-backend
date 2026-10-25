@@ -2,6 +2,7 @@ package com.ufal.smartagro.application.service.harvest;
 
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityInUseException;
+import com.ufal.smartagro.domain.exception.HarvestNotFoundException;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.HarvestRepository;
@@ -23,8 +24,15 @@ public class HarvestDeleteUseCase {
             throw new AccessDeniedException("Usuário não tem permissão para deletar uma safra.");
         }
 
-        if (productionPlanRepository.existsByHarvestId(id)) {
-            throw new EntityInUseException("Não é possível excluir uma safra que possui planos de produção vinculados.");
+        harvestRepository.findById(id)
+                .orElseThrow(HarvestNotFoundException::new);
+
+        long planCount = productionPlanRepository.countByHarvestId(id);
+        if (planCount > 0 || productionPlanRepository.existsByHarvestId(id)) {
+            long effectiveCount = planCount > 0 ? planCount : 1L;
+            throw new EntityInUseException(
+                    "Não é possível excluir uma safra que possui " + effectiveCount + " planos de produção vinculados."
+            );
         }
 
         harvestRepository.deleteById(id);

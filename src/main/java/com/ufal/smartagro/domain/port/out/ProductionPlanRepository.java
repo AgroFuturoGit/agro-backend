@@ -18,6 +18,8 @@ public interface ProductionPlanRepository {
     void delete(UUID id);
     boolean existsByHarvestId(UUID harvestId);
     boolean existsByCropId(UUID cropId);
+    long countByHarvestId(UUID harvestId);
+    long countByCropId(UUID cropId);
     List<FarmerPlanSummary> findPlanSummariesByFarmer(UUID farmerId, UUID harvestId, boolean includeActiveContinuous);
 
     default List<FarmerPlanSummary> findPlanSummariesByFarmer(UUID farmerId, UUID harvestId) {
