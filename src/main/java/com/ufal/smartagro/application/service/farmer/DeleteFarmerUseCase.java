@@ -16,7 +16,7 @@ public class DeleteFarmerUseCase {
     @Transactional
     public void delete(UUID id) {
         farmerRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Agricultor não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Agricultor não encontrado."));
 
         farmerRepository.delete(id);
     }

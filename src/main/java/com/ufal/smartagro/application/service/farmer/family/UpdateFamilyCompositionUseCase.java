@@ -21,7 +21,7 @@ public class UpdateFamilyCompositionUseCase {
     @Transactional
     public FamilyComposition update(UUID id, FamilyCompositionUpdateDTO dto, User loggedUser) {
         FamilyComposition existing = familyCompositionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Membro da composição familiar não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Membro da composição familiar não encontrado."));
 
         accessValidator.validateWriteAccess(existing.getFarmer(), loggedUser);
 

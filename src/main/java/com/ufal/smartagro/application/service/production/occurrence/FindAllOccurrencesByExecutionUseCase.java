@@ -24,7 +24,7 @@ public class FindAllOccurrencesByExecutionUseCase {
     @Transactional(readOnly = true)
     public List<FieldOccurrence> findAll(UUID executionId, User loggedUser) {
         ProductionExecution execution = productionExecutionRepository.findById(executionId)
-                .orElseThrow(() -> new IllegalArgumentException("Execução de produção não encontrada."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Execução de produção não encontrada."));
 
         if (execution.getProductionPlan() != null) {
             accessValidator.validateAccess(execution.getProductionPlan().getFarmer(), loggedUser);

@@ -21,7 +21,7 @@ public class UpdateFieldOccurrenceUseCase {
     @Transactional
     public FieldOccurrence update(UUID id, FieldOccurrenceUpdateDTO dto, User loggedUser) {
         FieldOccurrence existing = fieldOccurrenceRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Ocorrência de campo não encontrada."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Ocorrência de campo não encontrada."));
 
         if (existing.getExecution() != null && existing.getExecution().getProductionPlan() != null) {
             accessValidator.validateWriteAccess(existing.getExecution().getProductionPlan().getFarmer(), loggedUser);

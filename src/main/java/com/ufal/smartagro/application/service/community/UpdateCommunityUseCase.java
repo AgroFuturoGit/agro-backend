@@ -18,7 +18,7 @@ public class UpdateCommunityUseCase {
     @Transactional
     public Community update(UUID id, CommunityUpdateDTO dto) {
         Community existingCommunity = communityRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Comunidade não encontrada."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Comunidade não encontrada."));
 
         Community updatedCommunity = new Community(
                 existingCommunity.getId(),

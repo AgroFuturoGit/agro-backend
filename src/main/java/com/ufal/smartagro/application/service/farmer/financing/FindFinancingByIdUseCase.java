@@ -20,7 +20,7 @@ public class FindFinancingByIdUseCase {
     @Transactional(readOnly = true)
     public Financing findById(UUID id, User loggedUser) {
         Financing financing = financingRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Financiamento não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Financiamento não encontrado."));
 
         accessValidator.validateAccess(financing.getFarmer(), loggedUser);
 

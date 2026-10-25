@@ -24,7 +24,7 @@ public class RegisterFinancingUseCase {
     @Transactional
     public Financing register(UUID farmerId, FinancingRegisterDTO dto, User loggedUser) {
         Farmer farmer = farmerRepository.findById(farmerId)
-                .orElseThrow(() -> new IllegalArgumentException("Agricultor não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Agricultor não encontrado."));
 
         accessValidator.validateWriteAccess(farmer, loggedUser);
 

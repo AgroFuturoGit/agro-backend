@@ -21,7 +21,7 @@ public class DeleteFinancingUseCase {
     @Transactional
     public void delete(UUID id, User loggedUser) {
         Financing existing = financingRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Financiamento não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Financiamento não encontrado."));
 
         accessValidator.validateWriteAccess(existing.getFarmer(), loggedUser);
 

@@ -18,7 +18,7 @@ public class CropRegisterUseCase {
     public Crop execute(Crop crop, User loggedUser) {
         // Double-checking authorization at the business logic level
         if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN) {
-            throw new AccessDeniedException("User does not have permission to register a crop.");
+            throw new AccessDeniedException("Usuário não tem permissão para cadastrar culturas.");
         }
 
         if (cropRepository.existsByNameAndVariety(crop.getName(), crop.getVariety())) {

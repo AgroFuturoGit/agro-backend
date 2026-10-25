@@ -18,7 +18,7 @@ public class UpdateOrganizationUseCase {
     @Transactional
     public Organization update(UUID id, OrganizationUpdateDTO dto) {
         Organization existingOrganization = organizationRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Organização não encontrada."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Organização não encontrada."));
 
         Organization updatedOrganization = new Organization(
                 existingOrganization.getId(),

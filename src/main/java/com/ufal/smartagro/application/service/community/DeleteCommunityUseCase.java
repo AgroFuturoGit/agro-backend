@@ -16,7 +16,7 @@ public class DeleteCommunityUseCase {
     @Transactional
     public void delete(UUID id) {
         communityRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Comunidade não encontrada."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Comunidade não encontrada."));
         
         communityRepository.delete(id);
     }

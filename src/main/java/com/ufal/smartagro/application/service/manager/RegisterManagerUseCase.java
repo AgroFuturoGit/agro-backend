@@ -33,7 +33,7 @@ public class RegisterManagerUseCase {
         }
 
         Organization organization = organizationRepository.findById(organizationId)
-                .orElseThrow(() -> new IllegalArgumentException("Organização não encontrada"));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Organização não encontrada"));
 
         UserRegisterDTO userDto = new UserRegisterDTO(
                 dto.fullName(), dto.email(), dto.password(), dto.cpf(), Role.MANAGER

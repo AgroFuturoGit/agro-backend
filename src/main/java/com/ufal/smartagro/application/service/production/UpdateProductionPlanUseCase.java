@@ -25,7 +25,7 @@ public class UpdateProductionPlanUseCase {
     /** Confere acesso e versão concorrente, aplica os campos enviados e salva o plano. */
     public ProductionPlan update(UUID planId, ProductionPlanUpdateDTO dto, User loggedUser) {
         ProductionPlan existingPlan = productionPlanRepository.findById(planId)
-                .orElseThrow(() -> new IllegalArgumentException("Plano de produção não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Plano de produção não encontrado."));
 
         accessValidator.validateWriteAccess(existingPlan.getFarmer(), loggedUser);
 

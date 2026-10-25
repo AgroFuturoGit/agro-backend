@@ -31,6 +31,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -43,6 +45,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError(
                 HttpStatus.NOT_FOUND.value(),
                 ex.getMessage(),
+                httpServletRequest.getRequestURI(),
+                LocalDateTime.now()
+        ));
+    }
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<ApiError> handleNoSuchElement(
+            NoSuchElementException ex, HttpServletRequest httpServletRequest){
+        String message = (ex.getMessage() != null && !ex.getMessage().isBlank())
+                ? ex.getMessage()
+                : "Recurso não encontrado.";
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError(
+                HttpStatus.NOT_FOUND.value(),
+                message,
                 httpServletRequest.getRequestURI(),
                 LocalDateTime.now()
         ));
@@ -260,9 +276,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiError> handleIllegalArgument(
             IllegalArgumentException ex, HttpServletRequest httpServletRequest){
+        String msg = ex.getMessage();
+        if (msg != null) {
+            String lower = msg.toLowerCase(Locale.ROOT);
+            if (lower.contains("não encontrad") || lower.contains("nao encontrad") || lower.contains("not found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError(
+                        HttpStatus.NOT_FOUND.value(),
+                        msg,
+                        httpServletRequest.getRequestURI(),
+                        LocalDateTime.now()
+                ));
+            }
+        }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiError(
                 HttpStatus.BAD_REQUEST.value(),
-                ex.getMessage(),
+                msg,
                 httpServletRequest.getRequestURI(),
                 LocalDateTime.now()
         ));

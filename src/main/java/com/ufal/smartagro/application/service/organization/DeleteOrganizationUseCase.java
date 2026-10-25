@@ -16,7 +16,7 @@ public class DeleteOrganizationUseCase {
     @Transactional
     public void delete(UUID id) {
         organizationRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Organização não encontrada."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Organização não encontrada."));
         
         organizationRepository.delete(id);
     }

@@ -18,7 +18,7 @@ public class UpdateFarmerUseCase {
     @Transactional
     public Farmer update(UUID id, FarmerUpdateDTO dto) {
         Farmer existingFarmer = farmerRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Agricultor não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Agricultor não encontrado."));
 
         String localName = dto.localName() != null ? dto.localName() : existingFarmer.getLocalName();
 

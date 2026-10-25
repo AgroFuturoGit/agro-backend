@@ -17,6 +17,6 @@ public class FindManagerByUserUseCase {
     @Transactional(readOnly = true)
     public Manager findByUserId(UUID userId) {
         return managerRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Gerente associado a este usuário não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Gerente associado a este usuário não encontrado."));
     }
 }

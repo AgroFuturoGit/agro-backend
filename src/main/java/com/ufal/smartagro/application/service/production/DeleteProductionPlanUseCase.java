@@ -19,7 +19,7 @@ public class DeleteProductionPlanUseCase {
     @Transactional
     public void delete(UUID planId, User loggedUser) {
         ProductionPlan plan = productionPlanRepository.findById(planId)
-                .orElseThrow(() -> new IllegalArgumentException("Plano de produção não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Plano de produção não encontrado."));
 
         accessValidator.validateWriteAccess(plan.getFarmer(), loggedUser);
 

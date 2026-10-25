@@ -17,6 +17,6 @@ public class FindFarmerByIdUseCase {
     @Transactional(readOnly = true)
     public Farmer findById(UUID id) {
         return farmerRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Agricultor não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Agricultor não encontrado."));
     }
 }

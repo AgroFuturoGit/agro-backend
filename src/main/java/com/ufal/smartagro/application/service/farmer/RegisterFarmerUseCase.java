@@ -44,7 +44,7 @@ public class RegisterFarmerUseCase {
         Community community = null;
         if (communityId != null) {
             community = communityRepository.findById(communityId)
-                    .orElseThrow(() -> new IllegalArgumentException("Comunidade não encontrada"));
+                    .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Comunidade não encontrada"));
         }
 
         if (loggedUser.getRole() == Role.MANAGER && community != null) {
