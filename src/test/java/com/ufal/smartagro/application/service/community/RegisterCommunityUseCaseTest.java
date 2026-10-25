@@ -4,12 +4,14 @@ import com.ufal.smartagro.adapters.in.web.dto.community.CommunityRegisterDTO;
 import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.Community;
+import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Organization;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.OrganizationType;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CommunityRepository;
+import com.ufal.smartagro.domain.port.out.ManagerRepository;
 import com.ufal.smartagro.domain.port.out.OrganizationRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
 import org.junit.jupiter.api.DisplayName;
@@ -37,6 +39,8 @@ class RegisterCommunityUseCaseTest {
     private CommunityRepository communityRepository;
     @Mock
     private OrganizationRepository organizationRepository;
+    @Mock
+    private ManagerRepository managerRepository;
     @Mock
     private AuditLogService auditLogService;
 
@@ -74,31 +78,54 @@ class RegisterCommunityUseCaseTest {
     }
 
     @Test
-    @DisplayName("MANAGER cadastra comunidade com sucesso e gera log de auditoria")
+    @DisplayName("MANAGER cadastra comunidade da própria organização com sucesso e gera log de auditoria")
     void register_comManager_cadastraComunidadeEGeraAuditoria() {
-        User manager = UserTestFactory.user().role(Role.MANAGER).build();
+        User managerUser = UserTestFactory.user().role(Role.MANAGER).build();
         UUID orgId = UUID.randomUUID();
         Organization org = new Organization(orgId, "Associação Regional", "98765432000188", OrganizationType.ASSOC, null, null, null);
+        Manager manager = new Manager(UUID.randomUUID(), managerUser, org, "Gestor", null, null, null, null, null);
         CommunityRegisterDTO dto = new CommunityRegisterDTO("Comunidade Vale Verde");
 
         when(organizationRepository.findById(orgId)).thenReturn(Optional.of(org));
+        when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
         when(communityRepository.save(any(Community.class))).thenAnswer(inv -> {
             Community c = inv.getArgument(0);
             return new Community(UUID.randomUUID(), c.getName(), c.getOrganization(), null, null, null);
         });
 
-        Community result = registerCommunityUseCase.register(orgId, dto, manager);
+        Community result = registerCommunityUseCase.register(orgId, dto, managerUser);
 
         assertThat(result).isNotNull();
         assertThat(result.getName()).isEqualTo("Comunidade Vale Verde");
 
         verify(auditLogService).record(
-                eq(manager),
+                eq(managerUser),
                 eq(AuditAction.CREATE),
                 eq("communities"),
                 eq(result.getId()),
                 any()
         );
+    }
+
+    @Test
+    @DisplayName("MANAGER de outra organização não pode cadastrar comunidade (403 AccessDeniedException)")
+    void register_comManagerDeOutraOrganizacao_lancaAccessDenied() {
+        User managerUser = UserTestFactory.user().role(Role.MANAGER).build();
+        UUID targetOrgId = UUID.randomUUID();
+        UUID managerOrgId = UUID.randomUUID();
+        Organization targetOrg = new Organization(targetOrgId, "Org Alvo", "98765432000188", OrganizationType.ASSOC, null, null, null);
+        Organization managerOrg = new Organization(managerOrgId, "Org do Gestor", "11111111000111", OrganizationType.COOP, null, null, null);
+        Manager manager = new Manager(UUID.randomUUID(), managerUser, managerOrg, "Gestor", null, null, null, null, null);
+        CommunityRegisterDTO dto = new CommunityRegisterDTO("Comunidade Indevida");
+
+        when(organizationRepository.findById(targetOrgId)).thenReturn(Optional.of(targetOrg));
+        when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
+
+        assertThatThrownBy(() -> registerCommunityUseCase.register(targetOrgId, dto, managerUser))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(communityRepository, never()).save(any());
+        verifyNoInteractions(auditLogService);
     }
 
     @Test

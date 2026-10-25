@@ -1,7 +1,10 @@
 package com.ufal.smartagro.application.service.farmer;
 
 import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerUpdateDTO;
+import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
+import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,11 +17,21 @@ import java.util.UUID;
 public class UpdateFarmerUseCase {
 
     private final FarmerRepository farmerRepository;
+    private final ProductionAccessValidator accessValidator;
 
     @Transactional
     public Farmer update(UUID id, FarmerUpdateDTO dto) {
+        return update(id, dto, null);
+    }
+
+    @Transactional
+    public Farmer update(UUID id, FarmerUpdateDTO dto, User loggedUser) {
         Farmer existingFarmer = farmerRepository.findById(id)
-                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Agricultor não encontrado."));
+                .orElseThrow(() -> new EntityNotFoundException("Agricultor não encontrado."));
+
+        if (loggedUser != null) {
+            accessValidator.validateAccess(existingFarmer, loggedUser);
+        }
 
         String localName = dto.localName() != null ? dto.localName() : existingFarmer.getLocalName();
 

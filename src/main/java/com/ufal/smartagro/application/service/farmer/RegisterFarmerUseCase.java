@@ -5,6 +5,7 @@ import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.application.service.user.UserRegisterUseCase;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.CpfAlreadyExistsException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.Manager;
@@ -44,14 +45,16 @@ public class RegisterFarmerUseCase {
         Community community = null;
         if (communityId != null) {
             community = communityRepository.findById(communityId)
-                    .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Comunidade não encontrada"));
+                    .orElseThrow(() -> new EntityNotFoundException("Comunidade não encontrada"));
         }
 
-        if (loggedUser.getRole() == Role.MANAGER && community != null) {
+        if (loggedUser.getRole() == Role.MANAGER) {
             Manager manager = managerRepository.findByUserId(loggedUser.getId())
                     .orElseThrow(() -> new AccessDeniedException("Gestor não encontrado."));
             UUID managerOrgId = manager.getOrganization() != null ? manager.getOrganization().getId() : null;
-            UUID communityOrgId = community.getOrganization() != null ? community.getOrganization().getId() : null;
+            UUID communityOrgId = (community != null && community.getOrganization() != null)
+                    ? community.getOrganization().getId()
+                    : null;
             if (managerOrgId == null || communityOrgId == null || !managerOrgId.equals(communityOrgId)) {
                 throw new AccessDeniedException("O gestor só tem acesso aos agricultores da sua própria organização.");
             }

@@ -5,7 +5,10 @@ import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.farmer.*;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
+import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
+import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.port.out.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -32,6 +35,7 @@ public class FarmerController {
     private final FindAllFarmersUseCase findAllFarmersUseCase;
     private final UpdateFarmerUseCase updateFarmerUseCase;
     private final DeleteFarmerUseCase deleteFarmerUseCase;
+    private final UserRepository userRepository;
 
     @Operation(summary = "Buscar dados do agricultor autenticado", description = "Retorna os dados do agricultor logado a partir do token.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
@@ -55,13 +59,15 @@ public class FarmerController {
             @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
             @ApiResponse(responseCode = "403", description = "Não autorizado")
     })
-    @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN')")
     @GetMapping
     public ResponseEntity<List<FarmerResponseDTO>> findAllFarmers(
             @RequestParam(required = false) UUID communityId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        List<Farmer> farmers = findAllFarmersUseCase.findAll(communityId);
+        List<Farmer> farmers = loggedUserDetails != null
+                ? findAllFarmersUseCase.findAll(communityId, resolveLoggedUser(loggedUserDetails))
+                : findAllFarmersUseCase.findAll(communityId);
         List<FarmerResponseDTO> response = farmers.stream()
                 .map(Mapper::toFarmerResponseDTO)
                 .toList();
@@ -74,13 +80,15 @@ public class FarmerController {
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
             @ApiResponse(responseCode = "404", description = "Agricultor não encontrado")
     })
-    @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN')")
     @GetMapping("/{id}")
     public ResponseEntity<FarmerResponseDTO> findFarmerById(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        Farmer farmer = findFarmerByIdUseCase.findById(id);
+        Farmer farmer = loggedUserDetails != null
+                ? findFarmerByIdUseCase.findById(id, resolveLoggedUser(loggedUserDetails))
+                : findFarmerByIdUseCase.findById(id);
         FarmerResponseDTO response = Mapper.toFarmerResponseDTO(farmer);
         return ResponseEntity.ok(response);
     }
@@ -99,7 +107,9 @@ public class FarmerController {
             @Valid @RequestBody FarmerUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        Farmer farmer = updateFarmerUseCase.update(id, dto);
+        Farmer farmer = loggedUserDetails != null
+                ? updateFarmerUseCase.update(id, dto, resolveLoggedUser(loggedUserDetails))
+                : updateFarmerUseCase.update(id, dto);
         FarmerResponseDTO response = Mapper.toFarmerResponseDTO(farmer);
         return ResponseEntity.ok(response);
     }
@@ -116,7 +126,16 @@ public class FarmerController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        deleteFarmerUseCase.delete(id);
+        if (loggedUserDetails != null) {
+            deleteFarmerUseCase.delete(id, resolveLoggedUser(loggedUserDetails));
+        } else {
+            deleteFarmerUseCase.delete(id);
+        }
         return ResponseEntity.noContent().build();
+    }
+
+    private User resolveLoggedUser(UserDetailsImpl loggedUserDetails) {
+        return userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
     }
 }
