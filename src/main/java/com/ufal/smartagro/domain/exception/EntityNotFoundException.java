@@ -1,6 +1,6 @@
 package com.ufal.smartagro.domain.exception;
 
-public class EntityNotFoundException extends RuntimeException {
+public class EntityNotFoundException extends IllegalArgumentException {
     public EntityNotFoundException() {
         super("Entidade não encontrada.");
     }

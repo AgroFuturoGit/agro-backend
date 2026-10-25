@@ -20,7 +20,7 @@ public class FindFamilyCompositionByIdUseCase {
     @Transactional(readOnly = true)
     public FamilyComposition findById(UUID id, User loggedUser) {
         FamilyComposition composition = familyCompositionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Membro da composição familiar não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Membro da composição familiar não encontrado."));
 
         accessValidator.validateAccess(composition.getFarmer(), loggedUser);
 

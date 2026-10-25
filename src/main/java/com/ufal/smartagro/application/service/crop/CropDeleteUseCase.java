@@ -1,6 +1,7 @@
 package com.ufal.smartagro.application.service.crop;
 
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.CropNotFoundException;
 import com.ufal.smartagro.domain.exception.EntityInUseException;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;
@@ -20,11 +21,18 @@ public class CropDeleteUseCase {
 
     public void execute(UUID id, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN) {
-            throw new AccessDeniedException("User does not have permission to delete a crop.");
+            throw new AccessDeniedException("Usuário não tem permissão para deletar uma cultura.");
         }
 
-        if (productionPlanRepository.existsByCropId(id)) {
-            throw new EntityInUseException("Não é possível excluir uma cultura que possui planos de produção vinculados.");
+        cropRepository.findById(id)
+                .orElseThrow(CropNotFoundException::new);
+
+        long planCount = productionPlanRepository.countByCropId(id);
+        if (planCount > 0 || productionPlanRepository.existsByCropId(id)) {
+            long effectiveCount = planCount > 0 ? planCount : 1L;
+            throw new EntityInUseException(
+                    "Não é possível excluir uma cultura que possui " + effectiveCount + " planos de produção vinculados."
+            );
         }
 
         cropRepository.deleteById(id);

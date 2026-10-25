@@ -108,7 +108,7 @@ class CropUpdateUseCaseTest {
 
         assertThatThrownBy(() -> useCase.execute(CROP_ID, patchData, farmer))
                 .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("User does not have permission to update a crop.");
+                .hasMessage("Usuário não tem permissão para atualizar culturas.");
 
         verify(cropRepository, never()).save(any());
     }

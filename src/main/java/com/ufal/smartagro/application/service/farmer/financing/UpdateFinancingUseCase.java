@@ -21,7 +21,7 @@ public class UpdateFinancingUseCase {
     @Transactional
     public Financing update(UUID id, FinancingUpdateDTO dto, User loggedUser) {
         Financing existing = financingRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Financiamento não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Financiamento não encontrado."));
 
         accessValidator.validateWriteAccess(existing.getFarmer(), loggedUser);
 

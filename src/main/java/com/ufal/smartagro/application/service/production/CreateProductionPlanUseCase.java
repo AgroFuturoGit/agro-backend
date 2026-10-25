@@ -31,15 +31,15 @@ public class CreateProductionPlanUseCase {
     /** Valida vínculos e autorização antes de persistir o novo planejamento. */
     public ProductionPlan create(UUID farmerId, ProductionPlanRegisterDTO dto, User loggedUser) {
         Farmer farmer = farmerRepository.findById(farmerId)
-                .orElseThrow(() -> new IllegalArgumentException("Agricultor não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Agricultor não encontrado."));
 
         accessValidator.validateWriteAccess(farmer, loggedUser);
 
         Harvest harvest = harvestRepository.findById(dto.harvestId())
-                .orElseThrow(() -> new IllegalArgumentException("Safra não encontrada."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Safra não encontrada."));
 
         Crop crop = cropRepository.findById(dto.cropId())
-                .orElseThrow(() -> new IllegalArgumentException("Cultivo não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Cultivo não encontrado."));
 
         if (crop.getExpectedProductivity() == null || crop.getExpectedProductivity().signum() <= 0) {
             throw new IllegalArgumentException("O cultivo precisa ter produtividade esperada maior que zero para criar um plano.");

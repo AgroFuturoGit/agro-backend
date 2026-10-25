@@ -34,7 +34,7 @@ public class ValidateProductionExecutionUseCase {
         }
 
         ProductionExecution execution = productionExecutionRepository.findById(executionId)
-                .orElseThrow(() -> new IllegalArgumentException("Execução de produção não encontrada."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Execução de produção não encontrada."));
 
         if (execution.getStatus() != ExecutionStatus.PENDING) {
             throw new InvalidStateTransitionException("Apenas apontamentos com status PENDENTE podem ser validados. Status atual: " + execution.getStatus());

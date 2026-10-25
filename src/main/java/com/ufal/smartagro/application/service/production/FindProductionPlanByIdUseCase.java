@@ -19,7 +19,7 @@ public class FindProductionPlanByIdUseCase {
     @Transactional(readOnly = true)
     public ProductionPlan findById(UUID id, User loggedUser) {
         ProductionPlan plan = productionPlanRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Plano de produção não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Plano de produção não encontrado."));
 
         accessValidator.validateAccess(plan.getFarmer(), loggedUser);
 

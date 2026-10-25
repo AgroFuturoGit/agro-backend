@@ -1,6 +1,7 @@
 package com.ufal.smartagro.application.service.crop;
 
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.CropNotFoundException;
 import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;
@@ -21,8 +22,9 @@ public class CropFindByIdUseCase {
                 && loggedUser.getRole() != Role.TECHNICIAN
                 && loggedUser.getRole() != Role.MANAGER
                 && loggedUser.getRole() != Role.FARMER) {
-            throw new AccessDeniedException("User does not have permission to view a crop.");
+            throw new AccessDeniedException("Usuário não tem permissão para visualizar uma cultura.");
         }
-        return cropRepository.findById(id).orElseThrow();
+        return cropRepository.findById(id)
+                .orElseThrow(CropNotFoundException::new);
     }
 }

@@ -20,7 +20,7 @@ public class FindFieldOccurrenceByIdUseCase {
     @Transactional(readOnly = true)
     public FieldOccurrence findById(UUID id, User loggedUser) {
         FieldOccurrence occurrence = fieldOccurrenceRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Ocorrência de campo não encontrada."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Ocorrência de campo não encontrada."));
 
         if (occurrence.getExecution() != null && occurrence.getExecution().getProductionPlan() != null) {
             accessValidator.validateAccess(occurrence.getExecution().getProductionPlan().getFarmer(), loggedUser);

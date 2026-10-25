@@ -22,7 +22,7 @@ public class CropUpdateUseCase {
     /** Preserva o identificador e grava também ciclo, produtividade, tipo e unidade atualizados. */
     public Crop execute(UUID id, Crop updatedCropData, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN) {
-            throw new AccessDeniedException("User does not have permission to update a crop.");
+            throw new AccessDeniedException("Usuário não tem permissão para atualizar culturas.");
         }
 
         Crop existingCrop = cropRepository.findById(id)

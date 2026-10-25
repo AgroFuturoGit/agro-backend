@@ -25,7 +25,7 @@ public class CreateProductionExecutionUseCase {
     /** Cria o apontamento em estado PENDING após validar plano e acesso do usuário. */
     public ProductionExecution create(UUID planId, ProductionExecutionRegisterDTO dto, User loggedUser) {
         ProductionPlan plan = productionPlanRepository.findById(planId)
-                .orElseThrow(() -> new IllegalArgumentException("Plano de produção não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Plano de produção não encontrado."));
 
         accessValidator.validateWriteAccess(plan.getFarmer(), loggedUser);
 

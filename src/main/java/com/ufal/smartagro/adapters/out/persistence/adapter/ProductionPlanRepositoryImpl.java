@@ -66,6 +66,16 @@ public class ProductionPlanRepositoryImpl implements ProductionPlanRepository {
     }
 
     @Override
+    public long countByHarvestId(UUID harvestId) {
+        return jpaRepository.countByHarvestId(harvestId);
+    }
+
+    @Override
+    public long countByCropId(UUID cropId) {
+        return jpaRepository.countByCropId(cropId);
+    }
+
+    @Override
     public List<FarmerPlanSummary> findPlanSummariesByFarmer(UUID farmerId, UUID harvestId, boolean includeActiveContinuous) {
         return jpaRepository.findPlanSummariesByFarmer(farmerId, harvestId, includeActiveContinuous).stream()
                 .map(this::toFarmerPlanSummary)

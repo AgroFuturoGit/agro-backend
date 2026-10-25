@@ -20,7 +20,7 @@ public class DeleteFieldOccurrenceUseCase {
     @Transactional
     public void delete(UUID id, User loggedUser) {
         FieldOccurrence existing = fieldOccurrenceRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Ocorrência de campo não encontrada."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Ocorrência de campo não encontrada."));
 
         if (existing.getExecution() != null && existing.getExecution().getProductionPlan() != null) {
             accessValidator.validateWriteAccess(existing.getExecution().getProductionPlan().getFarmer(), loggedUser);

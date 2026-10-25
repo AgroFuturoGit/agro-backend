@@ -325,10 +325,11 @@ class AnalyticsControllerTest {
     }
 
     @Test
-    @DisplayName("GET /farmers/me/summary: deve rejeitar requisição não autenticada com HTTP 403")
+    @DisplayName("GET /farmers/me/summary: deve rejeitar requisição não autenticada com HTTP 401")
     void deveRejeitarRequisicaoNaoAutenticada() throws Exception {
         mockMvc.perform(get("/analytics/farmers/me/summary"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
     }
 
     @Test
@@ -478,10 +479,11 @@ class AnalyticsControllerTest {
     }
 
     @Test
-    @DisplayName("GET /technicians/me/summary: deve rejeitar requisição não autenticada com HTTP 403")
+    @DisplayName("GET /technicians/me/summary: deve rejeitar requisição não autenticada com HTTP 401")
     void deveRejeitarRequisicaoNaoAutenticadaParaTecnico() throws Exception {
         mockMvc.perform(get("/analytics/technicians/me/summary"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
     }
 
     // ==========================================

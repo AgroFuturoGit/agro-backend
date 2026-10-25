@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,6 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+@Slf4j
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenService jwtTokenService;
@@ -26,6 +28,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        if (path == null || path.isEmpty()) {
+            path = request.getRequestURI();
+        }
+        if (path == null) {
+            return false;
+        }
+        return "/auth/login".equals(path)
+                || "/error".equals(path)
+                || path.startsWith("/swagger-ui")
+                || path.startsWith("/v3/api-docs");
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain)
@@ -33,17 +50,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = recoveryToken(request);
 
-        if (token != null) {
-            String subject = jwtTokenService.getSubjectFromToken(token);
-            UserDetails userDetails = userDetailsService.loadUserByUsername(subject);
+        if (token != null && !token.isBlank()) {
+            try {
+                String subject = jwtTokenService.getSubjectFromToken(token);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(subject);
 
-            Authentication authentication = new UsernamePasswordAuthenticationToken(
-                    userDetails,
-                    null,
-                    userDetails.getAuthorities()
-            );
+                Authentication authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                );
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (Exception ex) {
+                log.debug("Token JWT inválido ou expirado para {}: {}", request.getRequestURI(), ex.getMessage());
+                SecurityContextHolder.clearContext();
+            }
         }
 
         filterChain.doFilter(request, response);

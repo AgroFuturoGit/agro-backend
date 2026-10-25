@@ -26,7 +26,7 @@ public class UpdateProductionExecutionUseCase {
     /** Mantém campos omitidos, valida acesso/versão e persiste as alterações recebidas. */
     public ProductionExecution update(UUID executionId, ProductionExecutionUpdateDTO dto, User loggedUser) {
         ProductionExecution existingExecution = productionExecutionRepository.findById(executionId)
-                .orElseThrow(() -> new IllegalArgumentException("Execução de produção não encontrada."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Execução de produção não encontrada."));
 
         if (existingExecution.getProductionPlan() != null) {
             accessValidator.validateWriteAccess(existingExecution.getProductionPlan().getFarmer(), loggedUser);

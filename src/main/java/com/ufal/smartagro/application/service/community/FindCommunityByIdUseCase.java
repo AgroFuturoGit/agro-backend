@@ -17,6 +17,6 @@ public class FindCommunityByIdUseCase {
     @Transactional(readOnly = true)
     public Community findById(UUID id) {
         return communityRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Comunidade não encontrada."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Comunidade não encontrada."));
     }
 }
