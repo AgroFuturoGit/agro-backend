@@ -105,6 +105,7 @@ public class UpdateProductionExecutionUseCase {
 
         ProductionExecution updatedExecution = new ProductionExecution(
                 existingExecution.getId(),
+                existingExecution.getClientId(),
                 existingExecution.getProductionPlan(),
                 newQuantity,
                 newQuantityKg,
@@ -133,10 +134,9 @@ public class UpdateProductionExecutionUseCase {
         BigDecimal lat = dto.latitude() != null ? dto.latitude() : existing.getLatitude();
         BigDecimal lon = dto.longitude() != null ? dto.longitude() : existing.getLongitude();
         BigDecimal acc = dto.locationAccuracy() != null ? dto.locationAccuracy() : existing.getLocationAccuracy();
-        LocalDateTime rec = dto.locationRecordedAt() != null ? dto.locationRecordedAt() : existing.getLocationRecordedAt();
-        return new Localizacao(lat, lon, acc, rec);
+        LocalDateTime at = dto.locationRecordedAt() != null ? dto.locationRecordedAt() : existing.getLocationRecordedAt();
+        return new Localizacao(lat, lon, acc, at);
     }
 
-    private record Localizacao(BigDecimal latitude, BigDecimal longitude, BigDecimal accuracy, LocalDateTime recordedAt) {
-    }
+    private record Localizacao(BigDecimal latitude, BigDecimal longitude, BigDecimal accuracy, LocalDateTime recordedAt) {}
 }

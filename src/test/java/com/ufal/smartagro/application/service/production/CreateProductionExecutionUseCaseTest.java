@@ -197,4 +197,71 @@ class CreateProductionExecutionUseCaseTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("A data da colheita não pode ser anterior à data planejada de plantio.");
     }
+
+    @Test
+    @DisplayName("Quando clientId já existe para o plano, retorna execução existente sem salvar novamente (idempotência)")
+    void givenExistingClientId_whenCreate_thenReturnsExistingExecutionWithoutSaving() {
+        User loggedUser = UserTestFactory.user().admin().build();
+        Farmer farmer = UserTestFactory.farmerProfile().build();
+        UUID planId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+        ProductionPlan plan = new ProductionPlan(
+                planId, farmer, null, null, new BigDecimal("2.0"),
+                PlanStatus.ACTIVE, null, null, new BigDecimal("5000.00"),
+                null, null, null, null, null, null, null, null
+        );
+        ProductionExecution existingExecution = ProductionExecution.builder()
+                .id(UUID.randomUUID())
+                .clientId(clientId)
+                .productionPlan(plan)
+                .quantity(new BigDecimal("20.00"))
+                .quantityKg(new BigDecimal("20.00"))
+                .status(ExecutionStatus.PENDING)
+                .build();
+
+        when(productionPlanRepository.findById(planId)).thenReturn(Optional.of(plan));
+        when(productionExecutionRepository.findByPlanIdAndClientId(planId, clientId))
+                .thenReturn(Optional.of(existingExecution));
+
+        ProductionExecutionRegisterDTO dto = new ProductionExecutionRegisterDTO(
+                clientId, new BigDecimal("20.00"), new BigDecimal("20.00"),
+                LocalDate.of(2026, 6, 1), "Colheita", null, null, null, null
+        );
+
+        ProductionExecution result = useCase.create(planId, dto, loggedUser);
+
+        assertThat(result).isSameAs(existingExecution);
+        verify(accessValidator).validateWriteAccess(farmer, loggedUser);
+        verify(productionExecutionRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Quando clientId é novo, persiste o apontamento vinculando o clientId")
+    void givenNewClientId_whenCreate_thenSavesExecutionWithClientId() {
+        User loggedUser = UserTestFactory.user().admin().build();
+        Farmer farmer = UserTestFactory.farmerProfile().build();
+        UUID planId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+        ProductionPlan plan = new ProductionPlan(
+                planId, farmer, null, null, new BigDecimal("2.0"),
+                PlanStatus.ACTIVE, null, null, new BigDecimal("5000.00"),
+                null, null, null, null, null, null, null, null
+        );
+
+        when(productionPlanRepository.findById(planId)).thenReturn(Optional.of(plan));
+        when(productionExecutionRepository.findByPlanIdAndClientId(planId, clientId))
+                .thenReturn(Optional.empty());
+        when(productionExecutionRepository.save(any(ProductionExecution.class))).thenAnswer(i -> i.getArgument(0));
+
+        ProductionExecutionRegisterDTO dto = new ProductionExecutionRegisterDTO(
+                clientId, new BigDecimal("20.00"), new BigDecimal("20.00"),
+                LocalDate.of(2026, 6, 1), "Colheita", null, null, null, null
+        );
+
+        ProductionExecution result = useCase.create(planId, dto, loggedUser);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getClientId()).isEqualTo(clientId);
+        verify(productionExecutionRepository).save(any(ProductionExecution.class));
+    }
 }

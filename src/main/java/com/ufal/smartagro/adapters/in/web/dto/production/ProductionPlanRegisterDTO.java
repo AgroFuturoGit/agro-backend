@@ -13,6 +13,9 @@ import java.util.UUID;
 
 /** Dados recebidos para planejar uma cultura em uma safra e registrar sua área e localização. */
 public record ProductionPlanRegisterDTO(
+        @Schema(description = "Identificador gerado no cliente offline para deduplicação idempotente", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+        UUID clientId,
+
         @NotNull(message = "A safra é obrigatória.")
         UUID harvestId,
 
@@ -38,9 +41,35 @@ public record ProductionPlanRegisterDTO(
 
         Map<String, Object> plannedCalendar
 ) {
+    /** Mantém compatibilidade com chamadas sem clientId. */
+    public ProductionPlanRegisterDTO(UUID harvestId, UUID cropId, BigDecimal plantedArea,
+                                     LocalDate expectedHarvestStart, LocalDate expectedHarvestEnd,
+                                     String locationDescription, BigDecimal latitude, BigDecimal longitude,
+                                     LocalDate plannedPlantingDate, Map<String, Object> plannedCalendar) {
+        this(null, harvestId, cropId, plantedArea, expectedHarvestStart, expectedHarvestEnd,
+                locationDescription, latitude, longitude, plannedPlantingDate, plannedCalendar);
+    }
+
     /** Mantém compatibilidade com clientes Java antigos; o rendimento legado não substitui a produtividade da cultura. */
     public ProductionPlanRegisterDTO(UUID harvestId, UUID cropId, BigDecimal plantedArea, BigDecimal ignoredLegacyYield,
                                      LocalDate plannedPlantingDate, Map<String, Object> plannedCalendar) {
-        this(harvestId, cropId, plantedArea, null, null, null, null, null, plannedPlantingDate, plannedCalendar);
+        this(null, harvestId, cropId, plantedArea, null, null, null, null, null, plannedPlantingDate, plannedCalendar);
+    }
+
+    /** Cria nova instância vinculando ou substituindo o clientId (ex: extraído de Idempotency-Key). */
+    public ProductionPlanRegisterDTO withClientId(UUID resolvedClientId) {
+        return new ProductionPlanRegisterDTO(
+                resolvedClientId,
+                this.harvestId,
+                this.cropId,
+                this.plantedArea,
+                this.expectedHarvestStart,
+                this.expectedHarvestEnd,
+                this.locationDescription,
+                this.latitude,
+                this.longitude,
+                this.plannedPlantingDate,
+                this.plannedCalendar
+        );
     }
 }

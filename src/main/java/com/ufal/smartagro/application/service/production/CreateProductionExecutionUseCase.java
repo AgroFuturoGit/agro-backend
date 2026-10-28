@@ -31,6 +31,13 @@ public class CreateProductionExecutionUseCase {
 
         accessValidator.validateWriteAccess(plan.getFarmer(), loggedUser);
 
+        if (dto.clientId() != null) {
+            var existing = productionExecutionRepository.findByPlanIdAndClientId(planId, dto.clientId());
+            if (existing.isPresent()) {
+                return existing.get();
+            }
+        }
+
         LocalDate harvestedAt = dto.harvestedAt();
         if (harvestedAt.isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("A data da colheita não pode ser futura.");
@@ -54,6 +61,7 @@ public class CreateProductionExecutionUseCase {
 
         ProductionExecution execution = new ProductionExecution(
                 null,
+                dto.clientId(),
                 plan,
                 dto.quantity(),
                 quantityKg,
@@ -62,6 +70,7 @@ public class CreateProductionExecutionUseCase {
                 null,
                 null,
                 dto.notes(),
+                null,
                 dto.latitude(),
                 dto.longitude(),
                 dto.locationAccuracy(),
@@ -75,6 +84,7 @@ public class CreateProductionExecutionUseCase {
         if (plan.getStatus() == com.ufal.smartagro.domain.model.enums.PlanStatus.PLANNED) {
             ProductionPlan activePlan = new ProductionPlan(
                     plan.getId(),
+                    plan.getClientId(),
                     plan.getFarmer(),
                     plan.getHarvest(),
                     plan.getCrop(),

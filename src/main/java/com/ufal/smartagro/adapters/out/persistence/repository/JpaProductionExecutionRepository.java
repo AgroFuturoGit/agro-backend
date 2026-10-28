@@ -6,10 +6,14 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface JpaProductionExecutionRepository extends JpaRepository<ProductionExecutionEntity, UUID> {
-    java.util.List<ProductionExecutionEntity> findAllByProductionPlanId(UUID planId);
+    List<ProductionExecutionEntity> findAllByProductionPlanId(UUID planId);
+
+    Optional<ProductionExecutionEntity> findByProductionPlanIdAndClientId(UUID planId, UUID clientId);
 
     @Modifying
     @Query("UPDATE ProductionExecutionEntity p SET p.deletedAt = CURRENT_TIMESTAMP WHERE p.id = :id")

@@ -48,6 +48,7 @@ public class ValidateProductionExecutionUseCase {
 
         ProductionExecution validatedExecution = new ProductionExecution(
                 execution.getId(),
+                execution.getClientId(),
                 execution.getProductionPlan(),
                 execution.getQuantity(),
                 execution.getQuantityKg(),

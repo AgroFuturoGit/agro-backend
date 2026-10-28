@@ -73,6 +73,7 @@ public class UpdateProductionPlanUseCase {
 
         ProductionPlan updatedPlan = new ProductionPlan(
                 existingPlan.getId(),
+                existingPlan.getClientId(),
                 existingPlan.getFarmer(),
                 existingPlan.getHarvest(),
                 existingPlan.getCrop(),

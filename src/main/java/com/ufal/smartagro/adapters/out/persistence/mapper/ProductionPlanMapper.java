@@ -20,6 +20,7 @@ public class ProductionPlanMapper {
         if (entity == null) return null;
         return new ProductionPlan(
                 entity.getId(),
+                entity.getClientId(),
                 farmerMapper.toDomain(entity.getFarmer()),
                 harvestMapper.toDomain(entity.getHarvest()),
                 cropMapper.toDomain(entity.getCrop()),
@@ -39,6 +40,7 @@ public class ProductionPlanMapper {
         if (domain == null) return null;
         ProductionPlanEntity entity = new ProductionPlanEntity();
         entity.setId(domain.getId());
+        entity.setClientId(domain.getClientId());
         entity.setFarmer(farmerMapper.toEntity(domain.getFarmer()));
         entity.setHarvest(harvestMapper.toEntity(domain.getHarvest()));
         entity.setCrop(cropMapper.toEntity(domain.getCrop()));

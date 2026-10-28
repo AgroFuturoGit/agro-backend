@@ -16,6 +16,8 @@ import com.ufal.smartagro.domain.model.enums.ExecutionStatus;
 @AllArgsConstructor
 public class ProductionExecution {
     private UUID id;
+    /** Identificador de idempotência gerado no cliente offline. */
+    private UUID clientId;
     private ProductionPlan productionPlan;
     /** Quantidade conforme a unidade configurada para a cultura. */
     private BigDecimal quantity;
@@ -41,13 +43,23 @@ public class ProductionExecution {
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
-    /** Construtor de compatibilidade para chamadas com 16 argumentos (rejectionReason = null). */
+    /** Construtor de compatibilidade para chamadas com 17 argumentos (sem clientId). */
+    public ProductionExecution(UUID id, ProductionPlan productionPlan, BigDecimal quantity, BigDecimal quantityKg,
+                               LocalDate harvestedAt, ExecutionStatus status, User validatedBy, LocalDateTime validatedAt,
+                               String notes, String rejectionReason, BigDecimal latitude, BigDecimal longitude,
+                               BigDecimal locationAccuracy, LocalDateTime locationRecordedAt, LocalDateTime createdAt,
+                               LocalDateTime updatedAt, LocalDateTime deletedAt) {
+        this(id, null, productionPlan, quantity, quantityKg, harvestedAt, status, validatedBy, validatedAt,
+                notes, rejectionReason, latitude, longitude, locationAccuracy, locationRecordedAt, createdAt, updatedAt, deletedAt);
+    }
+
+    /** Construtor de compatibilidade para chamadas com 16 argumentos (sem clientId e rejectionReason = null). */
     public ProductionExecution(UUID id, ProductionPlan productionPlan, BigDecimal quantity, BigDecimal quantityKg,
                                LocalDate harvestedAt, ExecutionStatus status, User validatedBy, LocalDateTime validatedAt,
                                String notes, BigDecimal latitude, BigDecimal longitude, BigDecimal locationAccuracy,
                                LocalDateTime locationRecordedAt, LocalDateTime createdAt, LocalDateTime updatedAt,
                                LocalDateTime deletedAt) {
-        this(id, productionPlan, quantity, quantityKg, harvestedAt, status, validatedBy, validatedAt, notes, null,
+        this(id, null, productionPlan, quantity, quantityKg, harvestedAt, status, validatedBy, validatedAt, notes, null,
                 latitude, longitude, locationAccuracy, locationRecordedAt, createdAt, updatedAt, deletedAt);
     }
 
@@ -56,7 +68,7 @@ public class ProductionExecution {
                                BigDecimal latitude, BigDecimal longitude, BigDecimal locationAccuracy,
                                LocalDateTime locationRecordedAt, LocalDateTime createdAt, LocalDateTime updatedAt,
                                LocalDateTime deletedAt) {
-        this(id, productionPlan, actualYield, actualYield,
+        this(id, null, productionPlan, actualYield, actualYield,
                 harvestDate, ExecutionStatus.PENDING,
                 null, null, null, null, latitude, longitude, locationAccuracy, locationRecordedAt,
                 createdAt, updatedAt, deletedAt);

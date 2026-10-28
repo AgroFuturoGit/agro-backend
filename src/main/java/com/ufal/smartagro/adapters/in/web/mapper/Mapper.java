@@ -92,7 +92,7 @@ public class Mapper {
     /** Constrói a cultura de domínio com todos os dados enviados no cadastro. */
     public static Crop toCrop(CropRegisterDTO dto) {
         return new Crop(
-                null,
+                null, 
                 dto.name(),
                 dto.variety(),
                 dto.isPriority(), dto.cycleDays(), dto.expectedProductivity(), dto.harvestType(), dto.unit(), dto.unitWeightKg()
@@ -198,11 +198,13 @@ public class Mapper {
                 farmer.getUpdatedAt()
         );
     }
+
     /** Retorna o plano com produtividade snapshot, datas esperadas e localização. */
     public static ProductionPlanResponseDTO toProductionPlanResponseDTO(com.ufal.smartagro.domain.model.ProductionPlan plan) {
         if (plan == null) return null;
         return new ProductionPlanResponseDTO(
                 plan.getId(),
+                plan.getClientId(),
                 toFarmerResponseDTO(plan.getFarmer()),
                 toHarvestResponseDTO(plan.getHarvest()),
                 toCropResponseDTO(plan.getCrop()),
@@ -221,6 +223,7 @@ public class Mapper {
         if (exec == null) return null;
         return new ProductionExecutionResponseDTO(
                 exec.getId(),
+                exec.getClientId(),
                 exec.getProductionPlan() != null ? exec.getProductionPlan().getId() : null,
                 exec.getQuantity(), exec.getQuantityKg(), exec.getHarvestedAt(), exec.getStatus(),
                 exec.getValidatedBy() != null ? exec.getValidatedBy().getId() : null,
@@ -279,6 +282,7 @@ public class Mapper {
         if (occ == null) return null;
         return new FieldOccurrenceResponseDTO(
                 occ.getId(),
+                occ.getClientId(),
                 occ.getExecution() != null ? occ.getExecution().getId() : null,
                 occ.getLogType(),
                 occ.getDescription(),

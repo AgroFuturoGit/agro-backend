@@ -39,7 +39,7 @@ public class FieldOccurrenceController {
     private final DeleteFieldOccurrenceUseCase deleteFieldOccurrenceUseCase;
     private final UserRepository userRepository;
 
-    @Operation(summary = "Registrar ocorrência de campo", description = "Adiciona uma ocorrência (clima, praga, doença) a um apontamento.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Registrar ocorrência de campo", description = "Adiciona uma ocorrência (clima, praga, doença) a um apontamento. Suporta deduplicação idempotente via clientId no corpo ou header Idempotency-Key.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Ocorrência registrada com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
@@ -49,11 +49,16 @@ public class FieldOccurrenceController {
     @PostMapping("/production-executions/{executionId}/occurrences")
     public ResponseEntity<FieldOccurrenceResponseDTO> register(
             @PathVariable UUID executionId,
+            @RequestHeader(value = "Idempotency-Key", required = false) UUID idempotencyKey,
             @Valid @RequestBody FieldOccurrenceRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
+
+        if (dto.clientId() == null && idempotencyKey != null) {
+            dto = dto.withClientId(idempotencyKey);
+        }
 
         FieldOccurrence saved = registerFieldOccurrenceUseCase.register(executionId, dto, loggedUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(Mapper.toFieldOccurrenceResponseDTO(saved));

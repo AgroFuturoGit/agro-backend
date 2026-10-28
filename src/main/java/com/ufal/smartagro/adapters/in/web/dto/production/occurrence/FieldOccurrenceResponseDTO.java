@@ -10,6 +10,9 @@ public record FieldOccurrenceResponseDTO(
         @Schema(description = "Identificador único da ocorrência", example = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
         UUID id,
 
+        @Schema(description = "Identificador de idempotência originado pelo cliente offline", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+        UUID clientId,
+
         @Schema(description = "Identificador do apontamento de produção vinculado", example = "b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a22")
         UUID executionId,
 
@@ -31,4 +34,10 @@ public record FieldOccurrenceResponseDTO(
         @Schema(description = "Data da última atualização")
         LocalDateTime updatedAt
 ) {
+    /** Construtor de compatibilidade para chamadas sem clientId. */
+    public FieldOccurrenceResponseDTO(UUID id, UUID executionId, OccurrenceType logType, String description,
+                                      String weatherObservation, String evidenceUrl, LocalDateTime createdAt,
+                                      LocalDateTime updatedAt) {
+        this(id, null, executionId, logType, description, weatherObservation, evidenceUrl, createdAt, updatedAt);
+    }
 }
