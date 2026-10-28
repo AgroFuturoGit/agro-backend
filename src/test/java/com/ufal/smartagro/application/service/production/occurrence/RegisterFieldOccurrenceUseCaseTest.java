@@ -89,4 +89,63 @@ class RegisterFieldOccurrenceUseCaseTest {
 
         verify(fieldOccurrenceRepository, never()).save(any());
     }
+
+    @Test
+    @DisplayName("Quando clientId já existe para o apontamento, retorna ocorrência existente sem salvar novamente (idempotência)")
+    void givenExistingClientId_whenRegister_thenReturnsExistingOccurrenceWithoutSaving() {
+        User admin = UserTestFactory.user().admin().build();
+        Farmer farmer = UserTestFactory.farmerProfile().build();
+        ProductionPlan plan = UserTestFactory.productionPlan().farmer(farmer).build();
+        UUID executionId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+        ProductionExecution execution = ProductionExecution.builder().id(executionId).productionPlan(plan).build();
+
+        FieldOccurrence existingOccurrence = FieldOccurrence.builder()
+                .id(UUID.randomUUID())
+                .clientId(clientId)
+                .execution(execution)
+                .logType(OccurrenceType.PEST)
+                .description("Lagarta detectada anteriormente")
+                .build();
+
+        when(productionExecutionRepository.findById(executionId)).thenReturn(Optional.of(execution));
+        when(fieldOccurrenceRepository.findByExecutionIdAndClientId(executionId, clientId))
+                .thenReturn(Optional.of(existingOccurrence));
+
+        FieldOccurrenceRegisterDTO dto = new FieldOccurrenceRegisterDTO(
+                clientId, OccurrenceType.PEST, "Lagarta detectada", "Tempo seco", null
+        );
+
+        FieldOccurrence result = useCase.register(executionId, dto, admin);
+
+        assertThat(result).isSameAs(existingOccurrence);
+        verify(accessValidator).validateWriteAccess(farmer, admin);
+        verify(fieldOccurrenceRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Quando clientId é novo, persiste ocorrência vinculando o clientId")
+    void givenNewClientId_whenRegister_thenSavesOccurrenceWithClientId() {
+        User admin = UserTestFactory.user().admin().build();
+        Farmer farmer = UserTestFactory.farmerProfile().build();
+        ProductionPlan plan = UserTestFactory.productionPlan().farmer(farmer).build();
+        UUID executionId = UUID.randomUUID();
+        UUID clientId = UUID.randomUUID();
+        ProductionExecution execution = ProductionExecution.builder().id(executionId).productionPlan(plan).build();
+
+        when(productionExecutionRepository.findById(executionId)).thenReturn(Optional.of(execution));
+        when(fieldOccurrenceRepository.findByExecutionIdAndClientId(executionId, clientId))
+                .thenReturn(Optional.empty());
+        when(fieldOccurrenceRepository.save(any(FieldOccurrence.class))).thenAnswer(i -> i.getArgument(0));
+
+        FieldOccurrenceRegisterDTO dto = new FieldOccurrenceRegisterDTO(
+                clientId, OccurrenceType.PEST, "Lagarta detectada", "Tempo seco", null
+        );
+
+        FieldOccurrence result = useCase.register(executionId, dto, admin);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getClientId()).isEqualTo(clientId);
+        verify(fieldOccurrenceRepository).save(any(FieldOccurrence.class));
+    }
 }

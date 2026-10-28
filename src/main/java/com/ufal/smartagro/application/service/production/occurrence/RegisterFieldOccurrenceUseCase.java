@@ -30,7 +30,15 @@ public class RegisterFieldOccurrenceUseCase {
             accessValidator.validateWriteAccess(execution.getProductionPlan().getFarmer(), loggedUser);
         }
 
+        if (dto.clientId() != null) {
+            var existing = fieldOccurrenceRepository.findByExecutionIdAndClientId(executionId, dto.clientId());
+            if (existing.isPresent()) {
+                return existing.get();
+            }
+        }
+
         FieldOccurrence occurrence = FieldOccurrence.builder()
+                .clientId(dto.clientId())
                 .execution(execution)
                 .logType(dto.logType())
                 .description(dto.description().trim())

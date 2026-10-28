@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -65,16 +65,18 @@ public class ExecutionAttachmentController {
         User loggedUser = loadUser(loggedUserDetails);
 
         var incoming = new NewExecutionAttachment(
-                clientId,
-                file.getOriginalFilename(),
-                file.getContentType(),
-                file.getBytes());
+            clientId,
+            file.getOriginalFilename(),
+            file.getContentType(),
+            file.getBytes());
 
         AttachmentUploadResult result = uploadUseCase.upload(executionId, incoming, loggedUser);
 
-        return ResponseEntity
-                .status(result.created() ? HttpStatus.CREATED : HttpStatus.OK)
-                .body(ExecutionAttachmentResponseDTO.from(result.attachment()));
+        if (result.created()) {
+            URI location = URI.create("/production-executions/" + executionId + "/attachments/" + result.attachment().getId());
+            return ResponseEntity.created(location).body(ExecutionAttachmentResponseDTO.from(result.attachment()));
+        }
+        return ResponseEntity.ok(ExecutionAttachmentResponseDTO.from(result.attachment()));
     }
 
     @Operation(summary = "Listar anexos de um apontamento", security = @SecurityRequirement(name = "bearerAuth"))

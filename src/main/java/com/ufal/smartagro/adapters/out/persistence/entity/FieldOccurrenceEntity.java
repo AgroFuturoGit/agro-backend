@@ -26,6 +26,9 @@ public class FieldOccurrenceEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(name = "client_id")
+    private UUID clientId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "execution_id", nullable = false)
     private ProductionExecutionEntity execution;

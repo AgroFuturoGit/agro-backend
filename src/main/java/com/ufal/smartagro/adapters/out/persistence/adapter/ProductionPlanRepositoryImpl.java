@@ -51,6 +51,11 @@ public class ProductionPlanRepositoryImpl implements ProductionPlanRepository {
     }
 
     @Override
+    public Optional<ProductionPlan> findByFarmerIdAndClientId(UUID farmerId, UUID clientId) {
+        return jpaRepository.findByFarmerIdAndClientId(farmerId, clientId).map(productionPlanMapper::toDomain);
+    }
+
+    @Override
     public void delete(UUID id) {
         jpaRepository.softDeleteById(id);
     }

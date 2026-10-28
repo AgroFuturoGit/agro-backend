@@ -17,12 +17,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,7 +56,9 @@ public class FamilyCompositionController {
                 .orElseThrow(UserNotFoundException::new);
 
         FamilyComposition saved = registerFamilyCompositionUseCase.register(farmerId, dto, loggedUser);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Mapper.toFamilyCompositionResponseDTO(saved));
+        FamilyCompositionResponseDTO response = Mapper.toFamilyCompositionResponseDTO(saved);
+        URI location = URI.create("/family-compositions/" + saved.getId());
+        return ResponseEntity.created(location).body(response);
     }
 
     @Operation(summary = "Listar composição familiar", description = "Lista os membros familiares de um agricultor.", security = @SecurityRequirement(name = "bearerAuth"))

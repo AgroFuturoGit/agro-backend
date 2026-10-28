@@ -28,12 +28,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -69,7 +69,8 @@ public class OrganizationController {
 
         Organization organization = registerOrganizationUseCase.register(dto, loggedUser);
         OrganizationResponseDTO response = Mapper.toOrganizationResponseDTO(organization);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        URI location = URI.create("/organizations/" + response.id());
+        return ResponseEntity.created(location).body(response);
     }
 
     @Operation(summary = "Cadastrar gestor na organização", description = "Cria e vincula um gestor a uma organização existente.", security = @SecurityRequirement(name = "bearerAuth"))
@@ -91,7 +92,8 @@ public class OrganizationController {
 
         Manager manager = registerManagerUseCase.register(id, dto, loggedUser);
         ManagerResponseDTO response = Mapper.toManagerResponseDTO(manager);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        URI location = URI.create("/organizations/" + id + "/managers/" + response.id());
+        return ResponseEntity.created(location).body(response);
     }
 
     @Operation(summary = "Cadastrar comunidade na organização", description = "Cria e vincula uma nova comunidade agrícola a uma organização.", security = @SecurityRequirement(name = "bearerAuth"))
@@ -113,7 +115,8 @@ public class OrganizationController {
 
         Community community = registerCommunityUseCase.register(orgId, dto, loggedUser);
         CommunityResponseDTO response = Mapper.toCommunityResponseDTO(community);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        URI location = URI.create("/communities/" + response.id());
+        return ResponseEntity.created(location).body(response);
     }
 
     @Operation(summary = "Listar todas as organizações", description = "Retorna a lista com todas as organizações cadastradas.", security = @SecurityRequirement(name = "bearerAuth"))

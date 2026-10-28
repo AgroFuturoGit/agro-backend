@@ -15,6 +15,7 @@ public class FieldOccurrenceMapper {
         if (entity == null) return null;
         return FieldOccurrence.builder()
                 .id(entity.getId())
+                .clientId(entity.getClientId())
                 .execution(executionMapper.toDomain(entity.getExecution()))
                 .logType(entity.getLogType())
                 .description(entity.getDescription())
@@ -30,6 +31,7 @@ public class FieldOccurrenceMapper {
         if (domain == null) return null;
         FieldOccurrenceEntity entity = new FieldOccurrenceEntity();
         entity.setId(domain.getId());
+        entity.setClientId(domain.getClientId());
         entity.setExecution(executionMapper.toEntity(domain.getExecution()));
         entity.setLogType(domain.getLogType());
         entity.setDescription(domain.getDescription());

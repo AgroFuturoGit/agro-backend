@@ -19,6 +19,7 @@ public class ProductionExecutionMapper {
         if (entity == null) return null;
         return new ProductionExecution(
                 entity.getId(),
+                entity.getClientId(),
                 productionPlanMapper.toDomain(entity.getProductionPlan()),
                 entity.getQuantity(), entity.getQuantityKg(), entity.getHarvestedAt(), entity.getStatus(),
                 userMapper.toDomain(entity.getValidatedBy()), entity.getValidatedAt(), entity.getNotes(),
@@ -38,6 +39,7 @@ public class ProductionExecutionMapper {
         if (domain == null) return null;
         ProductionExecutionEntity entity = new ProductionExecutionEntity();
         entity.setId(domain.getId());
+        entity.setClientId(domain.getClientId());
         entity.setProductionPlan(productionPlanMapper.toEntity(domain.getProductionPlan()));
         entity.setQuantity(domain.getQuantity());
         entity.setQuantityKg(domain.getQuantityKg());

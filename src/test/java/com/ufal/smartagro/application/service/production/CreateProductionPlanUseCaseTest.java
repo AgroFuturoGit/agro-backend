@@ -160,4 +160,59 @@ class CreateProductionPlanUseCaseTest {
 
         verify(productionPlanRepository, never()).save(any());
     }
+
+    @Test
+    @DisplayName("Quando clientId já existe para o agricultor, retorna plano existente sem salvar novamente (idempotência)")
+    void givenExistingClientId_whenCreate_thenReturnsExistingPlanWithoutSaving() {
+        User admin = UserTestFactory.user().admin().build();
+        Farmer farmer = UserTestFactory.farmerProfile().build();
+        UUID clientId = UUID.randomUUID();
+        ProductionPlan existingPlan = new ProductionPlan(
+                UUID.randomUUID(), clientId, farmer, defaultHarvest(), defaultCrop(),
+                new BigDecimal("2.50"), com.ufal.smartagro.domain.model.enums.PlanStatus.PLANNED,
+                null, null, new BigDecimal("1000.00"), null, null, null, null, null, null, null, null
+        );
+
+        when(farmerRepository.findById(FARMER_ID)).thenReturn(Optional.of(farmer));
+        when(productionPlanRepository.findByFarmerIdAndClientId(FARMER_ID, clientId))
+                .thenReturn(Optional.of(existingPlan));
+
+        ProductionPlanRegisterDTO dto = new ProductionPlanRegisterDTO(
+                clientId, HARVEST_ID, CROP_ID, new BigDecimal("2.50"),
+                null, null, null, null, null, null, null
+        );
+
+        ProductionPlan result = useCase.create(FARMER_ID, dto, admin);
+
+        assertThat(result).isSameAs(existingPlan);
+        verify(accessValidator).validateWriteAccess(farmer, admin);
+        verify(productionPlanRepository, never()).save(any());
+        verify(harvestRepository, never()).findById(any());
+    }
+
+    @Test
+    @DisplayName("Quando clientId é novo, persiste o plano vinculando o clientId")
+    void givenNewClientId_whenCreate_thenSavesPlanWithClientId() {
+        User admin = UserTestFactory.user().admin().build();
+        Farmer farmer = UserTestFactory.farmerProfile().build();
+        UUID clientId = UUID.randomUUID();
+
+        when(farmerRepository.findById(FARMER_ID)).thenReturn(Optional.of(farmer));
+        when(productionPlanRepository.findByFarmerIdAndClientId(FARMER_ID, clientId))
+                .thenReturn(Optional.empty());
+        when(harvestRepository.findById(HARVEST_ID)).thenReturn(Optional.of(defaultHarvest()));
+        when(cropRepository.findById(CROP_ID)).thenReturn(Optional.of(defaultCrop()));
+        when(productionPlanRepository.save(any(ProductionPlan.class))).thenAnswer(i -> i.getArgument(0));
+
+        ProductionPlanRegisterDTO dto = new ProductionPlanRegisterDTO(
+                clientId, HARVEST_ID, CROP_ID, new BigDecimal("2.50"),
+                null, null, null, null, null, null, null
+        );
+
+        ProductionPlan result = useCase.create(FARMER_ID, dto, admin);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getClientId()).isEqualTo(clientId);
+        verify(productionPlanRepository).save(any(ProductionPlan.class));
+    }
 }

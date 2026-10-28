@@ -21,12 +21,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,7 +44,7 @@ public class UserController {
     private final FindAllUsersUseCase findAllUsersUseCase;
     private final UserRepository userRepository;
 
-    @Operation(summary = "Registrar usuário (deprecado)", description = "Cria um novo usuário na base de dados. Deprecado em favor de fluxos específicos.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Registrar usuário (deprecado)", description = "Cria um novo usuário na base de dados. Aceita POST /users e POST /users/register com retorno de header Location.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Usuário registrado com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
@@ -52,7 +52,7 @@ public class UserController {
     })
     @Deprecated(since = "2.0", forRemoval = true)
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/register")
+    @PostMapping({"", "/register"})
     public ResponseEntity<UserResponseDTO> register(
             @Valid @RequestBody UserRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
@@ -65,7 +65,9 @@ public class UserController {
                 .orElseThrow(UserNotFoundException::new);
 
         UserResponseDTO response = userRegisterUseCase.register(dto, loggedUser);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        URI location = URI.create("/users/" + response.id());
+
+        return ResponseEntity.created(location).body(response);
     }
 
     @Operation(summary = "Excluir usuário", description = "Remove logicamente ou fisicamente um usuário do sistema pelo ID.", security = @SecurityRequirement(name = "bearerAuth"))

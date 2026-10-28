@@ -15,6 +15,8 @@ import java.util.UUID;
 @AllArgsConstructor
 public class FieldOccurrence {
     private UUID id;
+    /** Identificador de idempotência gerado no cliente offline. */
+    private UUID clientId;
     private ProductionExecution execution;
     private OccurrenceType logType;
     private String description;

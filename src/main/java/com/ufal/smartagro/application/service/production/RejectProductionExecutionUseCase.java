@@ -49,6 +49,7 @@ public class RejectProductionExecutionUseCase {
 
         ProductionExecution rejectedExecution = new ProductionExecution(
                 execution.getId(),
+                execution.getClientId(),
                 execution.getProductionPlan(),
                 execution.getQuantity(),
                 execution.getQuantityKg(),

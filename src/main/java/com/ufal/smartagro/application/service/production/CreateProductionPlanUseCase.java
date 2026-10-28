@@ -35,6 +35,13 @@ public class CreateProductionPlanUseCase {
 
         accessValidator.validateWriteAccess(farmer, loggedUser);
 
+        if (dto.clientId() != null) {
+            var existing = productionPlanRepository.findByFarmerIdAndClientId(farmerId, dto.clientId());
+            if (existing.isPresent()) {
+                return existing.get();
+            }
+        }
+
         Harvest harvest = harvestRepository.findById(dto.harvestId())
                 .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Safra não encontrada."));
 
@@ -66,6 +73,7 @@ public class CreateProductionPlanUseCase {
 
         ProductionPlan plan = new ProductionPlan(
                 null,
+                dto.clientId(),
                 farmer,
                 harvest,
                 crop,

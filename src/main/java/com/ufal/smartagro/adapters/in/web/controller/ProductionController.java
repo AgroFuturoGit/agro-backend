@@ -17,12 +17,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -59,7 +59,7 @@ public class ProductionController {
         return ResponseEntity.ok(productionDashboardUseCase.getDashboard(loggedUser));
     }
 
-    @Operation(summary = "Criar plano de produção", description = "Cria um plano de produção agrícola para determinado agricultor.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Criar plano de produção", description = "Cria um plano de produção agrícola para determinado agricultor. Suporta deduplicação idempotente via clientId no corpo ou header Idempotency-Key com header Location.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Plano de produção criado com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
@@ -70,18 +70,24 @@ public class ProductionController {
     @PostMapping("/farmers/{farmerId}/production-plans")
     public ResponseEntity<ProductionPlanResponseDTO> createProductionPlan(
             @PathVariable UUID farmerId,
+            @RequestHeader(value = "Idempotency-Key", required = false) UUID idempotencyKey,
             @Valid @RequestBody ProductionPlanRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
 
+        if (dto.clientId() == null && idempotencyKey != null) {
+            dto = dto.withClientId(idempotencyKey);
+        }
+
         ProductionPlan plan = createProductionPlanUseCase.create(farmerId, dto, loggedUser);
         ProductionPlanResponseDTO response = Mapper.toProductionPlanResponseDTO(plan);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        URI location = URI.create("/production-plans/" + plan.getId());
+        return ResponseEntity.created(location).body(response);
     }
 
-    @Operation(summary = "Registrar execução de produção", description = "Registra um evento de execução referente a um plano de produção.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Registrar execução de produção", description = "Registra um evento de execução referente a um plano de produção. Suporta deduplicação idempotente via clientId no corpo ou header Idempotency-Key com header Location.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Execução registrada com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
@@ -92,15 +98,21 @@ public class ProductionController {
     @PostMapping("/production-plans/{planId}/executions")
     public ResponseEntity<ProductionExecutionResponseDTO> createProductionExecution(
             @PathVariable UUID planId,
+            @RequestHeader(value = "Idempotency-Key", required = false) UUID idempotencyKey,
             @Valid @RequestBody ProductionExecutionRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
 
+        if (dto.clientId() == null && idempotencyKey != null) {
+            dto = dto.withClientId(idempotencyKey);
+        }
+
         ProductionExecution execution = createProductionExecutionUseCase.create(planId, dto, loggedUser);
         ProductionExecutionResponseDTO response = Mapper.toProductionExecutionResponseDTO(execution);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        URI location = URI.create("/production-executions/" + execution.getId());
+        return ResponseEntity.created(location).body(response);
     }
 
     @Operation(summary = "Atualizar plano de produção", description = "Atualiza os dados de um plano de produção existente.", security = @SecurityRequirement(name = "bearerAuth"))

@@ -15,6 +15,7 @@ public interface ProductionPlanRepository {
     ProductionPlan save(ProductionPlan productionPlan);
     Optional<ProductionPlan> findById(UUID id);
     List<ProductionPlan> findAllByFarmerId(UUID farmerId);
+    Optional<ProductionPlan> findByFarmerIdAndClientId(UUID farmerId, UUID clientId);
     void delete(UUID id);
     boolean existsByHarvestId(UUID harvestId);
     boolean existsByCropId(UUID cropId);
@@ -53,5 +54,3 @@ public interface ProductionPlanRepository {
             UUID harvestId
     );
 }
-
-
