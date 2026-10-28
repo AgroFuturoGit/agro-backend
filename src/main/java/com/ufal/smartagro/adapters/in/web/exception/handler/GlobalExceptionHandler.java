@@ -33,6 +33,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -322,10 +323,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGenericException(
             Exception ex, HttpServletRequest httpServletRequest){
-        log.error("Erro interno não tratado ao acessar {}", httpServletRequest.getRequestURI(), ex);
+        String traceId = UUID.randomUUID().toString().substring(0, 8);
+        log.error("[traceId={}] Erro interno não tratado ao acessar {}", traceId, httpServletRequest.getRequestURI(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiError(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Ocorreu um erro interno inesperado no servidor.",
+                "Ocorreu um erro interno inesperado no servidor. (Trace ID: " + traceId + ")",
                 httpServletRequest.getRequestURI(),
                 LocalDateTime.now()
         ));

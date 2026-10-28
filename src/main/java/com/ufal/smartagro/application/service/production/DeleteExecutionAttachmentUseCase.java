@@ -6,11 +6,13 @@ import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.ExecutionAttachmentRepository;
 import com.ufal.smartagro.domain.port.out.ProductionExecutionRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DeleteExecutionAttachmentUseCase {
@@ -36,5 +38,7 @@ public class DeleteExecutionAttachmentUseCase {
         }
 
         attachmentRepository.delete(attachmentId);
+        log.info("Anexo de apontamento excluído logicamente [attachmentId={}, executionId={}] pelo usuário [actorId={}]",
+                attachmentId, executionId, loggedUser.getId());
     }
 }

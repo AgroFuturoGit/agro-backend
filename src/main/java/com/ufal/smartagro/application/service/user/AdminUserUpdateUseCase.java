@@ -9,11 +9,13 @@ import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class AdminUserUpdateUseCase {
@@ -38,6 +40,11 @@ public class AdminUserUpdateUseCase {
             throw new IllegalArgumentException("Para criar ou promover gestores, produtores e técnicos, utilize as rotas específicas de perfil.");
         }
 
+        if (dto.role() != existingUser.getRole()) {
+            log.info("Papel de usuário alterado pelo administrador [actorId={}, actorEmail='{}'] no usuário alvo [targetUserId={}]: '{}' -> '{}'",
+                    loggedUser.getId(), loggedUser.getEmail(), userId, existingUser.getRole(), dto.role());
+        }
+
         User updatedUser = new User(
                 existingUser.getId(),
                 dto.fullName(),
@@ -48,6 +55,7 @@ public class AdminUserUpdateUseCase {
         );
 
         User savedUser = userRepository.save(updatedUser);
+        log.info("Usuário atualizado com sucesso pelo administrador [actorId={}] no usuário alvo [targetUserId={}]", loggedUser.getId(), userId);
         return Mapper.toUserResponseDTO(savedUser);
     }
 }

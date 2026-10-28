@@ -8,10 +8,12 @@ import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CropRepository;
 import com.ufal.smartagro.domain.port.out.ProductionPlanRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class CropDeleteUseCase {
@@ -36,5 +38,7 @@ public class CropDeleteUseCase {
         }
 
         cropRepository.deleteById(id);
+        log.info("Cultura excluída logicamente [cropId={}] pelo usuário [actorId={}, actorRole={}]",
+                id, loggedUser.getId(), loggedUser.getRole());
     }
 }
