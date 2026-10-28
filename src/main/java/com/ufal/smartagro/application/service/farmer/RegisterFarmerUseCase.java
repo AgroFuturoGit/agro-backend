@@ -5,6 +5,7 @@ import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.application.service.user.UserRegisterUseCase;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.CpfAlreadyExistsException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.Manager;
@@ -14,6 +15,7 @@ import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CommunityRepository;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
+import com.ufal.smartagro.domain.util.CpfNormalizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,21 +37,24 @@ public class RegisterFarmerUseCase {
             throw new AccessDeniedException();
         }
 
-        if (farmerRepository.existsByCpf(dto.cpf())) {
+        String normalizedCpf = CpfNormalizer.digitsOnly(dto.cpf());
+        if (farmerRepository.existsByCpf(normalizedCpf)) {
             throw new CpfAlreadyExistsException();
         }
 
         Community community = null;
         if (communityId != null) {
             community = communityRepository.findById(communityId)
-                    .orElseThrow(() -> new IllegalArgumentException("Comunidade não encontrada"));
+                    .orElseThrow(() -> new EntityNotFoundException("Comunidade não encontrada"));
         }
 
-        if (loggedUser.getRole() == Role.MANAGER && community != null) {
+        if (loggedUser.getRole() == Role.MANAGER) {
             Manager manager = managerRepository.findByUserId(loggedUser.getId())
                     .orElseThrow(() -> new AccessDeniedException("Gestor não encontrado."));
             UUID managerOrgId = manager.getOrganization() != null ? manager.getOrganization().getId() : null;
-            UUID communityOrgId = community.getOrganization() != null ? community.getOrganization().getId() : null;
+            UUID communityOrgId = (community != null && community.getOrganization() != null)
+                    ? community.getOrganization().getId()
+                    : null;
             if (managerOrgId == null || communityOrgId == null || !managerOrgId.equals(communityOrgId)) {
                 throw new AccessDeniedException("O gestor só tem acesso aos agricultores da sua própria organização.");
             }
@@ -58,7 +63,7 @@ public class RegisterFarmerUseCase {
         User savedUser = null;
         if (dto.email() != null && !dto.email().isBlank() && dto.password() != null && !dto.password().isBlank()) {
             UserRegisterDTO userDto = new UserRegisterDTO(
-                    dto.fullName(), dto.email(), dto.password(), dto.cpf(), Role.FARMER
+                    dto.fullName(), dto.email(), dto.password(), normalizedCpf, Role.FARMER
             );
             savedUser = userRegisterUseCase.createBaseUser(userDto);
         }
@@ -71,7 +76,7 @@ public class RegisterFarmerUseCase {
                 .user(savedUser)
                 .community(community)
                 .fullName(dto.fullName())
-                .cpf(dto.cpf())
+                .cpf(normalizedCpf)
                 .dateOfBirth(dto.dateOfBirth())
                 .motherName(dto.motherName())
                 .origin(dto.origin())

@@ -17,6 +17,6 @@ public class FindFarmerByUserUseCase {
     @Transactional(readOnly = true)
     public Farmer findByUserId(UUID userId) {
         return farmerRepository.findByUserId(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Agricultor associado a este usuário não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Agricultor associado a este usuário não encontrado."));
     }
 }

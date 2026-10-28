@@ -1,7 +1,10 @@
 package com.ufal.smartagro.application.service.farmer;
 
 import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerUpdateDTO;
+import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
+import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,30 +17,101 @@ import java.util.UUID;
 public class UpdateFarmerUseCase {
 
     private final FarmerRepository farmerRepository;
+    private final ProductionAccessValidator accessValidator;
 
     @Transactional
     public Farmer update(UUID id, FarmerUpdateDTO dto) {
-        Farmer existingFarmer = farmerRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Agricultor não encontrado."));
+        return update(id, dto, null);
+    }
 
-        String localName = dto.localName() != null ? dto.localName() : existingFarmer.getLocalName();
+    @Transactional
+    public Farmer update(UUID id, FarmerUpdateDTO dto, User loggedUser) {
+        Farmer existingFarmer = farmerRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Agricultor não encontrado."));
+
+        if (loggedUser != null) {
+            accessValidator.validateAccess(existingFarmer, loggedUser);
+        }
+
+        String fullName = existingFarmer.getFullName();
+        if (dto.fullName() != null) {
+            String trimmed = dto.fullName().trim();
+            if (trimmed.isEmpty()) {
+                throw new IllegalArgumentException("O nome completo não pode ser vazio.");
+            }
+            fullName = trimmed;
+        }
+
+        String localName = existingFarmer.getLocalName();
+        if (dto.localName() != null) {
+            String trimmed = dto.localName().trim();
+            localName = trimmed.isEmpty() ? null : trimmed;
+        }
+
+        String motherName = existingFarmer.getMotherName();
+        if (dto.motherName() != null) {
+            String trimmed = dto.motherName().trim();
+            motherName = trimmed.isEmpty() ? null : trimmed;
+        }
+
+        String origin = existingFarmer.getOrigin();
+        if (dto.origin() != null) {
+            String trimmed = dto.origin().trim();
+            origin = trimmed.isEmpty() ? null : trimmed;
+        }
+
+        String educationLevel = existingFarmer.getEducationLevel();
+        if (dto.educationLevel() != null) {
+            String trimmed = dto.educationLevel().trim();
+            educationLevel = trimmed.isEmpty() ? null : trimmed;
+        }
+
+        String phone = existingFarmer.getPhone();
+        if (dto.phone() != null) {
+            String trimmed = dto.phone().trim();
+            phone = trimmed.isEmpty() ? null : trimmed;
+        }
+
+        String street = existingFarmer.getStreet();
+        if (dto.street() != null) {
+            String trimmed = dto.street().trim();
+            street = trimmed.isEmpty() ? null : trimmed;
+        }
+
+        String city = existingFarmer.getCity();
+        if (dto.city() != null) {
+            String trimmed = dto.city().trim();
+            city = trimmed.isEmpty() ? null : trimmed;
+        }
+
+        String state = existingFarmer.getState();
+        if (dto.state() != null) {
+            String trimmed = dto.state().trim();
+            state = trimmed.isEmpty() ? null : trimmed;
+        }
+
+        String ibgeCode = existingFarmer.getIbgeCode();
+        if (dto.ibgeCode() != null) {
+            String trimmed = dto.ibgeCode().trim();
+            ibgeCode = trimmed.isEmpty() ? null : trimmed;
+        }
 
         Farmer updatedFarmer = Farmer.builder()
                 .id(existingFarmer.getId())
                 .user(existingFarmer.getUser())
                 .community(existingFarmer.getCommunity())
-                .fullName(dto.fullName() != null ? dto.fullName() : existingFarmer.getFullName())
+                .fullName(fullName)
                 .cpf(existingFarmer.getCpf())
                 .dateOfBirth(dto.dateOfBirth() != null ? dto.dateOfBirth() : existingFarmer.getDateOfBirth())
-                .motherName(dto.motherName() != null ? dto.motherName() : existingFarmer.getMotherName())
-                .origin(dto.origin() != null ? dto.origin() : existingFarmer.getOrigin())
-                .educationLevel(dto.educationLevel() != null ? dto.educationLevel() : existingFarmer.getEducationLevel())
-                .phone(dto.phone() != null ? dto.phone() : existingFarmer.getPhone())
+                .motherName(motherName)
+                .origin(origin)
+                .educationLevel(educationLevel)
+                .phone(phone)
                 .localName(localName)
-                .street(dto.street() != null ? dto.street() : existingFarmer.getStreet())
-                .city(dto.city() != null ? dto.city() : existingFarmer.getCity())
-                .state(dto.state() != null ? dto.state() : existingFarmer.getState())
-                .ibgeCode(dto.ibgeCode() != null ? dto.ibgeCode() : existingFarmer.getIbgeCode())
+                .street(street)
+                .city(city)
+                .state(state)
+                .ibgeCode(ibgeCode)
                 .latitude(dto.latitude() != null ? dto.latitude() : existingFarmer.getLatitude())
                 .longitude(dto.longitude() != null ? dto.longitude() : existingFarmer.getLongitude())
                 .registrationSource(existingFarmer.getRegistrationSource())

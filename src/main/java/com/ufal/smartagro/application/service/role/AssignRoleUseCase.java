@@ -29,6 +29,10 @@ public class AssignRoleUseCase {
             throw new IllegalArgumentException("Para criar ou promover gestores, produtores e técnicos, utilize as rotas específicas de perfil.");
         }
 
+        if (loggedUser.getId() != null && loggedUser.getId().equals(userId) && newRole != Role.ADMIN) {
+            throw new IllegalArgumentException("O administrador não pode rebaixar o próprio papel.");
+        }
+
         User user = userRepository.findById(userId)
             .orElseThrow(UserNotFoundException::new);
 

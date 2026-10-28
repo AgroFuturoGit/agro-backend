@@ -28,7 +28,7 @@ public class CompareProductionUseCase {
     /** Calcula desvio e percentual realizado usando área × produtividade e kg validados. */
     public ProductionComparisonDTO compare(UUID planId, User loggedUser) {
         ProductionPlan plan = productionPlanRepository.findById(planId)
-                .orElseThrow(() -> new IllegalArgumentException("Plano de produção não encontrado."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Plano de produção não encontrado."));
 
         accessValidator.validateAccess(plan.getFarmer(), loggedUser);
 

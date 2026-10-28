@@ -261,7 +261,7 @@ public class TechnicianController {
             @ApiResponse(responseCode = "403", description = "Não autorizado (requer perfil TECHNICIAN)")
     })
     @PreAuthorize("hasRole('TECHNICIAN')")
-    @GetMapping("/me/farmers")
+    @GetMapping({"/me/farmers", "/me/producers"})
     public ResponseEntity<List<FarmerResponseDTO>> getMyFarmers(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
@@ -281,7 +281,7 @@ public class TechnicianController {
             @ApiResponse(responseCode = "404", description = "Técnico não encontrado")
     })
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-    @GetMapping("/{id}/farmers")
+    @GetMapping({"/{id}/farmers", "/{id}/producers"})
     public ResponseEntity<List<FarmerResponseDTO>> getTechnicianFarmers(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {

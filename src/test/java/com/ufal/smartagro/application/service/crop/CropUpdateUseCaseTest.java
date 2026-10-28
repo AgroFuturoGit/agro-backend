@@ -1,6 +1,7 @@
 package com.ufal.smartagro.application.service.crop;
 
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.ConcurrentUpdateException;
 import com.ufal.smartagro.domain.exception.CropAlreadyExistsException;
 import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.User;
@@ -17,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -108,7 +110,7 @@ class CropUpdateUseCaseTest {
 
         assertThatThrownBy(() -> useCase.execute(CROP_ID, patchData, farmer))
                 .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("User does not have permission to update a crop.");
+                .hasMessage("Usuário não tem permissão para atualizar culturas.");
 
         verify(cropRepository, never()).save(any());
     }
@@ -125,6 +127,38 @@ class CropUpdateUseCaseTest {
 
         assertThatThrownBy(() -> useCase.execute(CROP_ID, patchData, admin))
                 .isInstanceOf(CropAlreadyExistsException.class);
+
+        verify(cropRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Concorrência: lançar ConcurrentUpdateException quando baseUpdatedAt for diferente de updatedAt do servidor")
+    void givenStaleBaseUpdatedAt_whenExecute_thenThrowsConcurrentUpdateException() {
+        User admin = UserTestFactory.user().admin().build();
+        LocalDateTime originalTime = LocalDateTime.of(2026, 4, 1, 10, 0, 0);
+        LocalDateTime newerTime = LocalDateTime.of(2026, 4, 1, 11, 0, 0);
+
+        Crop existing = new Crop(
+                CROP_ID,
+                "Tomate",
+                "Italiano",
+                true,
+                90,
+                new BigDecimal("45000.00"),
+                HarvestType.CONTINUOUS,
+                MeasurementUnit.BOX,
+                new BigDecimal("15.00"),
+                originalTime,
+                newerTime,
+                null
+        );
+        when(cropRepository.findById(CROP_ID)).thenReturn(Optional.of(existing));
+
+        Crop patchData = new Crop(null, "Tomate Novo", null, null, null, null, null, null, null);
+
+        assertThatThrownBy(() -> useCase.execute(CROP_ID, patchData, admin, originalTime))
+                .isInstanceOf(ConcurrentUpdateException.class)
+                .hasMessageContaining("A cultura foi alterada por outro usuário");
 
         verify(cropRepository, never()).save(any());
     }

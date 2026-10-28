@@ -21,7 +21,7 @@ public class CropFindAllUseCase {
                 && loggedUser.getRole() != Role.TECHNICIAN
                 && loggedUser.getRole() != Role.MANAGER
                 && loggedUser.getRole() != Role.FARMER) {
-            throw new AccessDeniedException("User does not have permission to view crops.");
+            throw new AccessDeniedException("Usuário não tem permissão para visualizar culturas.");
         }
         return cropRepository.findAll();
     }

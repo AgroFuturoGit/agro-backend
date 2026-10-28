@@ -81,7 +81,7 @@ public class HarvestController {
 
         Harvest harvestToUpdate = Mapper.toHarvest(harvestUpdateDTO);
 
-        Harvest updatedHarvest = harvestUpdateUseCase.execute(id, harvestToUpdate, loggedUser);
+        Harvest updatedHarvest = harvestUpdateUseCase.execute(id, harvestToUpdate, loggedUser, harvestUpdateDTO.baseUpdatedAt());
 
         HarvestResponseDTO responseDTO = Mapper.toHarvestResponseDTO(updatedHarvest);
 

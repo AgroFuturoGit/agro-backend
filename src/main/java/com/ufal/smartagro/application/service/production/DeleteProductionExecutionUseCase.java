@@ -19,7 +19,7 @@ public class DeleteProductionExecutionUseCase {
     @Transactional
     public void delete(UUID executionId, User loggedUser) {
         ProductionExecution execution = productionExecutionRepository.findById(executionId)
-                .orElseThrow(() -> new IllegalArgumentException("Execução de produção não encontrada."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Execução de produção não encontrada."));
 
         if (execution.getProductionPlan() != null) {
             accessValidator.validateWriteAccess(execution.getProductionPlan().getFarmer(), loggedUser);

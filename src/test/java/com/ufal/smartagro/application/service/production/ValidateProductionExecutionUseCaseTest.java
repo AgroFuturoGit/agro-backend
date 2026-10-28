@@ -1,6 +1,7 @@
 package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.InvalidStateTransitionException;
 import com.ufal.smartagro.domain.model.*;
 import com.ufal.smartagro.domain.model.enums.ExecutionStatus;
 import com.ufal.smartagro.domain.port.out.*;
@@ -110,8 +111,8 @@ class ValidateProductionExecutionUseCaseTest {
     }
 
     @Test
-    @DisplayName("Ao validar apontamento previamente rejeitado, rejectionReason é limpo")
-    void givenPreviouslyRejectedExecution_whenValidate_thenClearsRejectionReason() {
+    @DisplayName("Ao validar apontamento previamente rejeitado, lança InvalidStateTransitionException")
+    void givenPreviouslyRejectedExecution_whenValidate_thenThrowsInvalidStateTransitionException() {
         User admin = UserTestFactory.user().admin().build();
         Farmer farmer = UserTestFactory.farmerProfile().build();
         ProductionPlan plan = UserTestFactory.productionPlan().farmer(farmer).build();
@@ -122,13 +123,29 @@ class ValidateProductionExecutionUseCaseTest {
         );
 
         when(productionExecutionRepository.findById(rejectedExecution.getId())).thenReturn(Optional.of(rejectedExecution));
-        when(productionExecutionRepository.save(any(ProductionExecution.class))).thenAnswer(i -> i.getArgument(0));
 
-        ProductionExecution result = useCase.validate(rejectedExecution.getId(), admin);
+        assertThatThrownBy(() -> useCase.validate(rejectedExecution.getId(), admin))
+                .isInstanceOf(InvalidStateTransitionException.class)
+                .hasMessageContaining("Apenas apontamentos com status PENDENTE podem ser validados");
+    }
 
-        assertThat(result.getStatus()).isEqualTo(ExecutionStatus.VALIDATED);
-        assertThat(result.getRejectionReason()).isNull();
-        assertThat(result.getNotes()).isEqualTo("Observação");
+    @Test
+    @DisplayName("Ao validar apontamento já validado, lança InvalidStateTransitionException")
+    void givenAlreadyValidatedExecution_whenValidate_thenThrowsInvalidStateTransitionException() {
+        User admin = UserTestFactory.user().admin().build();
+        Farmer farmer = UserTestFactory.farmerProfile().build();
+        ProductionPlan plan = UserTestFactory.productionPlan().farmer(farmer).build();
+        ProductionExecution validatedExecution = new ProductionExecution(
+                UUID.randomUUID(), plan, new BigDecimal("10.00"), new BigDecimal("10.00"),
+                LocalDate.of(2026, 5, 10), ExecutionStatus.VALIDATED, null, null,
+                "Observação", null, null, null, null, null, null, null, null
+        );
+
+        when(productionExecutionRepository.findById(validatedExecution.getId())).thenReturn(Optional.of(validatedExecution));
+
+        assertThatThrownBy(() -> useCase.validate(validatedExecution.getId(), admin))
+                .isInstanceOf(InvalidStateTransitionException.class)
+                .hasMessageContaining("Apenas apontamentos com status PENDENTE podem ser validados");
     }
 
     @Test

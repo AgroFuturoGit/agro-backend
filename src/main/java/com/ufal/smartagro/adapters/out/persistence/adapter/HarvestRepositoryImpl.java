@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,8 +35,6 @@ public class HarvestRepositoryImpl implements HarvestRepository {
         return jpaHarvestRepository.existsByLabel(label);
     }
 
-
-
     @Override
     public Optional<Harvest> findById(UUID id) {
         return jpaHarvestRepository.findById(id).map(harvestMapper::toDomain);
@@ -52,5 +51,13 @@ public class HarvestRepositoryImpl implements HarvestRepository {
     @Transactional
     public void deleteById(UUID id) {
         jpaHarvestRepository.softDeleteById(id);
+    }
+
+    @Override
+    public Optional<Harvest> findActiveHarvest(LocalDate date) {
+        LocalDate referenceDate = date != null ? date : LocalDate.now();
+        return jpaHarvestRepository.findActiveHarvests(referenceDate).stream()
+                .findFirst()
+                .map(harvestMapper::toDomain);
     }
 }

@@ -35,6 +35,25 @@ class ProductionEnumsTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> HarvestType.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> MeasurementUnit.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> TimelineGranularity.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> PlanProgressStatus.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> TechnicianWarningType.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> WarningSeverity.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> ManagementDashboardScope.valueOf("UNKNOWN")).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test void planProgressStatusDeveConterValoresEDescricoesEsperados() {
+        assertThat(PlanProgressStatus.values()).containsExactly(
+                PlanProgressStatus.GOAL_REACHED,
+                PlanProgressStatus.ON_TRACK,
+                PlanProgressStatus.BELOW_EXPECTED,
+                PlanProgressStatus.DELAYED,
+                PlanProgressStatus.NOT_STARTED
+        );
+        assertThat(PlanProgressStatus.GOAL_REACHED.getDescription()).isEqualTo("Meta Atingida");
+        assertThat(PlanProgressStatus.ON_TRACK.getDescription()).isEqualTo("No Ritmo");
+        assertThat(PlanProgressStatus.BELOW_EXPECTED.getDescription()).isEqualTo("Abaixo do Esperado");
+        assertThat(PlanProgressStatus.DELAYED.getDescription()).isEqualTo("Atrasado");
+        assertThat(PlanProgressStatus.NOT_STARTED.getDescription()).isEqualTo("Não Iniciado");
     }
 
     @Test void timelineGranularityDeveConterValoresEDescricoesEsperados() {
@@ -61,4 +80,34 @@ class ProductionEnumsTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Granularidade inválida: 'YEAR'");
     }
+
+    @Test void technicianWarningTypeDeveConterValoresEDescricoesEsperados() {
+        assertThat(TechnicianWarningType.values()).containsExactly(
+                TechnicianWarningType.INACTIVE_EXECUTIONS,
+                TechnicianWarningType.LOW_YIELD_RISK,
+                TechnicianWarningType.HARVEST_OVERDUE
+        );
+        assertThat(TechnicianWarningType.INACTIVE_EXECUTIONS.getDescription()).isEqualTo("Apontamentos atrasados");
+        assertThat(TechnicianWarningType.LOW_YIELD_RISK.getDescription()).isEqualTo("Risco de baixa produtividade");
+        assertThat(TechnicianWarningType.HARVEST_OVERDUE.getDescription()).isEqualTo("Janela de colheita vencida");
+    }
+
+    @Test void warningSeverityDeveConterValoresEDescricoesEsperados() {
+        assertThat(WarningSeverity.values()).containsExactly(
+                WarningSeverity.MEDIUM,
+                WarningSeverity.HIGH
+        );
+        assertThat(WarningSeverity.MEDIUM.getDescription()).isEqualTo("Média");
+        assertThat(WarningSeverity.HIGH.getDescription()).isEqualTo("Alta");
+    }
+
+    @Test void managementDashboardScopeDeveConterValoresEDescricoesEsperados() {
+        assertThat(ManagementDashboardScope.values()).containsExactly(
+                ManagementDashboardScope.ORGANIZATION,
+                ManagementDashboardScope.GLOBAL
+        );
+        assertThat(ManagementDashboardScope.ORGANIZATION.getDescription()).isEqualTo("Organização");
+        assertThat(ManagementDashboardScope.GLOBAL.getDescription()).isEqualTo("Global");
+    }
 }
+

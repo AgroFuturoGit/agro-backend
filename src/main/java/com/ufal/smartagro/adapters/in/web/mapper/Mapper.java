@@ -6,6 +6,9 @@ import com.ufal.smartagro.adapters.in.web.dto.crop.CropResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.crop.CropUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionExecutionResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionPlanResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.production.occurrence.FieldOccurrenceResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.farmer.family.FamilyCompositionResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.farmer.financing.FinancingResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestRegisterDTO;
@@ -70,11 +73,19 @@ public class Mapper {
 
     /** Inclui os novos parâmetros da cultura na representação da API. */
     public static CropResponseDTO toCropResponseDTO(Crop crop) {
+        if (crop == null) return null;
         return new CropResponseDTO(
                 crop.getId(),
                 crop.getName(),
                 crop.getVariety(),
-                crop.getIsPriority(), crop.getCycleDays(), crop.getExpectedProductivity(), crop.getHarvestType(), crop.getUnit(), crop.getUnitWeightKg()
+                crop.getIsPriority(),
+                crop.getCycleDays(),
+                crop.getExpectedProductivity(),
+                crop.getHarvestType(),
+                crop.getUnit(),
+                crop.getUnitWeightKg(),
+                crop.getCreatedAt(),
+                crop.getUpdatedAt()
         );
     }
 
@@ -107,11 +118,14 @@ public class Mapper {
     }
 
     public static HarvestResponseDTO toHarvestResponseDTO(Harvest harvest) {
+        if (harvest == null) return null;
         return new HarvestResponseDTO(
                 harvest.getId(),
                 harvest.getLabel(),
                 harvest.getStartDate(),
-                harvest.getEndDate()
+                harvest.getEndDate(),
+                harvest.getCreatedAt(),
+                harvest.getUpdatedAt()
         );
     }
 
@@ -235,6 +249,46 @@ public class Mapper {
                 technician.getUpdatedAt()
         );
     }
+    public static FinancingResponseDTO toFinancingResponseDTO(com.ufal.smartagro.domain.model.Financing fin) {
+        if (fin == null) return null;
+        return new FinancingResponseDTO(
+                fin.getId(),
+                fin.getFarmer() != null ? fin.getFarmer().getId() : null,
+                fin.getDescription(),
+                fin.getStatus(),
+                fin.getAmount(),
+                fin.getCreatedAt(),
+                fin.getUpdatedAt()
+        );
+    }
+
+    public static FamilyCompositionResponseDTO toFamilyCompositionResponseDTO(com.ufal.smartagro.domain.model.FamilyComposition comp) {
+        if (comp == null) return null;
+        return new FamilyCompositionResponseDTO(
+                comp.getId(),
+                comp.getFarmer() != null ? comp.getFarmer().getId() : null,
+                comp.getName(),
+                comp.getKinship(),
+                comp.getAge(),
+                comp.getCreatedAt(),
+                comp.getUpdatedAt()
+        );
+    }
+
+    public static FieldOccurrenceResponseDTO toFieldOccurrenceResponseDTO(com.ufal.smartagro.domain.model.FieldOccurrence occ) {
+        if (occ == null) return null;
+        return new FieldOccurrenceResponseDTO(
+                occ.getId(),
+                occ.getExecution() != null ? occ.getExecution().getId() : null,
+                occ.getLogType(),
+                occ.getDescription(),
+                occ.getWeatherObservation(),
+                occ.getEvidenceUrl(),
+                occ.getCreatedAt(),
+                occ.getUpdatedAt()
+        );
+    }
+
     public static TechnicalAssistanceResponseDTO toTechnicalAssistanceResponseDTO(TechnicalAssistance assistance) {
         if (assistance == null) return null;
         return new TechnicalAssistanceResponseDTO(
