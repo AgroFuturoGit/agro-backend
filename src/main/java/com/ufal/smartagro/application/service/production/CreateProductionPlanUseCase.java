@@ -45,6 +45,25 @@ public class CreateProductionPlanUseCase {
             throw new IllegalArgumentException("O cultivo precisa ter produtividade esperada maior que zero para criar um plano.");
         }
 
+        // Validação de coerência das datas de colheita estimada
+        if (dto.expectedHarvestStart() != null && dto.expectedHarvestEnd() != null
+                && dto.expectedHarvestStart().isAfter(dto.expectedHarvestEnd())) {
+            throw new IllegalArgumentException("A data prevista de início da colheita não pode ser posterior à data de término.");
+        }
+
+        // Validação de coerência do plantio
+        if (dto.plannedPlantingDate() != null) {
+            if (harvest.getStartDate() != null && harvest.getEndDate() != null
+                    && (dto.plannedPlantingDate().isBefore(harvest.getStartDate()) || dto.plannedPlantingDate().isAfter(harvest.getEndDate()))) {
+                throw new IllegalArgumentException("A data de plantio deve estar dentro do período da safra ("
+                        + harvest.getStartDate() + " a " + harvest.getEndDate() + ").");
+            }
+
+            if (dto.expectedHarvestStart() != null && dto.plannedPlantingDate().isAfter(dto.expectedHarvestStart())) {
+                throw new IllegalArgumentException("A data planejada de plantio não pode ser posterior ao início previsto da colheita.");
+            }
+        }
+
         ProductionPlan plan = new ProductionPlan(
                 null,
                 farmer,

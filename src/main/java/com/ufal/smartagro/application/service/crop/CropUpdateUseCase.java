@@ -53,15 +53,15 @@ public class CropUpdateUseCase {
         );
 
         String targetName = (updatedCropData.getName() != null && !updatedCropData.getName().isBlank())
-                ? updatedCropData.getName()
-                : existingCrop.getName();
+                ? updatedCropData.getName().trim()
+                : existingCrop.getName().trim();
 
         String targetVariety = (updatedCropData.getVariety() != null && !updatedCropData.getVariety().isBlank())
-                ? updatedCropData.getVariety()
-                : existingCrop.getVariety();
+                ? updatedCropData.getVariety().trim()
+                : existingCrop.getVariety().trim();
 
-        boolean isNameOrVarietyChanged = !existingCrop.getName().equals(targetName) ||
-                !existingCrop.getVariety().equals(targetVariety);
+        boolean isNameOrVarietyChanged = !existingCrop.getName().trim().equals(targetName) ||
+                !existingCrop.getVariety().trim().equals(targetVariety);
 
         if (isNameOrVarietyChanged && cropRepository.existsByNameAndVariety(targetName, targetVariety)) {
             throw new CropAlreadyExistsException();

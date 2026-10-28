@@ -2,6 +2,10 @@ package com.ufal.smartagro.adapters.in.web.dto.production;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Size;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -9,12 +13,22 @@ import java.util.UUID;
 
 /** Campos editáveis do apontamento, incluindo quantidade, horário e decisão de validação. */
 public record ProductionExecutionUpdateDTO(
-        @DecimalMin(value = "0.01", message = "A quantidade produzida deve ser maior que zero.") BigDecimal quantity,
-        @DecimalMin(value = "0.01", message = "A quantidade em kg deve ser maior que zero.") BigDecimal quantityKg,
+        @DecimalMin(value = "0.01", message = "A quantidade produzida deve ser maior que zero.")
+        @Digits(integer = 8, fraction = 2, message = "A quantidade deve ter no máximo 8 dígitos inteiros e 2 decimais.")
+        BigDecimal quantity,
+
+        @DecimalMin(value = "0.01", message = "A quantidade em kg deve ser maior que zero.")
+        @Digits(integer = 8, fraction = 2, message = "A quantidade em kg deve ter no máximo 8 dígitos inteiros e 2 decimais.")
+        BigDecimal quantityKg,
+
+        @PastOrPresent(message = "A data da colheita não pode estar no futuro.")
         LocalDate harvestedAt,
+
         com.ufal.smartagro.domain.model.enums.ExecutionStatus status,
         UUID validatedBy,
         LocalDateTime validatedAt,
+
+        @Size(max = 500, message = "As observações devem ter no máximo 500 caracteres.")
         String notes,
 
         @DecimalMin(value = "-90.0", message = "Latitude inválida.")

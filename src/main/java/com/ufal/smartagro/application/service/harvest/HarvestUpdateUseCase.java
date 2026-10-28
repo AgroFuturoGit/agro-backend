@@ -56,14 +56,28 @@ public class HarvestUpdateUseCase {
             throw new IllegalArgumentException("A data de início não pode ser superior à data de término.");
         }
 
-        boolean isLabelChanged = !existingHarvest.getLabel().equals(updatedHarvestData.getLabel());
-        if (isLabelChanged && harvestRepository.existsByLabel(updatedHarvestData.getLabel())) {
-            throw new HarvestAlreadyExistsException("Já existe uma safra com o rótulo: " + updatedHarvestData.getLabel());
+        String targetLabel = updatedHarvestData.getLabel() != null ? updatedHarvestData.getLabel().trim() : existingHarvest.getLabel().trim();
+        if (targetLabel.isBlank()) {
+            throw new IllegalArgumentException("O rótulo da safra não pode ser vazio.");
+        }
+
+        boolean isLabelChanged = !existingHarvest.getLabel().trim().equals(targetLabel);
+        if (isLabelChanged && harvestRepository.existsByLabel(targetLabel)) {
+            throw new HarvestAlreadyExistsException("Já existe uma safra com o rótulo: " + targetLabel);
+        }
+
+        boolean hasOverlap = harvestRepository.findAll().stream()
+                .filter(existing -> existing.getId() != null && !existing.getId().equals(existingHarvest.getId()))
+                .anyMatch(existing -> existing.getStartDate() != null && existing.getEndDate() != null
+                        && !updatedHarvestData.getEndDate().isBefore(existing.getStartDate())
+                        && !updatedHarvestData.getStartDate().isAfter(existing.getEndDate()));
+        if (hasOverlap) {
+            throw new IllegalArgumentException("Já existe uma safra cadastrada com período sobreposto.");
         }
 
         Harvest harvestToSave = new Harvest(
                 existingHarvest.getId(),
-                updatedHarvestData.getLabel(),
+                targetLabel,
                 updatedHarvestData.getStartDate(),
                 updatedHarvestData.getEndDate(),
                 existingHarvest.getCreatedAt(),

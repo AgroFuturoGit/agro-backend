@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -123,5 +124,77 @@ class CreateProductionExecutionUseCaseTest {
         assertThat(created).isNotNull();
         assertThat(created.getStatus()).isEqualTo(ExecutionStatus.PENDING);
         verify(productionPlanRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Data de colheita no futuro lança IllegalArgumentException")
+    void givenFutureHarvestDate_whenCreate_thenThrowsIllegalArgumentException() {
+        User loggedUser = UserTestFactory.user().admin().build();
+        Farmer farmer = UserTestFactory.farmerProfile().build();
+        ProductionPlan plan = new ProductionPlan(
+                UUID.randomUUID(), farmer, null, null, new BigDecimal("2.0"),
+                PlanStatus.ACTIVE, null, null, new BigDecimal("5000.00"),
+                null, null, null, null, null, null, null, null
+        );
+        when(productionPlanRepository.findById(plan.getId())).thenReturn(Optional.of(plan));
+
+        ProductionExecutionRegisterDTO dto = new ProductionExecutionRegisterDTO(
+                new BigDecimal("10.00"),
+                new BigDecimal("10.00"),
+                LocalDate.now().plusDays(2),
+                null, null, null, null, null
+        );
+
+        assertThatThrownBy(() -> useCase.create(plan.getId(), dto, loggedUser))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A data da colheita não pode ser futura.");
+    }
+
+    @Test
+    @DisplayName("Data de colheita anterior a 1970 lança IllegalArgumentException")
+    void givenDateBefore1970_whenCreate_thenThrowsIllegalArgumentException() {
+        User loggedUser = UserTestFactory.user().admin().build();
+        Farmer farmer = UserTestFactory.farmerProfile().build();
+        ProductionPlan plan = new ProductionPlan(
+                UUID.randomUUID(), farmer, null, null, new BigDecimal("2.0"),
+                PlanStatus.ACTIVE, null, null, new BigDecimal("5000.00"),
+                null, null, null, null, null, null, null, null
+        );
+        when(productionPlanRepository.findById(plan.getId())).thenReturn(Optional.of(plan));
+
+        ProductionExecutionRegisterDTO dto = new ProductionExecutionRegisterDTO(
+                new BigDecimal("10.00"),
+                new BigDecimal("10.00"),
+                LocalDate.of(1969, 12, 31),
+                null, null, null, null, null
+        );
+
+        assertThatThrownBy(() -> useCase.create(plan.getId(), dto, loggedUser))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A data da colheita não pode ser anterior a 1970.");
+    }
+
+    @Test
+    @DisplayName("Data de colheita anterior ao plantio planejado lança IllegalArgumentException")
+    void givenHarvestDateBeforePlanting_whenCreate_thenThrowsIllegalArgumentException() {
+        User loggedUser = UserTestFactory.user().admin().build();
+        Farmer farmer = UserTestFactory.farmerProfile().build();
+        ProductionPlan plan = new ProductionPlan(
+                UUID.randomUUID(), farmer, null, null, new BigDecimal("2.0"),
+                PlanStatus.ACTIVE, null, null, new BigDecimal("5000.00"),
+                null, null, null, LocalDate.of(2026, 5, 10), null, null, null, null
+        );
+        when(productionPlanRepository.findById(plan.getId())).thenReturn(Optional.of(plan));
+
+        ProductionExecutionRegisterDTO dto = new ProductionExecutionRegisterDTO(
+                new BigDecimal("10.00"),
+                new BigDecimal("10.00"),
+                LocalDate.of(2026, 5, 1),
+                null, null, null, null, null
+        );
+
+        assertThatThrownBy(() -> useCase.create(plan.getId(), dto, loggedUser))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A data da colheita não pode ser anterior à data planejada de plantio.");
     }
 }

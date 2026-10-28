@@ -9,24 +9,30 @@ import org.hibernate.validator.constraints.br.CPF;
 import java.time.LocalDate;
 
 public record TechnicianRegisterDTO(
-    @NotBlank(message = "O nome completo é obrigatório")
-    String fullName,
+        @NotBlank(message = "O nome completo é obrigatório")
+        @Size(max = 150, message = "O nome completo deve ter no máximo 150 caracteres")
+        String fullName,
 
-    @NotBlank(message = "O email é obrigatório")
-    @Email(message = "O email deve ser válido")
-    String email,
+        @NotBlank(message = "O email é obrigatório")
+        @Email(message = "O email deve ser válido")
+        @Size(max = 100, message = "O email deve ter no máximo 100 caracteres")
+        String email,
 
-    @NotBlank(message = "A senha é obrigatória")
-    @Size(min = 8, message = "A senha deve ter no mínimo 8 caracteres")
-    String password,
+        @NotBlank(message = "A senha é obrigatória")
+        @Size(min = 8, max = 100, message = "A senha deve ter entre 8 e 100 caracteres")
+        String password,
 
-    @NotBlank(message = "O CPF é obrigatório")
-    @CPF(message = "O CPF deve ser válido")
-    String cpf,
+        @NotBlank(message = "O CPF é obrigatório")
+        @CPF(message = "O CPF deve ser válido")
+        String cpf,
 
-    ProfessionalRegistrationType registrationType,
-    String registrationNumber,
-    String specialty
+        ProfessionalRegistrationType registrationType,
+
+        @Size(max = 50, message = "O número de registro deve ter no máximo 50 caracteres")
+        String registrationNumber,
+
+        @Size(max = 100, message = "A especialidade deve ter no máximo 100 caracteres")
+        String specialty
 ) {
     public TechnicianRegisterDTO(
             String fullName,
@@ -48,18 +54,26 @@ public record TechnicianRegisterDTO(
     }
 
     private static ProfessionalRegistrationType parseType(String profId) {
-        if (profId == null) return ProfessionalRegistrationType.CREA;
+        if (profId == null) return null;
         String[] parts = profId.split("-", 2);
         try {
             return ProfessionalRegistrationType.valueOf(parts[0].trim().toUpperCase());
         } catch (Exception e) {
-            return ProfessionalRegistrationType.CREA;
+            return null;
         }
     }
 
     private static String parseNumber(String profId) {
         if (profId == null) return null;
         String[] parts = profId.split("-", 2);
-        return parts.length > 1 ? parts[1].trim() : profId;
+        if (parts.length > 1) {
+            try {
+                ProfessionalRegistrationType.valueOf(parts[0].trim().toUpperCase());
+                return parts[1].trim();
+            } catch (Exception e) {
+                return profId;
+            }
+        }
+        return profId;
     }
 }

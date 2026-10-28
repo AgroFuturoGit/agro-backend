@@ -1,23 +1,48 @@
 package com.ufal.smartagro.adapters.in.web.dto.farmer;
 
+import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Size;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record FarmerUpdateDTO(
-    String fullName,
-    LocalDate dateOfBirth,
-    String motherName,
-    String origin,
-    String educationLevel,
-    String phone,
-    String localName,
-    String street,
-    String city,
-    String state,
-    String ibgeCode,
-    BigDecimal latitude,
-    BigDecimal longitude,
-    Boolean isCompliant
+        @Size(max = 150, message = "O nome completo deve ter no máximo 150 caracteres")
+        String fullName,
+
+        @Past(message = "A data de nascimento deve estar no passado")
+        LocalDate dateOfBirth,
+
+        @Size(max = 150, message = "O nome da mãe deve ter no máximo 150 caracteres")
+        String motherName,
+
+        @Size(max = 100, message = "A origem deve ter no máximo 100 caracteres")
+        String origin,
+
+        @Size(max = 100, message = "O nível de escolaridade deve ter no máximo 100 caracteres")
+        String educationLevel,
+
+        @Size(max = 20, message = "O telefone deve ter no máximo 20 caracteres")
+        String phone,
+
+        @Size(max = 100, message = "O apelido/nome local deve ter no máximo 100 caracteres")
+        String localName,
+
+        @Size(max = 100, message = "A rua deve ter no máximo 100 caracteres")
+        String street,
+
+        @Size(max = 100, message = "A cidade deve ter no máximo 100 caracteres")
+        String city,
+
+        @Size(max = 50, message = "O estado deve ter no máximo 50 caracteres")
+        String state,
+
+        @Size(max = 10, message = "O código IBGE deve ter no máximo 10 caracteres")
+        String ibgeCode,
+
+        BigDecimal latitude,
+        BigDecimal longitude,
+        Boolean isCompliant
 ) {
     public FarmerUpdateDTO(String aliasName) {
         this(null, null, null, null, null, null, aliasName, null, null, null, null, null, null, null);
