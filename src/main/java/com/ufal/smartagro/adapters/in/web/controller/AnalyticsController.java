@@ -244,7 +244,7 @@ public class AnalyticsController {
 
     @Operation(
             summary = "Dashboard macro-gerencial da organização do gestor autenticado",
-            description = "Consolida os indicadores de desempenho, ranking de culturas e comparativo de comunidades da organização do gestor logado.",
+            description = "Consolida os indicadores de desempenho, ranking de culturas e comparativo de comunidades da organização do gestor logado a partir da visão materializada 'mv_org_harvest_summary' (com janela de atualização programada de até 5 minutos).",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -272,7 +272,7 @@ public class AnalyticsController {
 
     @Operation(
             summary = "Exportação de relatório macro-gerencial da organização do gestor (PDF ou XLSX)",
-            description = "Gera e exporta relatório da organização com ranking de culturas e desempenho por comunidade. Registra trilha de auditoria EXPORT.",
+            description = "Gera e exporta relatório da organização com ranking de culturas e desempenho por comunidade a partir da visão materializada 'mv_org_harvest_summary' (janela de atualização de até 5 minutos). Registra trilha de auditoria EXPORT.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -324,7 +324,7 @@ public class AnalyticsController {
 
     @Operation(
             summary = "Dashboard macro-gerencial de uma organização específica",
-            description = "Consolida os indicadores de desempenho de uma organização. Administradores podem consultar qualquer organização; Gestores apenas a sua.",
+            description = "Consolida os indicadores de desempenho de uma organização específica a partir da visão materializada 'mv_org_harvest_summary' (janela de atualização de até 5 minutos). Administradores podem consultar qualquer organização; Gestores apenas a sua.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -354,7 +354,7 @@ public class AnalyticsController {
 
     @Operation(
             summary = "Exportação de relatório macro-gerencial de uma organização específica (PDF ou XLSX)",
-            description = "Gera e exporta relatório da organização especificada. Administradores podem exportar qualquer organização; Gestores apenas a sua. Registra trilha de auditoria EXPORT.",
+            description = "Gera e exporta relatório da organização especificada a partir da visão materializada 'mv_org_harvest_summary' (janela de atualização de até 5 minutos). Administradores podem exportar qualquer organização; Gestores apenas a sua. Registra trilha de auditoria EXPORT.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -408,7 +408,7 @@ public class AnalyticsController {
 
     @Operation(
             summary = "Dashboard macro-gerencial global do sistema (Visão do Administrador)",
-            description = "Consolida todos os dados produtivos e cadastrais do sistema em nível nacional/estadual, com comparativo entre organizações.",
+            description = "Consolida todos os dados produtivos e cadastrais do sistema em nível nacional/estadual a partir da visão materializada 'mv_org_harvest_summary' (janela de atualização de até 5 minutos). Quando o parâmetro opcional 'organizationId' for informado para filtrar uma organização na visão do administrador, o campo 'scope' retornado no payload permanece 'GLOBAL', refletindo o contexto de autorização administrativa da sessão.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -438,7 +438,7 @@ public class AnalyticsController {
 
     @Operation(
             summary = "Exportação de relatório macro-gerencial global do sistema (PDF ou XLSX)",
-            description = "Gera e exporta relatório gerencial global com consolidação nacional, ranking de culturas e comparativo de organizações. Registra trilha de auditoria EXPORT.",
+            description = "Gera e exporta relatório gerencial global com consolidação nacional, ranking de culturas e comparativo de organizações a partir da visão materializada 'mv_org_harvest_summary' (janela de atualização de até 5 minutos). Quando filtrado por 'organizationId', o escopo documentado e exportado permanece 'GLOBAL'. Registra trilha de auditoria EXPORT.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({

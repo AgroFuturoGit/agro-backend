@@ -134,6 +134,9 @@ Com a aplicação em execução, a documentação interativa e os contratos da A
 3. No campo **Value**, insira o token JWT retornado.
 4. Clique em **Authorize** e feche a janela. Todos os endpoints protegidos utilizarão o token automaticamente.
 
+### 🔐 Controle de Acesso e Permissões (RBAC)
+Para detalhes completos sobre papéis (`ADMIN`, `MANAGER`, `TECHNICIAN`, `FARMER`), regras de escopo e métodos autorizados por endpoint, consulte a [Matriz Oficial de Permissões RBAC](docs/MATRIZ_PERMISSOES_RBAC.md).
+
 ---
 
 ## 🌿 Branches
