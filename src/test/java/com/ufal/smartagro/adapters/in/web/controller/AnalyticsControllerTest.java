@@ -14,6 +14,8 @@ import com.ufal.smartagro.adapters.in.web.dto.analytics.TechnicianFarmerSummaryD
 import com.ufal.smartagro.adapters.in.web.dto.analytics.TechnicianPlanWarningDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.TimelinePointDTO;
 import com.ufal.smartagro.adapters.out.persistence.entity.UserEntity;
+import com.ufal.smartagro.application.service.analytics.ReportExportService;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.GetFarmerDashboardSummaryUseCase;
 import com.ufal.smartagro.application.service.production.GetHarvestTimelineUseCase;
 import com.ufal.smartagro.application.service.production.GetManagementDashboardSummaryUseCase;
@@ -56,6 +58,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
+import org.springframework.http.HttpHeaders;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -80,6 +88,12 @@ class AnalyticsControllerTest {
 
     @MockitoBean
     private GetManagementDashboardSummaryUseCase getManagementDashboardSummaryUseCase;
+
+    @MockitoBean
+    private ReportExportService reportExportService;
+
+    @MockitoBean
+    private AuditLogService auditLogService;
 
     @MockitoBean
     private UserRepository userRepository;
@@ -625,6 +639,204 @@ class AnalyticsControllerTest {
         when(userRepository.findById(technicianUser.getId())).thenReturn(Optional.of(technicianUser));
 
         mockMvc.perform(get("/analytics/global/summary")
+                        .with(user(technicianUserDetails)))
+                .andExpect(status().isForbidden());
+    }
+
+    // =========================================================================
+    // Testes de Exportação de Relatórios (Feature 6.5)
+    // =========================================================================
+
+    @Test
+    @DisplayName("GET /farmers/me/summary/export: deve retornar 200 com binário PDF e registrar auditoria")
+    void deveExportarResumoAgricultorEmPdf() throws Exception {
+        User farmerUser = UserTestFactory.user().role(Role.FARMER).build();
+        UserDetailsImpl farmerUserDetails = userDetails(farmerUser);
+        when(userRepository.findById(farmerUser.getId())).thenReturn(Optional.of(farmerUser));
+
+        FarmerDashboardSummaryDTO summary = FarmerDashboardSummaryDTO.empty(
+                farmerUser.getId(), "João Agricultor", "Comunidade Sol Nascente", null
+        );
+        when(getFarmerDashboardSummaryUseCase.execute(null, farmerUser)).thenReturn(summary);
+        byte[] fakePdf = new byte[]{0x25, 0x50, 0x44, 0x46, 0x01, 0x02};
+        when(reportExportService.exportFarmerSummaryToPdf(summary)).thenReturn(fakePdf);
+
+        mockMvc.perform(get("/analytics/farmers/me/summary/export?format=pdf")
+                        .with(user(farmerUserDetails)))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "application/pdf"))
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, org.hamcrest.Matchers.containsString("relatorio-agricultor-")))
+                .andExpect(content().bytes(fakePdf));
+
+        verify(auditLogService).record(eq(farmerUser), eq(AuditAction.EXPORT), eq("analytics_reports"), any(), any());
+    }
+
+    @Test
+    @DisplayName("GET /farmers/me/summary/export: deve retornar 200 com planilha XLSX")
+    void deveExportarResumoAgricultorEmXlsx() throws Exception {
+        User farmerUser = UserTestFactory.user().role(Role.FARMER).build();
+        UserDetailsImpl farmerUserDetails = userDetails(farmerUser);
+        when(userRepository.findById(farmerUser.getId())).thenReturn(Optional.of(farmerUser));
+
+        FarmerDashboardSummaryDTO summary = FarmerDashboardSummaryDTO.empty(
+                farmerUser.getId(), "João Agricultor", "Comunidade Sol Nascente", null
+        );
+        when(getFarmerDashboardSummaryUseCase.execute(null, farmerUser)).thenReturn(summary);
+        byte[] fakeXlsx = new byte[]{0x50, 0x4B, 0x03, 0x04};
+        when(reportExportService.exportFarmerSummaryToXlsx(summary)).thenReturn(fakeXlsx);
+
+        mockMvc.perform(get("/analytics/farmers/me/summary/export?format=xlsx")
+                        .with(user(farmerUserDetails)))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, org.hamcrest.Matchers.containsString(".xlsx")))
+                .andExpect(content().bytes(fakeXlsx));
+    }
+
+    @Test
+    @DisplayName("GET /farmers/me/summary/export: deve retornar 400 para formato inválido")
+    void deveRetornar400ParaFormatoInvalido() throws Exception {
+        User farmerUser = UserTestFactory.user().role(Role.FARMER).build();
+        UserDetailsImpl farmerUserDetails = userDetails(farmerUser);
+        when(userRepository.findById(farmerUser.getId())).thenReturn(Optional.of(farmerUser));
+
+        mockMvc.perform(get("/analytics/farmers/me/summary/export?format=csv")
+                        .with(user(farmerUserDetails)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("GET /farmers/me/summary/export: técnico deve tomar 403 ao tentar exportar relatório de agricultor")
+    void tecnicoNaoPodeExportarRelatorioDeAgricultor() throws Exception {
+        User technicianUser = UserTestFactory.user().role(Role.TECHNICIAN).build();
+        UserDetailsImpl technicianUserDetails = userDetails(technicianUser);
+        when(userRepository.findById(technicianUser.getId())).thenReturn(Optional.of(technicianUser));
+
+        mockMvc.perform(get("/analytics/farmers/me/summary/export?format=pdf")
+                        .with(user(technicianUserDetails)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("GET /technicians/me/summary/export: deve retornar 200 com PDF da carteira técnica")
+    void deveExportarCarteiraTecnicaEmPdf() throws Exception {
+        User technicianUser = UserTestFactory.user().role(Role.TECHNICIAN).build();
+        UserDetailsImpl technicianUserDetails = userDetails(technicianUser);
+        when(userRepository.findById(technicianUser.getId())).thenReturn(Optional.of(technicianUser));
+
+        TechnicianDashboardSummaryDTO summary = TechnicianDashboardSummaryDTO.empty(
+                technicianUser.getId(), "Carlos Técnico", null, null, null
+        );
+        when(getTechnicianDashboardSummaryUseCase.execute(null, null, null, technicianUser)).thenReturn(summary);
+        byte[] fakePdf = new byte[]{0x25, 0x50, 0x44, 0x46};
+        when(reportExportService.exportTechnicianSummaryToPdf(summary)).thenReturn(fakePdf);
+
+        mockMvc.perform(get("/analytics/technicians/me/summary/export?format=pdf")
+                        .with(user(technicianUserDetails)))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "application/pdf"))
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, org.hamcrest.Matchers.containsString("relatorio-carteira-tecnica-")))
+                .andExpect(content().bytes(fakePdf));
+
+        verify(auditLogService).record(eq(technicianUser), eq(AuditAction.EXPORT), eq("analytics_reports"), any(), any());
+    }
+
+    @Test
+    @DisplayName("GET /technicians/me/summary/export: agricultor deve tomar 403 ao tentar exportar carteira técnica")
+    void agricultorNaoPodeExportarCarteiraTecnica() throws Exception {
+        User farmerUser = UserTestFactory.user().role(Role.FARMER).build();
+        UserDetailsImpl farmerUserDetails = userDetails(farmerUser);
+        when(userRepository.findById(farmerUser.getId())).thenReturn(Optional.of(farmerUser));
+
+        mockMvc.perform(get("/analytics/technicians/me/summary/export?format=pdf")
+                        .with(user(farmerUserDetails)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("GET /organizations/me/summary/export: gestor deve exportar resumo da organização em XLSX")
+    void gestorDeveExportarOrganizacaoEmXlsx() throws Exception {
+        User managerUser = UserTestFactory.user().role(Role.MANAGER).build();
+        UserDetailsImpl managerUserDetails = userDetails(managerUser);
+        when(userRepository.findById(managerUser.getId())).thenReturn(Optional.of(managerUser));
+
+        UUID orgId = UUID.randomUUID();
+        ManagementDashboardSummaryDTO summary = ManagementDashboardSummaryDTO.empty(
+                com.ufal.smartagro.domain.model.enums.ManagementDashboardScope.ORGANIZATION,
+                orgId, "Cooperativa Alagoana", null, null
+        );
+        when(getManagementDashboardSummaryUseCase.executeForCurrentManager(null, null, managerUser)).thenReturn(summary);
+        byte[] fakeXlsx = new byte[]{0x50, 0x4B, 0x03, 0x04};
+        when(reportExportService.exportManagementSummaryToXlsx(summary)).thenReturn(fakeXlsx);
+
+        mockMvc.perform(get("/analytics/organizations/me/summary/export?format=xlsx")
+                        .with(user(managerUserDetails)))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, org.hamcrest.Matchers.containsString("relatorio-organizacao-")))
+                .andExpect(content().bytes(fakeXlsx));
+
+        verify(auditLogService).record(eq(managerUser), eq(AuditAction.EXPORT), eq("analytics_reports"), eq(orgId), any());
+    }
+
+    @Test
+    @DisplayName("GET /organizations/{organizationId}/summary/export: admin pode exportar qualquer organização")
+    void adminPodeExportarOrganizacaoEspecifica() throws Exception {
+        UUID orgId = UUID.randomUUID();
+        ManagementDashboardSummaryDTO summary = ManagementDashboardSummaryDTO.empty(
+                com.ufal.smartagro.domain.model.enums.ManagementDashboardScope.ORGANIZATION,
+                orgId, "Cooperativa Central", null, null
+        );
+        when(getManagementDashboardSummaryUseCase.executeForOrganization(eq(orgId), any(), any(), eq(adminUser)))
+                .thenReturn(summary);
+        byte[] fakePdf = new byte[]{0x25, 0x50, 0x44, 0x46};
+        when(reportExportService.exportManagementSummaryToPdf(summary)).thenReturn(fakePdf);
+
+        mockMvc.perform(get("/analytics/organizations/" + orgId + "/summary/export?format=pdf")
+                        .with(user(adminUserDetails)))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "application/pdf"))
+                .andExpect(content().bytes(fakePdf));
+    }
+
+    @Test
+    @DisplayName("GET /global/summary/export: admin exporta dashboard global em PDF")
+    void adminPodeExportarDashboardGlobal() throws Exception {
+        ManagementDashboardSummaryDTO summary = ManagementDashboardSummaryDTO.empty(
+                com.ufal.smartagro.domain.model.enums.ManagementDashboardScope.GLOBAL,
+                null, null, null, null
+        );
+        when(getManagementDashboardSummaryUseCase.executeGlobal(null, null, null, adminUser))
+                .thenReturn(summary);
+        byte[] fakePdf = new byte[]{0x25, 0x50, 0x44, 0x46};
+        when(reportExportService.exportManagementSummaryToPdf(summary)).thenReturn(fakePdf);
+
+        mockMvc.perform(get("/analytics/global/summary/export?format=pdf")
+                        .with(user(adminUserDetails)))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "application/pdf"))
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, org.hamcrest.Matchers.containsString("relatorio-gerencial-global.pdf")))
+                .andExpect(content().bytes(fakePdf));
+
+        verify(auditLogService).record(eq(adminUser), eq(AuditAction.EXPORT), eq("analytics_reports"), any(), any());
+    }
+
+    @Test
+    @DisplayName("GET /global/summary/export: gestor e técnico tomam 403 ao tentar exportar global")
+    void gestorETecnicoNaoPodemExportarGlobal() throws Exception {
+        User managerUser = UserTestFactory.user().role(Role.MANAGER).build();
+        UserDetailsImpl managerUserDetails = userDetails(managerUser);
+        when(userRepository.findById(managerUser.getId())).thenReturn(Optional.of(managerUser));
+
+        mockMvc.perform(get("/analytics/global/summary/export?format=pdf")
+                        .with(user(managerUserDetails)))
+                .andExpect(status().isForbidden());
+
+        User technicianUser = UserTestFactory.user().role(Role.TECHNICIAN).build();
+        UserDetailsImpl technicianUserDetails = userDetails(technicianUser);
+        when(userRepository.findById(technicianUser.getId())).thenReturn(Optional.of(technicianUser));
+
+        mockMvc.perform(get("/analytics/global/summary/export?format=pdf")
                         .with(user(technicianUserDetails)))
                 .andExpect(status().isForbidden());
     }
