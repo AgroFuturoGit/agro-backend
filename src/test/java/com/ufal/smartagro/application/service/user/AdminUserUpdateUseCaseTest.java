@@ -9,7 +9,6 @@ import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.UserRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -19,7 +18,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 

@@ -3,7 +3,6 @@ package com.ufal.smartagro.application.service.harvest;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.ConcurrentUpdateException;
 import com.ufal.smartagro.domain.exception.HarvestAlreadyExistsException;
-import com.ufal.smartagro.domain.exception.HarvestNotFoundException;
 import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.HarvestRepository;

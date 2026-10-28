@@ -38,7 +38,7 @@ public class ProductionController {
     private final ListProductionPlansUseCase listProductionPlansUseCase;
     private final FindProductionPlanByIdUseCase findProductionPlanByIdUseCase;
     private final DeleteProductionPlanUseCase deleteProductionPlanUseCase;
-    
+
     private final UpdateProductionExecutionUseCase updateProductionExecutionUseCase;
     private final ValidateProductionExecutionUseCase validateProductionExecutionUseCase;
     private final RejectProductionExecutionUseCase rejectProductionExecutionUseCase;

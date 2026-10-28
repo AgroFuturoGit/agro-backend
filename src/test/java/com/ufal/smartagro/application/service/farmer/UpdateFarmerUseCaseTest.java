@@ -5,7 +5,6 @@ import com.ufal.smartagro.application.service.production.ProductionAccessValidat
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
-import com.ufal.smartagro.testsupport.UserTestFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

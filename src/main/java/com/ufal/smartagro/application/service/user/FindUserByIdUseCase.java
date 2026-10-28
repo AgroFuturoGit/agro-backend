@@ -4,7 +4,6 @@ import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
-import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;

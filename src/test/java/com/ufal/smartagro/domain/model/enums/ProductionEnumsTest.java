@@ -110,4 +110,3 @@ class ProductionEnumsTest {
         assertThat(ManagementDashboardScope.GLOBAL.getDescription()).isEqualTo("Global");
     }
 }
-

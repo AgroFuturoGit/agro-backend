@@ -58,7 +58,7 @@ public class RoleController {
             @PathVariable UUID userId,
             @Valid @RequestBody AssignRoleDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
-        
+
         User loggedUser = userRepository.findById(loggedUserDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
 

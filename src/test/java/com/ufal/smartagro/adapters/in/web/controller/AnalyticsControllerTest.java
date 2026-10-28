@@ -4,10 +4,7 @@ import com.ufal.smartagro.adapters.in.web.dto.analytics.FarmerDashboardSummaryDT
 import com.ufal.smartagro.adapters.in.web.dto.analytics.FarmerPlanSummaryCardDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.HarvestSummaryInfoDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.HarvestTimelineDTO;
-import com.ufal.smartagro.adapters.in.web.dto.analytics.ManagementCommunityPerformanceDTO;
-import com.ufal.smartagro.adapters.in.web.dto.analytics.ManagementCropRankingItemDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.ManagementDashboardSummaryDTO;
-import com.ufal.smartagro.adapters.in.web.dto.analytics.ManagementOrganizationSummaryDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.TechnicianCommunitySummaryDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.TechnicianDashboardSummaryDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.TechnicianFarmerSummaryDTO;

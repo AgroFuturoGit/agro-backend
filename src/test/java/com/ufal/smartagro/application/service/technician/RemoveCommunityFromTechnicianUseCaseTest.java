@@ -162,4 +162,3 @@ class RemoveCommunityFromTechnicianUseCaseTest {
                 .hasMessage("Acesso negado para encerrar assistência.");
     }
 }
-
