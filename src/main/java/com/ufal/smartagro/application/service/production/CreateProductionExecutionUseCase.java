@@ -1,6 +1,7 @@
 package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionExecutionRegisterDTO;
+import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.User;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 /** Registra cada ocorrência de colheita como apontamento independente. */
@@ -29,6 +31,21 @@ public class CreateProductionExecutionUseCase {
 
         accessValidator.validateWriteAccess(plan.getFarmer(), loggedUser);
 
+        LocalDate harvestedAt = dto.harvestedAt();
+        if (harvestedAt.isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("A data da colheita não pode ser futura.");
+        }
+        if (harvestedAt.isBefore(LocalDate.of(1970, 1, 1))) {
+            throw new IllegalArgumentException("A data da colheita não pode ser anterior a 1970.");
+        }
+        if (plan.getPlannedPlantingDate() != null && harvestedAt.isBefore(plan.getPlannedPlantingDate())) {
+            throw new IllegalArgumentException("A data da colheita não pode ser anterior à data planejada de plantio.");
+        }
+        Harvest harvest = plan.getHarvest();
+        if (harvest != null && harvest.getStartDate() != null && harvestedAt.isBefore(harvest.getStartDate())) {
+            throw new IllegalArgumentException("A data da colheita não pode ser anterior ao início da safra.");
+        }
+
         java.math.BigDecimal quantityKg = ProductionQuantityCalculator.calculateQuantityKg(
                 plan.getCrop(),
                 dto.quantity(),
@@ -40,7 +57,7 @@ public class CreateProductionExecutionUseCase {
                 plan,
                 dto.quantity(),
                 quantityKg,
-                dto.harvestedAt(),
+                harvestedAt,
                 com.ufal.smartagro.domain.model.enums.ExecutionStatus.PENDING,
                 null,
                 null,
@@ -77,6 +94,7 @@ public class CreateProductionExecutionUseCase {
             );
             productionPlanRepository.save(activePlan);
         }
+
         return saved;
     }
 }

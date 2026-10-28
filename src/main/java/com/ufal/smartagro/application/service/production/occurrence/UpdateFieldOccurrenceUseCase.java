@@ -27,13 +27,33 @@ public class UpdateFieldOccurrenceUseCase {
             accessValidator.validateWriteAccess(existing.getExecution().getProductionPlan().getFarmer(), loggedUser);
         }
 
+        String description = existing.getDescription();
+        if (dto.description() != null) {
+            String trimmed = dto.description().trim();
+            if (!trimmed.isEmpty()) {
+                description = trimmed;
+            }
+        }
+
+        String weatherObservation = existing.getWeatherObservation();
+        if (dto.weatherObservation() != null) {
+            String trimmed = dto.weatherObservation().trim();
+            weatherObservation = trimmed.isEmpty() ? null : trimmed;
+        }
+
+        String evidenceUrl = existing.getEvidenceUrl();
+        if (dto.evidenceUrl() != null) {
+            String trimmed = dto.evidenceUrl().trim();
+            evidenceUrl = trimmed.isEmpty() ? null : trimmed;
+        }
+
         FieldOccurrence updated = FieldOccurrence.builder()
                 .id(existing.getId())
                 .execution(existing.getExecution())
                 .logType(dto.logType() != null ? dto.logType() : existing.getLogType())
-                .description(dto.description() != null && !dto.description().isBlank() ? dto.description().trim() : existing.getDescription())
-                .weatherObservation(dto.weatherObservation() != null ? dto.weatherObservation().trim() : existing.getWeatherObservation())
-                .evidenceUrl(dto.evidenceUrl() != null ? dto.evidenceUrl().trim() : existing.getEvidenceUrl())
+                .description(description)
+                .weatherObservation(weatherObservation)
+                .evidenceUrl(evidenceUrl)
                 .createdAt(existing.getCreatedAt())
                 .updatedAt(null)
                 .deletedAt(existing.getDeletedAt())

@@ -83,7 +83,7 @@ public class CropController {
 
         Crop cropToUpdate = Mapper.toCrop(cropUpdateDTO);
 
-        Crop updatedCrop = cropUpdateUseCase.execute(id, cropToUpdate, loggedUser);
+        Crop updatedCrop = cropUpdateUseCase.execute(id, cropToUpdate, loggedUser, cropUpdateDTO.baseUpdatedAt());
 
         CropResponseDTO responseDTO = Mapper.toCropResponseDTO(updatedCrop);
 

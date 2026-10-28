@@ -246,6 +246,11 @@ public class GetTechnicianDashboardSummaryUseCase {
             UUID fId = farmerRow.farmerId();
             List<TechnicianPlanSummary> fPlans = plansByFarmer.getOrDefault(fId, List.of());
 
+            // Quando cropId está presente, exibe apenas os agricultores que possuem planos da cultura filtrada (Seção 3.3)
+            if (cropId != null && fPlans.isEmpty()) {
+                continue;
+            }
+
             int activePlansCount = 0;
             BigDecimal plantedArea = BigDecimal.ZERO;
             BigDecimal targetKg = BigDecimal.ZERO;

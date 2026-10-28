@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -30,6 +31,15 @@ public class UpdateProductionExecutionUseCase {
 
         if (existingExecution.getProductionPlan() != null) {
             accessValidator.validateWriteAccess(existingExecution.getProductionPlan().getFarmer(), loggedUser);
+        }
+
+        if (dto.harvestedAt() != null) {
+            if (dto.harvestedAt().isAfter(LocalDate.now())) {
+                throw new IllegalArgumentException("A data da colheita não pode ser futura.");
+            }
+            if (dto.harvestedAt().isBefore(LocalDate.of(1970, 1, 1))) {
+                throw new IllegalArgumentException("A data da colheita não pode ser anterior a 1970.");
+            }
         }
 
         if (loggedUser.getRole() == com.ufal.smartagro.domain.model.enums.Role.FARMER) {
@@ -116,53 +126,17 @@ public class UpdateProductionExecutionUseCase {
         return productionExecutionRepository.save(updatedExecution);
     }
 
-    private User userReference(UUID userId) {
-        return User.builder().id(userId).build();
-    }
-
-    private record Localizacao(
-            BigDecimal latitude,
-            BigDecimal longitude,
-            BigDecimal accuracy,
-            LocalDateTime recordedAt
-    ) {}
-
-    /**
-     * Decide o destino da localização numa edição, entre três intenções que um
-     * campo nulo sozinho não distingue:
-     *
-     * <ul>
-     *   <li>{@code clearLocation} — apagar a posição de propósito, para quando o
-     *       usuário reconhece que ela não corresponde ao local da colheita;</li>
-     *   <li>coordenada presente — recaptura: substitui tudo, inclusive precisão
-     *       e carimbo, que pertencem àquela leitura e não podem ficar para trás;</li>
-     *   <li>nada — preserva. Um formulário salvo sem GPS não pode apagar a
-     *       posição registrada em campo.</li>
-     * </ul>
-     */
-    /** Interpreta a intenção de manter, substituir ou limpar a posição GPS no apontamento. */
-    private Localizacao resolverLocalizacao(
-            ProductionExecutionUpdateDTO dto,
-            ProductionExecution existente
-    ) {
+    private Localizacao resolverLocalizacao(ProductionExecutionUpdateDTO dto, ProductionExecution existing) {
         if (Boolean.TRUE.equals(dto.clearLocation())) {
             return new Localizacao(null, null, null, null);
         }
+        BigDecimal lat = dto.latitude() != null ? dto.latitude() : existing.getLatitude();
+        BigDecimal lon = dto.longitude() != null ? dto.longitude() : existing.getLongitude();
+        BigDecimal acc = dto.locationAccuracy() != null ? dto.locationAccuracy() : existing.getLocationAccuracy();
+        LocalDateTime rec = dto.locationRecordedAt() != null ? dto.locationRecordedAt() : existing.getLocationRecordedAt();
+        return new Localizacao(lat, lon, acc, rec);
+    }
 
-        if (dto.latitude() != null && dto.longitude() != null) {
-            return new Localizacao(
-                    dto.latitude(),
-                    dto.longitude(),
-                    dto.locationAccuracy(),
-                    dto.locationRecordedAt()
-            );
-        }
-
-        return new Localizacao(
-                existente.getLatitude(),
-                existente.getLongitude(),
-                existente.getLocationAccuracy(),
-                existente.getLocationRecordedAt()
-        );
+    private record Localizacao(BigDecimal latitude, BigDecimal longitude, BigDecimal accuracy, LocalDateTime recordedAt) {
     }
 }

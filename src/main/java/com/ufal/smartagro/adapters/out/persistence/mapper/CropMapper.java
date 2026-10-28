@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class CropMapper {
 
-    /** Reconstrói a cultura com os parâmetros de produtividade e unidade persistidos. */
+    /** Reconstrói a cultura com os parâmetros de produtividade, unidade e timestamps persistidos. */
     public Crop toDomain(CropEntity entity) {
         if (entity == null) {
             return null;
@@ -17,7 +17,15 @@ public class CropMapper {
                 entity.getId(),
                 entity.getName(),
                 entity.getVariety(),
-                entity.getIsPriority(), entity.getCycleDays(), entity.getExpectedProductivity(), entity.getHarvestType(), entity.getUnit(), entity.getUnitWeightKg()
+                entity.getIsPriority(),
+                entity.getCycleDays(),
+                entity.getExpectedProductivity(),
+                entity.getHarvestType(),
+                entity.getUnit(),
+                entity.getUnitWeightKg(),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt(),
+                entity.getDeletedAt()
         );
     }
 
@@ -37,6 +45,9 @@ public class CropMapper {
         cropEntity.setHarvestType(domain.getHarvestType());
         cropEntity.setUnit(domain.getUnit());
         cropEntity.setUnitWeightKg(domain.getUnitWeightKg());
+        cropEntity.setCreatedAt(domain.getCreatedAt());
+        cropEntity.setUpdatedAt(domain.getUpdatedAt());
+        cropEntity.setDeletedAt(domain.getDeletedAt());
         return cropEntity;
     }
 }

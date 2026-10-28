@@ -15,7 +15,10 @@ public class HarvestMapper {
                 entity.getId(),
                 entity.getLabel(),
                 entity.getStartDate(),
-                entity.getEndDate()
+                entity.getEndDate(),
+                entity.getCreatedAt(),
+                entity.getUpdatedAt(),
+                entity.getDeletedAt()
         );
     }
 
@@ -29,7 +32,9 @@ public class HarvestMapper {
         harvestEntity.setLabel(domain.getLabel());
         harvestEntity.setStartDate(domain.getStartDate());
         harvestEntity.setEndDate(domain.getEndDate());
+        harvestEntity.setCreatedAt(domain.getCreatedAt());
+        harvestEntity.setUpdatedAt(domain.getUpdatedAt());
+        harvestEntity.setDeletedAt(domain.getDeletedAt());
         return harvestEntity;
     }
-
 }

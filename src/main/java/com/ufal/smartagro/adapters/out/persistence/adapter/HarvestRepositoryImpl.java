@@ -35,8 +35,6 @@ public class HarvestRepositoryImpl implements HarvestRepository {
         return jpaHarvestRepository.existsByLabel(label);
     }
 
-
-
     @Override
     public Optional<Harvest> findById(UUID id) {
         return jpaHarvestRepository.findById(id).map(harvestMapper::toDomain);

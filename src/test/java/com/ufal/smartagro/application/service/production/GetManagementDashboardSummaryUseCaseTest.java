@@ -398,8 +398,8 @@ class GetManagementDashboardSummaryUseCaseTest {
         }
 
         @Test
-        @DisplayName("deve calcular market share baseado na meta quando volume realizado for zero (início de safra)")
-        void marketShare_comRealizadoZero_deveUsarTargetKg() {
+        @DisplayName("deve retornar market share zero quando volume total realizado for zero (Secao 3.3)")
+        void marketShare_comRealizadoZero_deveZerarMarketShare() {
             when(organizationRepository.findById(orgIdA)).thenReturn(Optional.of(orgA));
             when(harvestRepository.findById(harvestId)).thenReturn(Optional.of(harvest));
 
@@ -423,10 +423,25 @@ class GetManagementDashboardSummaryUseCaseTest {
             ManagementDashboardSummaryDTO result = useCase.executeForOrganization(orgIdA, harvestId, null, adminUser, refDate);
 
             assertThat(result.cropRanking()).hasSize(2);
-            // Milho: 75.000 de 100.000 target => 75.00%
-            assertThat(result.cropRanking().get(0).productionSharePct()).isEqualByComparingTo("75.00");
-            // Feijão: 25.000 de 100.000 target => 25.00%
-            assertThat(result.cropRanking().get(1).productionSharePct()).isEqualByComparingTo("25.00");
+            // Com realizado = 0, productionSharePct deve ser 0.00 conforme Secao 3.3
+            assertThat(result.cropRanking().get(0).productionSharePct()).isEqualByComparingTo("0.00");
+            assertThat(result.cropRanking().get(1).productionSharePct()).isEqualByComparingTo("0.00");
+        }
+
+        @Test
+        @DisplayName("deve marcar isEmpty = true quando nao houver planos no escopo da safra (Secao 3.3)")
+        void execute_quandoSafraSemPlanos_deveRetornarIsEmptyTrue() {
+            when(organizationRepository.findById(orgIdA)).thenReturn(Optional.of(orgA));
+            when(harvestRepository.findById(harvestId)).thenReturn(Optional.of(harvest));
+
+            ManagementCommunityCensusRow census = new ManagementCommunityCensusRow(orgIdA, "COOPAFAL", commId1, "São José", 10, 10);
+            when(productionPlanRepository.findCommunityCensus(orgIdA, null)).thenReturn(List.of(census));
+            when(productionPlanRepository.findManagementHarvestSummary(orgIdA, null, harvestId)).thenReturn(List.of());
+
+            ManagementDashboardSummaryDTO result = useCase.executeForOrganization(orgIdA, harvestId, null, adminUser, refDate);
+
+            assertThat(result.totalPlansCount()).isZero();
+            assertThat(result.isEmpty()).isTrue();
         }
     }
 

@@ -2,16 +2,32 @@ package com.ufal.smartagro.adapters.in.web.dto.production;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Size;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /** Dados de um apontamento de colheita; o estado inicial de validação é definido pelo serviço. */
 public record ProductionExecutionRegisterDTO(
-        @NotNull(message = "A quantidade colhida é obrigatória.") @DecimalMin("0.01") BigDecimal quantity,
-        @NotNull(message = "A quantidade em kg é obrigatória.") @DecimalMin("0.01") BigDecimal quantityKg,
-        @NotNull(message = "A data da colheita é obrigatória.") LocalDate harvestedAt,
+        @NotNull(message = "A quantidade colhida é obrigatória.")
+        @DecimalMin(value = "0.01", message = "A quantidade produzida deve ser maior que zero.")
+        @Digits(integer = 8, fraction = 2, message = "A quantidade deve ter no máximo 8 dígitos inteiros e 2 decimais.")
+        BigDecimal quantity,
+
+        @NotNull(message = "A quantidade em kg é obrigatória.")
+        @DecimalMin(value = "0.01", message = "A quantidade em kg deve ser maior que zero.")
+        @Digits(integer = 8, fraction = 2, message = "A quantidade em kg deve ter no máximo 8 dígitos inteiros e 2 decimais.")
+        BigDecimal quantityKg,
+
+        @NotNull(message = "A data da colheita é obrigatória.")
+        @PastOrPresent(message = "A data da colheita não pode estar no futuro.")
+        LocalDate harvestedAt,
+
+        @Size(max = 500, message = "As observações devem ter no máximo 500 caracteres.")
         String notes,
 
         /**

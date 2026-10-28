@@ -73,11 +73,19 @@ public class Mapper {
 
     /** Inclui os novos parâmetros da cultura na representação da API. */
     public static CropResponseDTO toCropResponseDTO(Crop crop) {
+        if (crop == null) return null;
         return new CropResponseDTO(
                 crop.getId(),
                 crop.getName(),
                 crop.getVariety(),
-                crop.getIsPriority(), crop.getCycleDays(), crop.getExpectedProductivity(), crop.getHarvestType(), crop.getUnit(), crop.getUnitWeightKg()
+                crop.getIsPriority(),
+                crop.getCycleDays(),
+                crop.getExpectedProductivity(),
+                crop.getHarvestType(),
+                crop.getUnit(),
+                crop.getUnitWeightKg(),
+                crop.getCreatedAt(),
+                crop.getUpdatedAt()
         );
     }
 
@@ -110,11 +118,14 @@ public class Mapper {
     }
 
     public static HarvestResponseDTO toHarvestResponseDTO(Harvest harvest) {
+        if (harvest == null) return null;
         return new HarvestResponseDTO(
                 harvest.getId(),
                 harvest.getLabel(),
                 harvest.getStartDate(),
-                harvest.getEndDate()
+                harvest.getEndDate(),
+                harvest.getCreatedAt(),
+                harvest.getUpdatedAt()
         );
     }
 
