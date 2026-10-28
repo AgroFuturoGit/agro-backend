@@ -1,8 +1,8 @@
 package com.ufal.smartagro.application.service.user;
 
 import com.ufal.smartagro.adapters.in.web.dto.user.AdminUserUpdateDTO;
-import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
-import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+
+
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
@@ -23,7 +23,7 @@ public class AdminUserUpdateUseCase {
     private final UserRepository userRepository;
 
     @Transactional
-    public UserResponseDTO update(UUID userId, AdminUserUpdateDTO dto, User loggedUser) {
+    public User update(UUID userId, AdminUserUpdateDTO dto, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException();
         }
@@ -56,6 +56,6 @@ public class AdminUserUpdateUseCase {
 
         User savedUser = userRepository.save(updatedUser);
         log.info("Usuário atualizado com sucesso pelo administrador [actorId={}] no usuário alvo [targetUserId={}]", loggedUser.getId(), userId);
-        return Mapper.toUserResponseDTO(savedUser);
+        return savedUser;
     }
 }

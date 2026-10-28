@@ -1,7 +1,7 @@
 package com.ufal.smartagro.application.service.user;
 
-import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
-import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+
+
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.Manager;
@@ -25,7 +25,7 @@ public class FindUserByIdUseCase {
     private final FarmerRepository farmerRepository;
 
     @Transactional(readOnly = true)
-    public UserResponseDTO findById(UUID userId, User loggedUser) {
+    public User findById(UUID userId, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.MANAGER) {
             throw new AccessDeniedException();
         }
@@ -37,7 +37,7 @@ public class FindUserByIdUseCase {
             throw new AccessDeniedException("O gestor só tem acesso aos usuários da sua própria organização.");
         }
 
-        return Mapper.toUserResponseDTO(user);
+        return user;
     }
 
     private boolean isUserInManagerOrganization(UUID targetUserId, User loggedUser) {

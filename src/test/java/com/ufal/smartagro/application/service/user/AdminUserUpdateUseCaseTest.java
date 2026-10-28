@@ -1,7 +1,6 @@
 package com.ufal.smartagro.application.service.user;
 
 import com.ufal.smartagro.adapters.in.web.dto.user.AdminUserUpdateDTO;
-import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
@@ -55,7 +54,7 @@ class AdminUserUpdateUseCaseTest {
         when(userRepository.findById(target.getId())).thenReturn(Optional.of(target));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        UserResponseDTO response = adminUserUpdateUseCase.update(target.getId(), dto, admin);
+        User response = adminUserUpdateUseCase.update(target.getId(), dto, admin);
 
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(captor.capture());
@@ -65,8 +64,8 @@ class AdminUserUpdateUseCaseTest {
         assertThat(saved.getPassword()).isEqualTo(UserTestFactory.ENCODED_PASSWORD);
         assertThat(saved.getFullName()).isEqualTo("Nome Admin Editado");
         assertThat(saved.getRole()).isEqualTo(Role.ADMIN);
-        assertThat(response.email()).isEqualTo(target.getEmail());
-        assertThat(response.cpf()).isEqualTo(target.getCpf());
+        assertThat(response.getEmail()).isEqualTo(target.getEmail());
+        assertThat(response.getCpf()).isEqualTo(target.getCpf());
     }
 
     @ParameterizedTest(name = "Given Role.{0} When update Then AccessDeniedException")

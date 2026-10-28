@@ -1,8 +1,8 @@
 package com.ufal.smartagro.application.service.user;
 
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
-import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
-import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+
+
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.CpfAlreadyExistsException;
 import com.ufal.smartagro.domain.exception.EmailAlreadyExistsException;
@@ -25,7 +25,7 @@ public class UserRegisterUseCase {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public UserResponseDTO register(UserRegisterDTO dto, User loggedUser) {
+    public User register(UserRegisterDTO dto, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException();
         }
@@ -34,8 +34,8 @@ public class UserRegisterUseCase {
             throw new IllegalArgumentException("Para criar ou promover gestores, produtores e técnicos, utilize as rotas específicas de perfil.");
         }
 
-        User savedUser = createBaseUser(dto);
-        return Mapper.toUserResponseDTO(savedUser);
+        return createBaseUser(dto);
+
     }
 
     @Transactional
@@ -54,14 +54,14 @@ public class UserRegisterUseCase {
 
         String encodedPassword = passwordEncoder.encode(dto.password());
 
-        User baseUser = Mapper.toUser(dto, encodedPassword);
+
         User newUser = new User(
-                baseUser.getId(),
-                baseUser.getFullName() != null ? baseUser.getFullName().trim() : null,
+                null,
+                dto.fullName() != null ? dto.fullName().trim() : null,
                 normalizedEmail,
-                baseUser.getPassword(),
+                encodedPassword,
                 normalizedCpf,
-                baseUser.getRole()
+                dto.role()
         );
         return userRepository.save(newUser);
     }

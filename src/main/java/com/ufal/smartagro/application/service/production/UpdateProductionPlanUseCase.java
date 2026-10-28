@@ -1,7 +1,7 @@
 package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionPlanUpdateDTO;
-import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+
 import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.User;
@@ -34,7 +34,7 @@ public class UpdateProductionPlanUseCase {
                 dto.baseUpdatedAt(),
                 existingPlan.getUpdatedAt(),
                 existingPlan.getCreatedAt(),
-                Mapper.toProductionPlanResponseDTO(existingPlan),
+                existingPlan,
                 "O plano de produção foi alterado por outro usuário depois que esta edição começou."
         );
 

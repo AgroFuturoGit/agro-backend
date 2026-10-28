@@ -1,7 +1,7 @@
 package com.ufal.smartagro.application.service.role;
 
-import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
-import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+
+
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
@@ -20,7 +20,7 @@ public class AssignRoleUseCase {
     private final UserRepository userRepository;
 
     @Transactional
-    public UserResponseDTO assignRole(UUID userId, Role newRole, User loggedUser) {
+    public User assignRole(UUID userId, Role newRole, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException();
         }
@@ -42,6 +42,6 @@ public class AssignRoleUseCase {
             newRole
         );
 
-        return Mapper.toUserResponseDTO(userRepository.save(updated));
+        return userRepository.save(updated);
     }
 }

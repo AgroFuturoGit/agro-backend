@@ -1,6 +1,5 @@
 package com.ufal.smartagro.application.service.role;
 
-import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
@@ -87,14 +86,14 @@ class AssignRoleUseCaseTest {
             when(userRepository.findById(target.getId())).thenReturn(Optional.of(target));
             when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-            UserResponseDTO response = assignRoleUseCase.assignRole(target.getId(), Role.ADMIN, admin);
+            User response = assignRoleUseCase.assignRole(target.getId(), Role.ADMIN, admin);
 
             ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
             verify(userRepository).save(captor.capture());
             assertThat(captor.getValue().getRole()).isEqualTo(Role.ADMIN);
             assertThat(captor.getValue().getEmail()).isEqualTo(target.getEmail());
             assertThat(captor.getValue().getCpf()).isEqualTo(target.getCpf());
-            assertThat(response.role()).isEqualTo(Role.ADMIN);
+            assertThat(response.getRole()).isEqualTo(Role.ADMIN);
         }
 
         @Test

@@ -1,7 +1,6 @@
 package com.ufal.smartagro.application.service.user;
 
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
-import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.CpfAlreadyExistsException;
 import com.ufal.smartagro.domain.exception.EmailAlreadyExistsException;
@@ -75,7 +74,7 @@ class UserRegisterUseCaseTest {
                 );
             });
 
-            UserResponseDTO response = userRegisterUseCase.register(dto, admin);
+            User response = userRegisterUseCase.register(dto, admin);
 
             ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
             verify(userRepository).save(captor.capture());
@@ -84,10 +83,10 @@ class UserRegisterUseCaseTest {
             assertThat(persisted.getId()).isNull();
             assertThat(persisted.getPassword()).isEqualTo(UserTestFactory.ENCODED_PASSWORD);
             assertThat(persisted.getRole()).isEqualTo(targetRole);
-            assertThat(response.id()).isEqualTo(savedId);
-            assertThat(response.email()).isEqualTo(dto.email());
-            assertThat(response.cpf()).isEqualTo(dto.cpf());
-            assertThat(response.role()).isEqualTo(targetRole);
+            assertThat(response.getId()).isEqualTo(savedId);
+            assertThat(response.getEmail()).isEqualTo(dto.email());
+            assertThat(response.getCpf()).isEqualTo(dto.cpf());
+            assertThat(response.getRole()).isEqualTo(targetRole);
             verify(passwordEncoder).encode(UserTestFactory.RAW_PASSWORD);
         }
     }

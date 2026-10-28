@@ -1,6 +1,5 @@
 package com.ufal.smartagro.application.service.user;
 
-import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserUpdateDTO;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
@@ -56,7 +55,7 @@ class UserUpdateUseCaseTest {
             when(userRepository.findById(logged.getId())).thenReturn(Optional.of(logged));
             when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-            UserResponseDTO response = userUpdateUseCase.update(dto, logged);
+            User response = userUpdateUseCase.update(dto, logged);
 
             ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
             verify(userRepository).save(captor.capture());
@@ -68,8 +67,8 @@ class UserUpdateUseCaseTest {
             assertThat(saved.getCpf()).isEqualTo(UserTestFactory.VALID_CPF);
             assertThat(saved.getPassword()).isEqualTo(UserTestFactory.ENCODED_PASSWORD);
             assertThat(saved.getRole()).isEqualTo(Role.FARMER);
-            assertThat(response.email()).isEqualTo(logged.getEmail());
-            assertThat(response.cpf()).isEqualTo(logged.getCpf());
+            assertThat(response.getEmail()).isEqualTo(logged.getEmail());
+            assertThat(response.getCpf()).isEqualTo(logged.getCpf());
         }
 
         @ParameterizedTest(name = "Given Role.{0} When update Then carrega somente loggedUser.getId()")

@@ -3,6 +3,7 @@ package com.ufal.smartagro.adapters.in.web.controller;
 import com.ufal.smartagro.adapters.in.web.dto.role.AssignRoleDTO;
 import com.ufal.smartagro.adapters.in.web.dto.role.RoleResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
+import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.role.AssignRoleUseCase;
 import com.ufal.smartagro.application.service.role.ListRolesUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
@@ -58,6 +59,7 @@ public class RoleController {
 
         User loggedUser = loggedUserDetails.toDomainUser();
 
-        return ResponseEntity.ok(assignRoleUseCase.assignRole(userId, dto.role(), loggedUser));
+        User updated = assignRoleUseCase.assignRole(userId, dto.role(), loggedUser);
+        return ResponseEntity.ok(Mapper.toUserResponseDTO(updated));
     }
 }

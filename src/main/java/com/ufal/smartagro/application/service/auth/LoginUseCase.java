@@ -1,8 +1,8 @@
 package com.ufal.smartagro.application.service.auth;
 
 import com.ufal.smartagro.adapters.in.web.dto.auth.LoginDTO;
-import com.ufal.smartagro.adapters.in.web.dto.auth.LoginResponseDTO;
-import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+import com.ufal.smartagro.domain.model.LoginResult;
+
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.config.security.service.JwtTokenService;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
@@ -29,7 +29,7 @@ public class LoginUseCase {
     private final JwtTokenService jwtTokenService;
 
     @Transactional(readOnly = true)
-    public LoginResponseDTO login(LoginDTO loginDTO) {
+    public LoginResult login(LoginDTO loginDTO) {
         String normalizedEmail = loginDTO.email() != null
                 ? loginDTO.email().trim().toLowerCase(Locale.ROOT)
                 : "";
@@ -48,7 +48,7 @@ public class LoginUseCase {
             String token = jwtTokenService.generateToken(userDetails);
 
             log.info("Login efetuado com sucesso [userId={}, email='{}', role={}]", user.getId(), normalizedEmail, user.getRole());
-            return Mapper.toLoginResponseDTO(token, user);
+            return new LoginResult(token, user);
         } catch (AuthenticationException ex) {
             log.warn("Falha de autenticação para o email '{}': {}", normalizedEmail, ex.getMessage());
             throw ex;
