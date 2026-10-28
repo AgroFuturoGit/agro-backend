@@ -16,7 +16,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UploadExecutionAttachmentUseCase {
 
-    /** Espelha o CHECK da migration V15. */
+    /** Espelha o CHECK da migration V18. */
     static final long MAX_SIZE_BYTES = 5L * 1024 * 1024;
 
     static final Set<String> ALLOWED_CONTENT_TYPES =
