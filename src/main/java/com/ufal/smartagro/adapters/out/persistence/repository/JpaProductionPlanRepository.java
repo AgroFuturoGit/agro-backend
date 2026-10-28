@@ -6,6 +6,7 @@ import com.ufal.smartagro.adapters.out.persistence.projection.ManagementCommunit
 import com.ufal.smartagro.adapters.out.persistence.projection.ManagementOrgHarvestSummaryProjection;
 import com.ufal.smartagro.adapters.out.persistence.projection.TechnicianAssistedFarmerProjection;
 import com.ufal.smartagro.adapters.out.persistence.projection.TechnicianPlanSummaryProjection;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -16,8 +17,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface JpaProductionPlanRepository extends JpaRepository<ProductionPlanEntity, UUID> {
+    @Override
+    @EntityGraph(attributePaths = {"farmer", "crop", "harvest"})
+    Optional<ProductionPlanEntity> findById(UUID id);
+
+    @EntityGraph(attributePaths = {"farmer", "crop", "harvest"})
     List<ProductionPlanEntity> findAllByFarmerId(UUID farmerId);
 
+    @EntityGraph(attributePaths = {"farmer", "crop", "harvest"})
     Optional<ProductionPlanEntity> findByFarmerIdAndClientId(UUID farmerId, UUID clientId);
 
     boolean existsByHarvestId(UUID harvestId);
