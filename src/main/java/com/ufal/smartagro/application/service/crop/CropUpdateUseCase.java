@@ -10,6 +10,7 @@ import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CropRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -31,11 +32,13 @@ public class CropUpdateUseCase {
     }
 
     /** Retrocompatibilidade sem baseUpdatedAt. */
+    @Transactional
     public Crop execute(UUID id, Crop updatedCropData, User loggedUser) {
         return execute(id, updatedCropData, loggedUser, null);
     }
 
     /** Preserva o identificador e grava também ciclo, produtividade, tipo e unidade atualizados, com controle de concorrência. */
+    @Transactional
     public Crop execute(UUID id, Crop updatedCropData, User loggedUser, LocalDateTime baseUpdatedAt) {
         if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN) {
             throw new AccessDeniedException("Usuário não tem permissão para atualizar culturas.");

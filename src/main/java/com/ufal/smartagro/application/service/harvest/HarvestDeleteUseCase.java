@@ -10,6 +10,7 @@ import com.ufal.smartagro.domain.port.out.ProductionPlanRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -21,6 +22,7 @@ public class HarvestDeleteUseCase {
     private final HarvestRepository harvestRepository;
     private final ProductionPlanRepository productionPlanRepository;
 
+    @Transactional
     public void execute(UUID id, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN) {
             throw new AccessDeniedException("Usuário não tem permissão para deletar uma safra.");

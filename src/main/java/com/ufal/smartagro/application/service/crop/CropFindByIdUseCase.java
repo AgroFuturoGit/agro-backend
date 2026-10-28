@@ -8,6 +8,7 @@ import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CropRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -17,6 +18,7 @@ public class CropFindByIdUseCase {
 
     private final CropRepository cropRepository;
 
+    @Transactional(readOnly = true)
     public Crop execute(UUID id, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN
                 && loggedUser.getRole() != Role.TECHNICIAN

@@ -7,7 +7,6 @@ import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.port.out.CropRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +28,7 @@ public class CropRepositoryImpl implements CropRepository {
     }
 
     @Override
-    public boolean existsByNameAndVariety(String name, String variety){
+    public boolean existsByNameAndVariety(String name, String variety) {
         return jpaCropRepository.existsByNameAndVariety(name, variety);
     }
 
@@ -46,7 +45,6 @@ public class CropRepositoryImpl implements CropRepository {
     }
 
     @Override
-    @Transactional
     public void deleteById(UUID id) {
         jpaCropRepository.softDeleteById(id);
     }

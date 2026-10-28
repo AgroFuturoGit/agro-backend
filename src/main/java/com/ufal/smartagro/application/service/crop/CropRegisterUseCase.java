@@ -8,6 +8,7 @@ import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CropRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
@@ -15,6 +16,7 @@ public class CropRegisterUseCase {
 
     private final CropRepository cropRepository;
 
+    @Transactional
     public Crop execute(Crop crop, User loggedUser) {
         // Double-checking authorization at the business logic level
         if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN) {

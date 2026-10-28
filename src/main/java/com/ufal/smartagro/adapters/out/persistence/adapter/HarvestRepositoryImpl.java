@@ -4,12 +4,9 @@ import com.ufal.smartagro.adapters.out.persistence.entity.HarvestEntity;
 import com.ufal.smartagro.adapters.out.persistence.mapper.HarvestMapper;
 import com.ufal.smartagro.adapters.out.persistence.repository.JpaHarvestRepository;
 import com.ufal.smartagro.domain.model.Harvest;
-
 import com.ufal.smartagro.domain.port.out.HarvestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-
 
 import java.time.LocalDate;
 import java.util.List;
@@ -20,6 +17,7 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class HarvestRepositoryImpl implements HarvestRepository {
+
     private final JpaHarvestRepository jpaHarvestRepository;
     private final HarvestMapper harvestMapper;
 
@@ -43,12 +41,11 @@ public class HarvestRepositoryImpl implements HarvestRepository {
     @Override
     public List<Harvest> findAll() {
         return jpaHarvestRepository.findAll().stream()
-                .map(harvestMapper::toDomain)
+                .map(cropMapper -> harvestMapper.toDomain(cropMapper))
                 .collect(Collectors.toList());
     }
 
     @Override
-    @Transactional
     public void deleteById(UUID id) {
         jpaHarvestRepository.softDeleteById(id);
     }
