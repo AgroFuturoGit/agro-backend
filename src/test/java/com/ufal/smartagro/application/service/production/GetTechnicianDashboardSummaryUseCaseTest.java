@@ -631,5 +631,39 @@ class GetTechnicianDashboardSummaryUseCaseTest {
             assertThat(farmerPedro.realizedKg()).isEqualByComparingTo(BigDecimal.ZERO);
             assertThat(farmerPedro.lastExecutionDate()).isNull();
         }
+        @Test
+        @DisplayName("Quando cropId for informado, deve filtrar lista de agricultores trazendo apenas os que possuem planos da cultura (Secao 3.3)")
+        void execute_quandoCropIdInformado_deveFiltrarListaFarmers() {
+            when(technicianRepository.findByUserId(userId)).thenReturn(Optional.of(technician));
+            when(harvestRepository.findById(harvestId)).thenReturn(Optional.of(harvest));
+            when(cropRepository.findById(cropId)).thenReturn(Optional.of(mock(Crop.class)));
+
+            List<TechnicianAssistedFarmerRow> assistedRows = List.of(
+                    new TechnicianAssistedFarmerRow(communityId1, "Comunidade A", farmerId1, "João", true),
+                    new TechnicianAssistedFarmerRow(communityId1, "Comunidade A", farmerId2, "Maria", false),
+                    new TechnicianAssistedFarmerRow(communityId2, "Comunidade B", farmerId3, "Pedro", true)
+            );
+            when(productionPlanRepository.findAssistedFarmersByTechnician(technicianId, null))
+                    .thenReturn(assistedRows);
+
+            // Apenas João tem plano para este cropId
+            TechnicianPlanSummary planJoao = new TechnicianPlanSummary(
+                    UUID.randomUUID(), farmerId1, "João", communityId1, "Comunidade A",
+                    cropId, "Milho", "Híbrido", HarvestType.SINGLE, "KG", PlanStatus.ACTIVE,
+                    new BigDecimal("3.00"), new BigDecimal("6000.00"), new BigDecimal("4000.00"), new BigDecimal("500.00"),
+                    2L, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 4, 1), LocalDate.of(2026, 7, 1),
+                    LocalDate.of(2026, 5, 10)
+            );
+
+            when(productionPlanRepository.findPlanSummariesByTechnician(technicianId, null, cropId, harvestId, false))
+                    .thenReturn(List.of(planJoao));
+
+            TechnicianDashboardSummaryDTO result = useCase.execute(harvestId, null, cropId, technicianUser);
+
+            // Com o filtro de cropId, farmers[] deve conter apenas João (Secao 3.3)
+            assertThat(result.farmers()).hasSize(1);
+            assertThat(result.farmers().get(0).farmerId()).isEqualTo(farmerId1);
+            assertThat(result.farmers().get(0).farmerName()).isEqualTo("João");
+        }
     }
 }

@@ -317,13 +317,15 @@ public class GetManagementDashboardSummaryUseCase {
         // 3. Comparativo de Organizações
         List<ManagementOrganizationSummaryDTO> organizations = buildOrganizationSummaries(censusRows, harvestRows);
 
+        boolean isEmpty = (totalPlansCount == 0);
+
         return new ManagementDashboardSummaryDTO(
                 scope,
                 organizationId,
                 organizationName,
                 currentHarvest,
                 appliedCommunityId,
-                false,
+                isEmpty,
                 totalOrganizationsCount,
                 totalCommunitiesCount,
                 totalFarmersCount,
@@ -378,12 +380,10 @@ public class GetManagementDashboardSummaryUseCase {
 
             BigDecimal conversionRatePct = calculatePercentage(realizedKg, targetKg);
 
-            // Participação na produção (market share)
+            // Participação na produção (market share sobre total realizado; 0 quando sem colheita - Seção 3.3)
             BigDecimal productionSharePct;
             if (globalRealizedKg.compareTo(BigDecimal.ZERO) > 0) {
                 productionSharePct = calculatePercentage(realizedKg, globalRealizedKg);
-            } else if (globalTargetKg.compareTo(BigDecimal.ZERO) > 0) {
-                productionSharePct = calculatePercentage(targetKg, globalTargetKg);
             } else {
                 productionSharePct = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
             }
