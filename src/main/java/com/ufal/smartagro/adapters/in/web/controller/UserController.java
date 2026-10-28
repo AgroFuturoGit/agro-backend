@@ -11,9 +11,7 @@ import com.ufal.smartagro.application.service.user.FindUserByIdUseCase;
 import com.ufal.smartagro.application.service.user.UserRegisterUseCase;
 import com.ufal.smartagro.application.service.user.UserUpdateUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
-import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
-import com.ufal.smartagro.domain.port.out.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -42,7 +40,6 @@ public class UserController {
     private final UserUpdateUseCase userUpdateUseCase;
     private final AdminUserUpdateUseCase adminUserUpdateUseCase;
     private final FindAllUsersUseCase findAllUsersUseCase;
-    private final UserRepository userRepository;
 
     @Operation(summary = "Registrar usuário (deprecado)", description = "Cria um novo usuário na base de dados. Aceita POST /users e POST /users/register com retorno de header Location.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
@@ -61,8 +58,7 @@ public class UserController {
             throw new IllegalArgumentException("Para criar gestores ou agricultores, utilize as rotas específicas de Organização e Comunidade.");
         }
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         UserResponseDTO response = userRegisterUseCase.register(dto, loggedUser);
         URI location = URI.create("/users/" + response.id());
@@ -82,8 +78,7 @@ public class UserController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         userDeleteUseCase.delete(id, loggedUser);
         return ResponseEntity.noContent().build();
@@ -100,8 +95,7 @@ public class UserController {
             @Valid @RequestBody UserUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         UserResponseDTO response = userUpdateUseCase.update(dto, loggedUser);
         return ResponseEntity.ok(response);
@@ -121,8 +115,7 @@ public class UserController {
             @Valid @RequestBody AdminUserUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         UserResponseDTO response = adminUserUpdateUseCase.update(id, dto, loggedUser);
         return ResponseEntity.ok(response);
@@ -140,8 +133,7 @@ public class UserController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         UserResponseDTO response = findUserByIdUseCase.findById(id, loggedUser);
         return ResponseEntity.ok(response);
@@ -157,8 +149,7 @@ public class UserController {
     public ResponseEntity<List<UserResponseDTO>> findAll(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         List<UserResponseDTO> response = findAllUsersUseCase.findAll(loggedUser);
         return ResponseEntity.ok(response);

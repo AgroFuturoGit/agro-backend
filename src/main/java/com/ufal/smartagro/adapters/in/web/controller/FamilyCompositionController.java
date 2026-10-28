@@ -6,10 +6,8 @@ import com.ufal.smartagro.adapters.in.web.dto.farmer.family.FamilyCompositionUpd
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.farmer.family.*;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
-import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.FamilyComposition;
 import com.ufal.smartagro.domain.model.User;
-import com.ufal.smartagro.domain.port.out.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -37,7 +35,6 @@ public class FamilyCompositionController {
     private final FindFamilyCompositionByIdUseCase findFamilyCompositionByIdUseCase;
     private final UpdateFamilyCompositionUseCase updateFamilyCompositionUseCase;
     private final DeleteFamilyCompositionUseCase deleteFamilyCompositionUseCase;
-    private final UserRepository userRepository;
 
     @Operation(summary = "Cadastrar membro familiar", description = "Adiciona um membro à composição familiar do agricultor.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
@@ -52,8 +49,7 @@ public class FamilyCompositionController {
             @Valid @RequestBody FamilyCompositionRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         FamilyComposition saved = registerFamilyCompositionUseCase.register(farmerId, dto, loggedUser);
         FamilyCompositionResponseDTO response = Mapper.toFamilyCompositionResponseDTO(saved);
@@ -72,8 +68,7 @@ public class FamilyCompositionController {
             @PathVariable UUID farmerId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         List<FamilyComposition> list = findAllFamilyCompositionsByFarmerUseCase.findAll(farmerId, loggedUser);
         return ResponseEntity.ok(list.stream().map(Mapper::toFamilyCompositionResponseDTO).toList());
@@ -91,8 +86,7 @@ public class FamilyCompositionController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         FamilyComposition item = findFamilyCompositionByIdUseCase.findById(id, loggedUser);
         return ResponseEntity.ok(Mapper.toFamilyCompositionResponseDTO(item));
@@ -112,8 +106,7 @@ public class FamilyCompositionController {
             @Valid @RequestBody FamilyCompositionUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         FamilyComposition updated = updateFamilyCompositionUseCase.update(id, dto, loggedUser);
         return ResponseEntity.ok(Mapper.toFamilyCompositionResponseDTO(updated));
@@ -131,8 +124,7 @@ public class FamilyCompositionController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         deleteFamilyCompositionUseCase.delete(id, loggedUser);
         return ResponseEntity.noContent().build();

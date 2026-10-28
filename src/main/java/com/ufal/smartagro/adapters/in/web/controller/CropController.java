@@ -10,10 +10,8 @@ import com.ufal.smartagro.application.service.crop.CropRegisterUseCase;
 import com.ufal.smartagro.application.service.crop.CropUpdateUseCase;
 import com.ufal.smartagro.application.service.crop.CropDeleteUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
-import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.User;
-import com.ufal.smartagro.domain.port.out.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -41,7 +39,6 @@ public class CropController {
     private final CropFindByIdUseCase cropFindByIdUseCase;
     private final CropFindAllUseCase cropFindAllUseCase;
     private final CropDeleteUseCase cropDeleteUseCase;
-    private final UserRepository userRepository;
 
     @Operation(summary = "Cadastrar cultura", description = "Registra uma nova cultura agrícola no sistema. Aceita POST /crops e POST /crops/register com retorno de header Location.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
@@ -54,8 +51,7 @@ public class CropController {
     public ResponseEntity<CropResponseDTO> register(@Valid @RequestBody CropRegisterDTO cropRegisterDTO,
                                                     @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         Crop crop = Mapper.toCrop(cropRegisterDTO);
 
@@ -79,8 +75,7 @@ public class CropController {
     public ResponseEntity<CropResponseDTO> update(@PathVariable UUID id,
                                                   @Valid @RequestBody CropUpdateDTO cropUpdateDTO,
                                                   @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         Crop cropToUpdate = Mapper.toCrop(cropUpdateDTO);
 
@@ -100,8 +95,7 @@ public class CropController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping("/{id}")
     public ResponseEntity<CropResponseDTO> findById(@PathVariable UUID id, @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
         Crop crop = cropFindByIdUseCase.execute(id, loggedUser);
         CropResponseDTO responseDTO = Mapper.toCropResponseDTO(crop);
         return ResponseEntity.ok(responseDTO);
@@ -115,8 +109,7 @@ public class CropController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping
     public ResponseEntity<List<CropResponseDTO>> findAll(@AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
         List<Crop> crops = cropFindAllUseCase.execute(loggedUser);
         List<CropResponseDTO> responseDTOs = crops.stream()
                 .map(Mapper::toCropResponseDTO)
@@ -133,8 +126,7 @@ public class CropController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
         cropDeleteUseCase.execute(id, loggedUser);
         return ResponseEntity.noContent().build();
     }

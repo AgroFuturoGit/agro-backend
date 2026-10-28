@@ -11,11 +11,9 @@ import com.ufal.smartagro.application.service.community.FindCommunityByIdUseCase
 import com.ufal.smartagro.application.service.community.UpdateCommunityUseCase;
 import com.ufal.smartagro.application.service.farmer.RegisterFarmerUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
-import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.User;
-import com.ufal.smartagro.domain.port.out.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -43,7 +41,6 @@ public class CommunityController {
     private final FindAllCommunitiesUseCase findAllCommunitiesUseCase;
     private final UpdateCommunityUseCase updateCommunityUseCase;
     private final DeleteCommunityUseCase deleteCommunityUseCase;
-    private final UserRepository userRepository;
 
     @Operation(summary = "Cadastrar agricultor na comunidade", description = "Registra um novo agricultor e o vincula à comunidade informada.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
@@ -59,8 +56,7 @@ public class CommunityController {
             @Valid @RequestBody FarmerRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         Farmer farmer = registerFarmerUseCase.register(id, dto, loggedUser);
         FarmerResponseDTO response = Mapper.toFarmerResponseDTO(farmer);
@@ -148,8 +144,5 @@ public class CommunityController {
         return ResponseEntity.noContent().build();
     }
 
-    private User resolveLoggedUser(UserDetailsImpl loggedUserDetails) {
-        return userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
-    }
+    private User resolveLoggedUser(UserDetailsImpl loggedUserDetails) { return loggedUserDetails != null ? loggedUserDetails.toDomainUser() : null; }
 }

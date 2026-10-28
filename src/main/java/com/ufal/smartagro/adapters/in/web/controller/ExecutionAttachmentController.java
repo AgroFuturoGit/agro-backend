@@ -3,10 +3,8 @@ package com.ufal.smartagro.adapters.in.web.controller;
 import com.ufal.smartagro.adapters.in.web.dto.production.ExecutionAttachmentResponseDTO;
 import com.ufal.smartagro.application.service.production.*;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
-import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.ExecutionAttachment;
 import com.ufal.smartagro.domain.model.User;
-import com.ufal.smartagro.domain.port.out.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -36,7 +34,6 @@ public class ExecutionAttachmentController {
     private final ListExecutionAttachmentsUseCase listUseCase;
     private final DownloadExecutionAttachmentUseCase downloadUseCase;
     private final DeleteExecutionAttachmentUseCase deleteUseCase;
-    private final UserRepository userRepository;
 
     @Operation(
             summary = "Anexar foto a um apontamento",
@@ -126,8 +123,5 @@ public class ExecutionAttachmentController {
         return ResponseEntity.noContent().build();
     }
 
-    private User loadUser(UserDetailsImpl loggedUserDetails) {
-        return userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
-    }
+    private User loadUser(UserDetailsImpl loggedUserDetails) { return loggedUserDetails.toDomainUser(); }
 }
