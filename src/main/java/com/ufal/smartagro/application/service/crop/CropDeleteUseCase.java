@@ -8,10 +8,13 @@ import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CropRepository;
 import com.ufal.smartagro.domain.port.out.ProductionPlanRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class CropDeleteUseCase {
@@ -19,6 +22,7 @@ public class CropDeleteUseCase {
     private final CropRepository cropRepository;
     private final ProductionPlanRepository productionPlanRepository;
 
+    @Transactional
     public void execute(UUID id, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN) {
             throw new AccessDeniedException("Usuário não tem permissão para deletar uma cultura.");
@@ -36,5 +40,7 @@ public class CropDeleteUseCase {
         }
 
         cropRepository.deleteById(id);
+        log.info("Cultura excluída logicamente [cropId={}] pelo usuário [actorId={}, actorRole={}]",
+                id, loggedUser.getId(), loggedUser.getRole());
     }
 }

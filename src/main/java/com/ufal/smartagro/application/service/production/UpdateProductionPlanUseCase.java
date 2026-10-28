@@ -65,6 +65,12 @@ public class UpdateProductionPlanUseCase {
             }
         }
 
+        String locationDesc = existingPlan.getLocationDescription();
+        if (dto.locationDescription() != null) {
+            String trimmed = dto.locationDescription().trim();
+            locationDesc = trimmed.isEmpty() ? null : trimmed;
+        }
+
         ProductionPlan updatedPlan = new ProductionPlan(
                 existingPlan.getId(),
                 existingPlan.getFarmer(),
@@ -75,7 +81,7 @@ public class UpdateProductionPlanUseCase {
                 harvestStart,
                 harvestEnd,
                 existingPlan.getExpectedProductivity(),
-                dto.locationDescription() != null ? dto.locationDescription() : existingPlan.getLocationDescription(),
+                locationDesc,
                 dto.latitude() != null ? dto.latitude() : existingPlan.getLatitude(),
                 dto.longitude() != null ? dto.longitude() : existingPlan.getLongitude(),
                 plantingDate,

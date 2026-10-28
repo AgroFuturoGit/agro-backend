@@ -8,6 +8,7 @@ import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.HarvestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -17,6 +18,7 @@ public class HarvestFindByIdUseCase {
 
     private final HarvestRepository harvestRepository;
 
+    @Transactional(readOnly = true)
     public Harvest execute(UUID id, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN
                 && loggedUser.getRole() != Role.TECHNICIAN

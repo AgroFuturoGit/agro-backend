@@ -5,11 +5,13 @@ import com.ufal.smartagro.domain.model.FieldOccurrence;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.FieldOccurrenceRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DeleteFieldOccurrenceUseCase {
@@ -27,5 +29,7 @@ public class DeleteFieldOccurrenceUseCase {
         }
 
         fieldOccurrenceRepository.delete(id);
+        log.info("Ocorrência de campo excluída logicamente [occurrenceId={}] pelo usuário [actorId={}, actorRole={}]",
+                id, loggedUser.getId(), loggedUser.getRole());
     }
 }
