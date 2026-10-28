@@ -14,6 +14,8 @@ import com.ufal.smartagro.adapters.in.web.dto.analytics.TechnicianFarmerSummaryD
 import com.ufal.smartagro.adapters.in.web.dto.analytics.TechnicianPlanWarningDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.TimelinePointDTO;
 import com.ufal.smartagro.adapters.out.persistence.entity.UserEntity;
+import com.ufal.smartagro.application.service.analytics.ReportExportService;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.GetFarmerDashboardSummaryUseCase;
 import com.ufal.smartagro.application.service.production.GetHarvestTimelineUseCase;
 import com.ufal.smartagro.application.service.production.GetManagementDashboardSummaryUseCase;
@@ -80,6 +82,12 @@ class AnalyticsControllerTest {
 
     @MockitoBean
     private GetManagementDashboardSummaryUseCase getManagementDashboardSummaryUseCase;
+
+    @MockitoBean
+    private ReportExportService reportExportService;
+
+    @MockitoBean
+    private AuditLogService auditLogService;
 
     @MockitoBean
     private UserRepository userRepository;
