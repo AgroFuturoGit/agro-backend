@@ -1,6 +1,6 @@
 package com.ufal.smartagro.application.service.crop;
 
-import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+
 import com.ufal.smartagro.application.service.production.ProductionVersionGuard;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.CropAlreadyExistsException;
@@ -51,7 +51,7 @@ public class CropUpdateUseCase {
                 baseUpdatedAt,
                 existingCrop.getUpdatedAt(),
                 existingCrop.getCreatedAt(),
-                Mapper.toCropResponseDTO(existingCrop),
+                existingCrop,
                 "A cultura foi alterada por outro usuário depois que esta edição começou."
         );
 

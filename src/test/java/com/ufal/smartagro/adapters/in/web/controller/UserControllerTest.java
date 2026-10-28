@@ -2,7 +2,6 @@ package com.ufal.smartagro.adapters.in.web.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
-import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.application.service.user.*;
 import com.ufal.smartagro.config.security.SecurityConfig;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
@@ -72,10 +71,10 @@ class UserControllerTest {
     void registerUser_standardPost_returnsCreatedAndLocationHeader() throws Exception {
         User adminUser = UserTestFactory.user().admin().build();
         UUID newUserId = UUID.randomUUID();
-        UserResponseDTO responseDTO = new UserResponseDTO(newUserId, "Novo Usuario", "novo@smartagro.test", UserTestFactory.VALID_CPF, Role.ADMIN);
+        User createdUser = new User(newUserId, "Novo Usuario", "novo@smartagro.test", "senha", UserTestFactory.VALID_CPF, Role.ADMIN);
 
         when(userRepository.findById(any())).thenReturn(Optional.of(adminUser));
-        when(userRegisterUseCase.register(any(), any())).thenReturn(responseDTO);
+        when(userRegisterUseCase.register(any(), any())).thenReturn(createdUser);
 
         UserRegisterDTO dto = new UserRegisterDTO("Novo Usuario", "novo@smartagro.test", "senhaForte123", UserTestFactory.VALID_CPF, Role.ADMIN);
 
@@ -93,10 +92,10 @@ class UserControllerTest {
     void registerUser_legacyRegisterPost_returnsCreatedAndLocationHeader() throws Exception {
         User adminUser = UserTestFactory.user().admin().build();
         UUID newUserId = UUID.randomUUID();
-        UserResponseDTO responseDTO = new UserResponseDTO(newUserId, "Outro Usuario", "outro@smartagro.test", UserTestFactory.VALID_CPF, Role.ADMIN);
+        User createdUser = new User(newUserId, "Outro Usuario", "outro@smartagro.test", "senha", UserTestFactory.VALID_CPF, Role.ADMIN);
 
         when(userRepository.findById(any())).thenReturn(Optional.of(adminUser));
-        when(userRegisterUseCase.register(any(), any())).thenReturn(responseDTO);
+        when(userRegisterUseCase.register(any(), any())).thenReturn(createdUser);
 
         UserRegisterDTO dto = new UserRegisterDTO("Outro Usuario", "outro@smartagro.test", "senhaForte123", UserTestFactory.VALID_CPF, Role.ADMIN);
 

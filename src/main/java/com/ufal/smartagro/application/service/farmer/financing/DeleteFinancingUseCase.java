@@ -1,7 +1,6 @@
 package com.ufal.smartagro.application.service.farmer.financing;
 
 import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
-import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.Financing;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.FinancingRepository;

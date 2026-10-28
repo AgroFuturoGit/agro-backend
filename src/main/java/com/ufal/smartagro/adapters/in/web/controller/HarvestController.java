@@ -10,10 +10,8 @@ import com.ufal.smartagro.application.service.harvest.HarvestFindByIdUseCase;
 import com.ufal.smartagro.application.service.harvest.HarvestRegisterUseCase;
 import com.ufal.smartagro.application.service.harvest.HarvestUpdateUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
-import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.User;
-import com.ufal.smartagro.domain.port.out.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -41,7 +39,6 @@ public class HarvestController {
     private final HarvestFindAllUseCase harvestFindAllUseCase;
     private final HarvestFindByIdUseCase harvestFindByIdUseCase;
     private final HarvestDeleteUseCase harvestDeleteUseCase;
-    private final UserRepository userRepository;
 
     @Operation(summary = "Registrar colheita", description = "Cadastra uma nova colheita realizada no sistema. Aceita POST /harvests e POST /harvests/register com retorno de header Location.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
@@ -52,8 +49,7 @@ public class HarvestController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
     @PostMapping({"", "/register"})
     public ResponseEntity<HarvestResponseDTO> register(@Valid @RequestBody HarvestRegisterDTO harvestRegisterDTO, @AuthenticationPrincipal UserDetailsImpl userDetails) {
-        User loggedUser = userRepository.findById(userDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = userDetails.toDomainUser();
 
         Harvest harvest = Mapper.toHarvest(harvestRegisterDTO);
 
@@ -77,8 +73,7 @@ public class HarvestController {
     public ResponseEntity<HarvestResponseDTO> update(@PathVariable UUID id,
                                                      @Valid @RequestBody HarvestUpdateDTO harvestUpdateDTO,
                                                      @AuthenticationPrincipal UserDetailsImpl userDetails) {
-        User loggedUser = userRepository.findById(userDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = userDetails.toDomainUser();
 
         Harvest harvestToUpdate = Mapper.toHarvest(harvestUpdateDTO);
 
@@ -99,8 +94,7 @@ public class HarvestController {
     @GetMapping("/{id}")
     public ResponseEntity<HarvestResponseDTO> findById(@PathVariable UUID id,
                                                        @AuthenticationPrincipal UserDetailsImpl userDetails) {
-        User loggedUser = userRepository.findById(userDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = userDetails.toDomainUser();
 
         Harvest harvest = harvestFindByIdUseCase.execute(id, loggedUser);
 
@@ -117,8 +111,7 @@ public class HarvestController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping
     public ResponseEntity<List<HarvestResponseDTO>> findAll(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        User loggedUser = userRepository.findById(userDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = userDetails.toDomainUser();
 
         List<Harvest> harvests = harvestFindAllUseCase.execute(loggedUser);
 
@@ -139,8 +132,7 @@ public class HarvestController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id,
                                        @AuthenticationPrincipal UserDetailsImpl userDetails) {
-        User loggedUser = userRepository.findById(userDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = userDetails.toDomainUser();
 
         harvestDeleteUseCase.execute(id, loggedUser);
 

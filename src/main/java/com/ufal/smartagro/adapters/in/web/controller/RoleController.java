@@ -3,12 +3,11 @@ package com.ufal.smartagro.adapters.in.web.controller;
 import com.ufal.smartagro.adapters.in.web.dto.role.AssignRoleDTO;
 import com.ufal.smartagro.adapters.in.web.dto.role.RoleResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
+import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.role.AssignRoleUseCase;
 import com.ufal.smartagro.application.service.role.ListRolesUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
-import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
-import com.ufal.smartagro.domain.port.out.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -32,7 +31,6 @@ public class RoleController {
 
     private final ListRolesUseCase listRolesUseCase;
     private final AssignRoleUseCase assignRoleUseCase;
-    private final UserRepository userRepository;
 
     @Operation(summary = "Listar todos os papéis", description = "Retorna a lista de papéis (roles) disponíveis no sistema.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
@@ -58,10 +56,10 @@ public class RoleController {
             @PathVariable UUID userId,
             @Valid @RequestBody AssignRoleDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
-        
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
 
-        return ResponseEntity.ok(assignRoleUseCase.assignRole(userId, dto.role(), loggedUser));
+        User loggedUser = loggedUserDetails.toDomainUser();
+
+        User updated = assignRoleUseCase.assignRole(userId, dto.role(), loggedUser);
+        return ResponseEntity.ok(Mapper.toUserResponseDTO(updated));
     }
 }

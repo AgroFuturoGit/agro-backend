@@ -6,10 +6,8 @@ import com.ufal.smartagro.adapters.in.web.dto.farmer.financing.FinancingUpdateDT
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.farmer.financing.*;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
-import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.Financing;
 import com.ufal.smartagro.domain.model.User;
-import com.ufal.smartagro.domain.port.out.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -37,7 +35,6 @@ public class FinancingController {
     private final FindFinancingByIdUseCase findFinancingByIdUseCase;
     private final UpdateFinancingUseCase updateFinancingUseCase;
     private final DeleteFinancingUseCase deleteFinancingUseCase;
-    private final UserRepository userRepository;
 
     @Operation(summary = "Cadastrar financiamento", description = "Adiciona um financiamento ao agricultor.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
@@ -52,8 +49,7 @@ public class FinancingController {
             @Valid @RequestBody FinancingRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         Financing saved = registerFinancingUseCase.register(farmerId, dto, loggedUser);
         URI location = URI.create("/financings/" + saved.getId());
@@ -71,8 +67,7 @@ public class FinancingController {
             @PathVariable UUID farmerId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         List<Financing> list = findAllFinancingsByFarmerUseCase.findAll(farmerId, loggedUser);
         return ResponseEntity.ok(list.stream().map(Mapper::toFinancingResponseDTO).toList());
@@ -90,8 +85,7 @@ public class FinancingController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         Financing item = findFinancingByIdUseCase.findById(id, loggedUser);
         return ResponseEntity.ok(Mapper.toFinancingResponseDTO(item));
@@ -111,8 +105,7 @@ public class FinancingController {
             @Valid @RequestBody FinancingUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         Financing updated = updateFinancingUseCase.update(id, dto, loggedUser);
         return ResponseEntity.ok(Mapper.toFinancingResponseDTO(updated));
@@ -130,8 +123,7 @@ public class FinancingController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         deleteFinancingUseCase.delete(id, loggedUser);
         return ResponseEntity.noContent().build();

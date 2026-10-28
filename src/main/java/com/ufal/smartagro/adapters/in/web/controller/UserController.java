@@ -4,6 +4,7 @@ import com.ufal.smartagro.adapters.in.web.dto.user.AdminUserUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserUpdateDTO;
+import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.user.AdminUserUpdateUseCase;
 import com.ufal.smartagro.application.service.user.FindAllUsersUseCase;
 import com.ufal.smartagro.application.service.user.UserDeleteUseCase;
@@ -11,9 +12,7 @@ import com.ufal.smartagro.application.service.user.FindUserByIdUseCase;
 import com.ufal.smartagro.application.service.user.UserRegisterUseCase;
 import com.ufal.smartagro.application.service.user.UserUpdateUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
-import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
-import com.ufal.smartagro.domain.port.out.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -42,7 +41,6 @@ public class UserController {
     private final UserUpdateUseCase userUpdateUseCase;
     private final AdminUserUpdateUseCase adminUserUpdateUseCase;
     private final FindAllUsersUseCase findAllUsersUseCase;
-    private final UserRepository userRepository;
 
     @Operation(summary = "Registrar usuário (deprecado)", description = "Cria um novo usuário na base de dados. Aceita POST /users e POST /users/register com retorno de header Location.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
@@ -61,10 +59,10 @@ public class UserController {
             throw new IllegalArgumentException("Para criar gestores ou agricultores, utilize as rotas específicas de Organização e Comunidade.");
         }
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
-        UserResponseDTO response = userRegisterUseCase.register(dto, loggedUser);
+        User savedUser = userRegisterUseCase.register(dto, loggedUser);
+        UserResponseDTO response = Mapper.toUserResponseDTO(savedUser);
         URI location = URI.create("/users/" + response.id());
 
         return ResponseEntity.created(location).body(response);
@@ -82,8 +80,7 @@ public class UserController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         userDeleteUseCase.delete(id, loggedUser);
         return ResponseEntity.noContent().build();
@@ -100,11 +97,11 @@ public class UserController {
             @Valid @RequestBody UserUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
-        UserResponseDTO response = userUpdateUseCase.update(dto, loggedUser);
-        return ResponseEntity.ok(response);
+        User savedUser = userUpdateUseCase.update(dto, loggedUser);
+        return ResponseEntity.ok(Mapper.toUserResponseDTO(savedUser));
+
     }
 
     @Operation(summary = "Atualizar usuário (admin)", description = "Permite que administradores atualizem dados de outros usuários.", security = @SecurityRequirement(name = "bearerAuth"))
@@ -121,11 +118,11 @@ public class UserController {
             @Valid @RequestBody AdminUserUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
-        UserResponseDTO response = adminUserUpdateUseCase.update(id, dto, loggedUser);
-        return ResponseEntity.ok(response);
+        User savedUser = adminUserUpdateUseCase.update(id, dto, loggedUser);
+        return ResponseEntity.ok(Mapper.toUserResponseDTO(savedUser));
+
     }
 
     @Operation(summary = "Buscar usuário por ID", description = "Recupera os detalhes de um usuário específico.", security = @SecurityRequirement(name = "bearerAuth"))
@@ -140,11 +137,11 @@ public class UserController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
-        UserResponseDTO response = findUserByIdUseCase.findById(id, loggedUser);
-        return ResponseEntity.ok(response);
+        User user = findUserByIdUseCase.findById(id, loggedUser);
+        return ResponseEntity.ok(Mapper.toUserResponseDTO(user));
+
     }
 
     @Operation(summary = "Listar todos os usuários", description = "Retorna a lista de todos os usuários cadastrados no sistema.", security = @SecurityRequirement(name = "bearerAuth"))
@@ -157,10 +154,10 @@ public class UserController {
     public ResponseEntity<List<UserResponseDTO>> findAll(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
-        List<UserResponseDTO> response = findAllUsersUseCase.findAll(loggedUser);
-        return ResponseEntity.ok(response);
+        List<User> users = findAllUsersUseCase.findAll(loggedUser);
+        return ResponseEntity.ok(users.stream().map(Mapper::toUserResponseDTO).toList());
+
     }
 }

@@ -15,12 +15,10 @@ import com.ufal.smartagro.application.service.organization.RegisterOrganizationU
 import com.ufal.smartagro.application.service.organization.UpdateOrganizationUseCase;
 import com.ufal.smartagro.application.service.organization.DeleteOrganizationUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
-import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Organization;
 import com.ufal.smartagro.domain.model.User;
-import com.ufal.smartagro.domain.port.out.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -50,7 +48,6 @@ public class OrganizationController {
     private final FindAllOrganizationsUseCase findAllOrganizationsUseCase;
     private final UpdateOrganizationUseCase updateOrganizationUseCase;
     private final DeleteOrganizationUseCase deleteOrganizationUseCase;
-    private final UserRepository userRepository;
 
     @Operation(summary = "Cadastrar organização", description = "Cria uma nova organização/cooperativa no sistema.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
@@ -64,8 +61,7 @@ public class OrganizationController {
             @Valid @RequestBody OrganizationRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         Organization organization = registerOrganizationUseCase.register(dto, loggedUser);
         OrganizationResponseDTO response = Mapper.toOrganizationResponseDTO(organization);
@@ -87,8 +83,7 @@ public class OrganizationController {
             @Valid @RequestBody ManagerRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         Manager manager = registerManagerUseCase.register(id, dto, loggedUser);
         ManagerResponseDTO response = Mapper.toManagerResponseDTO(manager);
@@ -110,8 +105,7 @@ public class OrganizationController {
             @Valid @RequestBody CommunityRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         Community community = registerCommunityUseCase.register(orgId, dto, loggedUser);
         CommunityResponseDTO response = Mapper.toCommunityResponseDTO(community);

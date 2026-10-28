@@ -92,7 +92,7 @@ public class Mapper {
     /** Constrói a cultura de domínio com todos os dados enviados no cadastro. */
     public static Crop toCrop(CropRegisterDTO dto) {
         return new Crop(
-                null, 
+                null,
                 dto.name(),
                 dto.variety(),
                 dto.isPriority(), dto.cycleDays(), dto.expectedProductivity(), dto.harvestType(), dto.unit(), dto.unitWeightKg()
@@ -101,7 +101,7 @@ public class Mapper {
 
     public static Crop toCrop(CropUpdateDTO dto) {
         return new Crop(
-                null, 
+                null,
                 dto.name(),
                 dto.variety(),
                 dto.isPriority(), dto.cycleDays(), dto.expectedProductivity(), dto.harvestType(), dto.unit(), dto.unitWeightKg()

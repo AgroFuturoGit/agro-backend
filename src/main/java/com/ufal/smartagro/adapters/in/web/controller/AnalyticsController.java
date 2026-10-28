@@ -11,12 +11,10 @@ import com.ufal.smartagro.application.service.production.GetHarvestTimelineUseCa
 import com.ufal.smartagro.application.service.production.GetManagementDashboardSummaryUseCase;
 import com.ufal.smartagro.application.service.production.GetTechnicianDashboardSummaryUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
-import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.ReportExportFormat;
 import com.ufal.smartagro.domain.model.enums.TimelineGranularity;
-import com.ufal.smartagro.domain.port.out.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -54,7 +52,6 @@ public class AnalyticsController {
     private final GetManagementDashboardSummaryUseCase getManagementDashboardSummaryUseCase;
     private final ReportExportService reportExportService;
     private final AuditLogService auditLogService;
-    private final UserRepository userRepository;
 
     @Operation(
             summary = "Evolução temporal comparativa da colheita",
@@ -78,8 +75,7 @@ public class AnalyticsController {
     ) {
         TimelineGranularity parsedGranularity = TimelineGranularity.fromString(granularity);
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         HarvestTimelineDTO timeline = getHarvestTimelineUseCase.execute(planId, parsedGranularity, loggedUser);
         return ResponseEntity.ok(timeline);
@@ -103,8 +99,7 @@ public class AnalyticsController {
             @RequestParam(name = "harvestId", required = false) UUID harvestId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         FarmerDashboardSummaryDTO summary = getFarmerDashboardSummaryUseCase.execute(harvestId, loggedUser);
         return ResponseEntity.ok(summary);
@@ -133,8 +128,7 @@ public class AnalyticsController {
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
         ReportExportFormat exportFormat = ReportExportFormat.fromString(format);
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         FarmerDashboardSummaryDTO summary = getFarmerDashboardSummaryUseCase.execute(harvestId, loggedUser);
 
@@ -180,8 +174,7 @@ public class AnalyticsController {
             @RequestParam(name = "cropId", required = false) UUID cropId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         TechnicianDashboardSummaryDTO summary = getTechnicianDashboardSummaryUseCase
                 .execute(harvestId, communityId, cropId, loggedUser);
@@ -215,8 +208,7 @@ public class AnalyticsController {
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
         ReportExportFormat exportFormat = ReportExportFormat.fromString(format);
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         TechnicianDashboardSummaryDTO summary = getTechnicianDashboardSummaryUseCase
                 .execute(harvestId, communityId, cropId, loggedUser);
@@ -262,8 +254,7 @@ public class AnalyticsController {
             @RequestParam(name = "communityId", required = false) UUID communityId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         ManagementDashboardSummaryDTO summary = getManagementDashboardSummaryUseCase
                 .executeForCurrentManager(harvestId, communityId, loggedUser);
@@ -295,8 +286,7 @@ public class AnalyticsController {
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
         ReportExportFormat exportFormat = ReportExportFormat.fromString(format);
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         ManagementDashboardSummaryDTO summary = getManagementDashboardSummaryUseCase
                 .executeForCurrentManager(harvestId, communityId, loggedUser);
@@ -344,8 +334,7 @@ public class AnalyticsController {
             @RequestParam(name = "communityId", required = false) UUID communityId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         ManagementDashboardSummaryDTO summary = getManagementDashboardSummaryUseCase
                 .executeForOrganization(organizationId, harvestId, communityId, loggedUser);
@@ -379,8 +368,7 @@ public class AnalyticsController {
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
         ReportExportFormat exportFormat = ReportExportFormat.fromString(format);
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         ManagementDashboardSummaryDTO summary = getManagementDashboardSummaryUseCase
                 .executeForOrganization(organizationId, harvestId, communityId, loggedUser);
@@ -428,8 +416,7 @@ public class AnalyticsController {
             @RequestParam(name = "communityId", required = false) UUID communityId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         ManagementDashboardSummaryDTO summary = getManagementDashboardSummaryUseCase
                 .executeGlobal(harvestId, organizationId, communityId, loggedUser);
@@ -463,8 +450,7 @@ public class AnalyticsController {
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
         ReportExportFormat exportFormat = ReportExportFormat.fromString(format);
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         ManagementDashboardSummaryDTO summary = getManagementDashboardSummaryUseCase
                 .executeGlobal(harvestId, organizationId, communityId, loggedUser);

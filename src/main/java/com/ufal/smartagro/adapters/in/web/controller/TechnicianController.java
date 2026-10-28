@@ -12,11 +12,9 @@ import com.ufal.smartagro.adapters.in.web.dto.community.CommunityResponseDTO;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
-import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.TechnicalAssistance;
 import com.ufal.smartagro.domain.model.User;
-import com.ufal.smartagro.domain.port.out.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -45,7 +43,6 @@ public class TechnicianController {
     private final FindAllTechniciansUseCase findAllTechniciansUseCase;
     private final UpdateTechnicianUseCase updateTechnicianUseCase;
     private final DeleteTechnicianUseCase deleteTechnicianUseCase;
-    private final UserRepository userRepository;
     private final AssignCommunityToTechnicianUseCase assignCommunityToTechnicianUseCase;
     private final RemoveCommunityFromTechnicianUseCase removeCommunityFromTechnicianUseCase;
     private final GetAssignedCommunitiesUseCase getAssignedCommunitiesUseCase;
@@ -63,8 +60,7 @@ public class TechnicianController {
             @Valid @RequestBody TechnicianRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         Technician technician = registerTechnicianUseCase.register(dto, loggedUser);
         TechnicianResponseDTO response = Mapper.toTechnicianResponseDTO(technician);
@@ -84,8 +80,7 @@ public class TechnicianController {
     public ResponseEntity<TechnicianResponseDTO> findMyTechnicianData(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
         Technician technician = findTechnicianByUserUseCase.findByUser(loggedUser);
         TechnicianResponseDTO response = Mapper.toTechnicianResponseDTO(technician);
         return ResponseEntity.ok(response);
@@ -101,8 +96,7 @@ public class TechnicianController {
     public ResponseEntity<List<TechnicianResponseDTO>> findAllTechnicians(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         List<Technician> technicians = findAllTechniciansUseCase.findAll(loggedUser);
         List<TechnicianResponseDTO> response = technicians.stream()
@@ -123,8 +117,7 @@ public class TechnicianController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         Technician technician = findTechnicianByIdUseCase.findById(id, loggedUser);
         TechnicianResponseDTO response = Mapper.toTechnicianResponseDTO(technician);
@@ -145,8 +138,7 @@ public class TechnicianController {
             @Valid @RequestBody TechnicianUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         Technician technician = updateTechnicianUseCase.update(id, dto, loggedUser);
         TechnicianResponseDTO response = Mapper.toTechnicianResponseDTO(technician);
@@ -165,8 +157,7 @@ public class TechnicianController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         deleteTechnicianUseCase.delete(id, loggedUser);
         return ResponseEntity.noContent().build();
@@ -186,8 +177,7 @@ public class TechnicianController {
             @Valid @RequestBody TechnicalAssistanceRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         TechnicalAssistance assistance = assignCommunityToTechnicianUseCase.assign(technicianId, dto, loggedUser);
         TechnicalAssistanceResponseDTO response = Mapper.toTechnicalAssistanceResponseDTO(assistance);
@@ -208,8 +198,7 @@ public class TechnicianController {
             @PathVariable UUID assistanceId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
         TechnicalAssistance assistance = removeCommunityFromTechnicianUseCase.remove(technicianId, assistanceId, loggedUser);
         TechnicalAssistanceResponseDTO response = Mapper.toTechnicalAssistanceResponseDTO(assistance);
         return ResponseEntity.ok(response);
@@ -226,8 +215,7 @@ public class TechnicianController {
     public ResponseEntity<List<CommunityResponseDTO>> getMyCommunities(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
         List<Community> communities = getAssignedCommunitiesUseCase.getAssignedCommunities(loggedUser);
         List<CommunityResponseDTO> response = communities.stream()
                 .map(Mapper::toCommunityResponseDTO)
@@ -247,8 +235,7 @@ public class TechnicianController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
         List<Community> communities = getAssignedCommunitiesUseCase.getAssignedCommunities(id, loggedUser);
         List<CommunityResponseDTO> response = communities.stream()
                 .map(Mapper::toCommunityResponseDTO)
@@ -267,8 +254,7 @@ public class TechnicianController {
     public ResponseEntity<List<FarmerResponseDTO>> getMyFarmers(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
         List<Farmer> farmers = getAssignedFarmersUseCase.getAssignedFarmers(loggedUser);
         List<FarmerResponseDTO> response = farmers.stream()
                 .map(Mapper::toFarmerResponseDTO)
@@ -288,8 +274,7 @@ public class TechnicianController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
         List<Farmer> farmers = getAssignedFarmersUseCase.getAssignedFarmers(id, loggedUser);
         List<FarmerResponseDTO> response = farmers.stream()
                 .map(Mapper::toFarmerResponseDTO)

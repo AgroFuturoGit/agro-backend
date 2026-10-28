@@ -1,7 +1,7 @@
 package com.ufal.smartagro.application.service.user;
 
-import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
-import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+
+
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.Manager;
@@ -29,7 +29,7 @@ public class FindAllUsersUseCase {
     private final FarmerRepository farmerRepository;
 
     @Transactional(readOnly = true)
-    public List<UserResponseDTO> findAll(User loggedUser) {
+    public List<User> findAll(User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.MANAGER) {
             throw new AccessDeniedException();
         }
@@ -39,13 +39,13 @@ public class FindAllUsersUseCase {
             return userRepository.findAll()
                     .stream()
                     .filter(u -> allowedUserIds.contains(u.getId()))
-                    .map(Mapper::toUserResponseDTO)
+
                     .collect(Collectors.toList());
         }
 
         return userRepository.findAll()
                 .stream()
-                .map(Mapper::toUserResponseDTO)
+
                 .collect(Collectors.toList());
     }
 

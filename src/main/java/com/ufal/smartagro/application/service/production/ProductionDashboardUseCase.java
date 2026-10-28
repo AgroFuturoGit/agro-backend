@@ -5,7 +5,6 @@ import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.*;
 import com.ufal.smartagro.domain.model.enums.ExecutionStatus;
 import com.ufal.smartagro.domain.model.enums.PlanStatus;
-import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

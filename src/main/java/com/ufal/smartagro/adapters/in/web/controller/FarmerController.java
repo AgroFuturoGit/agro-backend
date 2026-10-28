@@ -5,10 +5,8 @@ import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.farmer.*;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
-import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.User;
-import com.ufal.smartagro.domain.port.out.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -35,7 +33,6 @@ public class FarmerController {
     private final FindAllFarmersUseCase findAllFarmersUseCase;
     private final UpdateFarmerUseCase updateFarmerUseCase;
     private final DeleteFarmerUseCase deleteFarmerUseCase;
-    private final UserRepository userRepository;
 
     @Operation(summary = "Buscar dados do agricultor autenticado", description = "Retorna os dados do agricultor logado a partir do token.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
@@ -134,8 +131,5 @@ public class FarmerController {
         return ResponseEntity.noContent().build();
     }
 
-    private User resolveLoggedUser(UserDetailsImpl loggedUserDetails) {
-        return userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
-    }
+    private User resolveLoggedUser(UserDetailsImpl loggedUserDetails) { return loggedUserDetails != null ? loggedUserDetails.toDomainUser() : null; }
 }

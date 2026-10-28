@@ -37,11 +37,11 @@ public class RegisterTechnicianUseCase {
         );
         User savedUser = userRegisterUseCase.createBaseUser(userDto);
 
-        ProfessionalRegistrationType regType = dto.registrationType() != null 
-                ? dto.registrationType() 
+        ProfessionalRegistrationType regType = dto.registrationType() != null
+                ? dto.registrationType()
                 : ProfessionalRegistrationType.CREA;
-        String regNum = dto.registrationNumber() != null 
-                ? dto.registrationNumber() 
+        String regNum = dto.registrationNumber() != null
+                ? dto.registrationNumber()
                 : dto.professionalId();
 
         Technician technician = Technician.builder()

@@ -6,10 +6,8 @@ import com.ufal.smartagro.adapters.in.web.dto.production.occurrence.FieldOccurre
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.production.occurrence.*;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
-import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.FieldOccurrence;
 import com.ufal.smartagro.domain.model.User;
-import com.ufal.smartagro.domain.port.out.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -37,7 +35,6 @@ public class FieldOccurrenceController {
     private final FindFieldOccurrenceByIdUseCase findFieldOccurrenceByIdUseCase;
     private final UpdateFieldOccurrenceUseCase updateFieldOccurrenceUseCase;
     private final DeleteFieldOccurrenceUseCase deleteFieldOccurrenceUseCase;
-    private final UserRepository userRepository;
 
     @Operation(summary = "Registrar ocorrência de campo", description = "Adiciona uma ocorrência (clima, praga, doença) a um apontamento. Suporta deduplicação idempotente via clientId no corpo ou header Idempotency-Key com header Location.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
@@ -53,8 +50,7 @@ public class FieldOccurrenceController {
             @Valid @RequestBody FieldOccurrenceRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         if (dto.clientId() == null && idempotencyKey != null) {
             dto = dto.withClientId(idempotencyKey);
@@ -77,8 +73,7 @@ public class FieldOccurrenceController {
             @PathVariable UUID executionId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         List<FieldOccurrence> list = findAllOccurrencesByExecutionUseCase.findAll(executionId, loggedUser);
         return ResponseEntity.ok(list.stream().map(Mapper::toFieldOccurrenceResponseDTO).toList());
@@ -96,8 +91,7 @@ public class FieldOccurrenceController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         FieldOccurrence item = findFieldOccurrenceByIdUseCase.findById(id, loggedUser);
         return ResponseEntity.ok(Mapper.toFieldOccurrenceResponseDTO(item));
@@ -117,8 +111,7 @@ public class FieldOccurrenceController {
             @Valid @RequestBody FieldOccurrenceUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         FieldOccurrence updated = updateFieldOccurrenceUseCase.update(id, dto, loggedUser);
         return ResponseEntity.ok(Mapper.toFieldOccurrenceResponseDTO(updated));
@@ -136,8 +129,7 @@ public class FieldOccurrenceController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = userRepository.findById(loggedUserDetails.getId())
-                .orElseThrow(UserNotFoundException::new);
+        User loggedUser = loggedUserDetails.toDomainUser();
 
         deleteFieldOccurrenceUseCase.delete(id, loggedUser);
         return ResponseEntity.noContent().build();
