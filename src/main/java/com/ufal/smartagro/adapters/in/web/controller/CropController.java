@@ -21,12 +21,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,14 +43,14 @@ public class CropController {
     private final CropDeleteUseCase cropDeleteUseCase;
     private final UserRepository userRepository;
 
-    @Operation(summary = "Cadastrar cultura", description = "Registra uma nova cultura agrícola no sistema.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Cadastrar cultura", description = "Registra uma nova cultura agrícola no sistema. Aceita POST /crops e POST /crops/register com retorno de header Location.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Cultura cadastrada com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
             @ApiResponse(responseCode = "403", description = "Não autorizado")
     })
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
-    @PostMapping("/register")
+    @PostMapping({"", "/register"})
     public ResponseEntity<CropResponseDTO> register(@Valid @RequestBody CropRegisterDTO cropRegisterDTO,
                                                     @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
@@ -62,8 +62,9 @@ public class CropController {
         Crop savedCrop = cropRegisterUseCase.execute(crop, loggedUser);
 
         CropResponseDTO responseDTO = Mapper.toCropResponseDTO(savedCrop);
+        URI location = URI.create("/crops/" + savedCrop.getId());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
+        return ResponseEntity.created(location).body(responseDTO);
     }
 
     @Operation(summary = "Atualizar cultura", description = "Atualiza parcialmente os dados de uma cultura existente.", security = @SecurityRequirement(name = "bearerAuth"))

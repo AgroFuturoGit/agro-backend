@@ -17,12 +17,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,7 +56,8 @@ public class FinancingController {
                 .orElseThrow(UserNotFoundException::new);
 
         Financing saved = registerFinancingUseCase.register(farmerId, dto, loggedUser);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Mapper.toFinancingResponseDTO(saved));
+        URI location = URI.create("/financings/" + saved.getId());
+        return ResponseEntity.created(location).body(Mapper.toFinancingResponseDTO(saved));
     }
 
     @Operation(summary = "Listar financiamentos", description = "Lista os financiamentos de um agricultor.", security = @SecurityRequirement(name = "bearerAuth"))

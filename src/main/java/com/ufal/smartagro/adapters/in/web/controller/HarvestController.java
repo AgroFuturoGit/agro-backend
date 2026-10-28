@@ -21,12 +21,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,14 +43,14 @@ public class HarvestController {
     private final HarvestDeleteUseCase harvestDeleteUseCase;
     private final UserRepository userRepository;
 
-    @Operation(summary = "Registrar colheita", description = "Cadastra uma nova colheita realizada no sistema.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Registrar colheita", description = "Cadastra uma nova colheita realizada no sistema. Aceita POST /harvests e POST /harvests/register com retorno de header Location.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Colheita registrada com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
             @ApiResponse(responseCode = "403", description = "Não autorizado")
     })
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
-    @PostMapping("/register")
+    @PostMapping({"", "/register"})
     public ResponseEntity<HarvestResponseDTO> register(@Valid @RequestBody HarvestRegisterDTO harvestRegisterDTO, @AuthenticationPrincipal UserDetailsImpl userDetails) {
         User loggedUser = userRepository.findById(userDetails.getId())
                 .orElseThrow(UserNotFoundException::new);
@@ -60,8 +60,9 @@ public class HarvestController {
         Harvest newHarvest = harvestRegisterUseCase.execute(harvest, loggedUser);
 
         HarvestResponseDTO harvestResponseDTO = Mapper.toHarvestResponseDTO(newHarvest);
+        URI location = URI.create("/harvests/" + newHarvest.getId());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(harvestResponseDTO);
+        return ResponseEntity.created(location).body(harvestResponseDTO);
     }
 
     @Operation(summary = "Atualizar colheita", description = "Atualiza parcialmente as informações de uma colheita existente.", security = @SecurityRequirement(name = "bearerAuth"))

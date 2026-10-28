@@ -17,12 +17,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,7 +39,7 @@ public class FieldOccurrenceController {
     private final DeleteFieldOccurrenceUseCase deleteFieldOccurrenceUseCase;
     private final UserRepository userRepository;
 
-    @Operation(summary = "Registrar ocorrência de campo", description = "Adiciona uma ocorrência (clima, praga, doença) a um apontamento. Suporta deduplicação idempotente via clientId no corpo ou header Idempotency-Key.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Registrar ocorrência de campo", description = "Adiciona uma ocorrência (clima, praga, doença) a um apontamento. Suporta deduplicação idempotente via clientId no corpo ou header Idempotency-Key com header Location.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Ocorrência registrada com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
@@ -61,7 +61,9 @@ public class FieldOccurrenceController {
         }
 
         FieldOccurrence saved = registerFieldOccurrenceUseCase.register(executionId, dto, loggedUser);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Mapper.toFieldOccurrenceResponseDTO(saved));
+        FieldOccurrenceResponseDTO response = Mapper.toFieldOccurrenceResponseDTO(saved);
+        URI location = URI.create("/occurrences/" + saved.getId());
+        return ResponseEntity.created(location).body(response);
     }
 
     @Operation(summary = "Listar ocorrências da execução", description = "Lista as ocorrências registradas em um apontamento.", security = @SecurityRequirement(name = "bearerAuth"))

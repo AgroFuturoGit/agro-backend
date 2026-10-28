@@ -23,12 +23,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,7 +64,8 @@ public class CommunityController {
 
         Farmer farmer = registerFarmerUseCase.register(id, dto, loggedUser);
         FarmerResponseDTO response = Mapper.toFarmerResponseDTO(farmer);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        URI location = URI.create("/farmers/" + response.id());
+        return ResponseEntity.created(location).body(response);
     }
 
     @Operation(summary = "Listar comunidades", description = "Retorna todas as comunidades, com opção de filtro por ID de organização (orgId).", security = @SecurityRequirement(name = "bearerAuth"))

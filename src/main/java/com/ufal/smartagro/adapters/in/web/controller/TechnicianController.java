@@ -24,12 +24,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -68,7 +68,8 @@ public class TechnicianController {
 
         Technician technician = registerTechnicianUseCase.register(dto, loggedUser);
         TechnicianResponseDTO response = Mapper.toTechnicianResponseDTO(technician);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        URI location = URI.create("/technicians/" + response.id());
+        return ResponseEntity.created(location).body(response);
     }
 
     @Operation(summary = "Buscar dados do técnico autenticado", description = "Retorna os dados cadastrais do técnico logado a partir do token.", security = @SecurityRequirement(name = "bearerAuth"))
@@ -190,7 +191,8 @@ public class TechnicianController {
 
         TechnicalAssistance assistance = assignCommunityToTechnicianUseCase.assign(technicianId, dto, loggedUser);
         TechnicalAssistanceResponseDTO response = Mapper.toTechnicalAssistanceResponseDTO(assistance);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        URI location = URI.create("/technicians/" + technicianId + "/assistances/" + response.id());
+        return ResponseEntity.created(location).body(response);
     }
 
     @Operation(summary = "Remover assistência técnica", description = "Remove um atendimento de assistência técnica registrado.", security = @SecurityRequirement(name = "bearerAuth"))
@@ -295,4 +297,3 @@ public class TechnicianController {
         return ResponseEntity.ok(response);
     }
 }
-
