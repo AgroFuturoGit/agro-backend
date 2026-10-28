@@ -28,7 +28,7 @@ public class ProductionAccessValidator {
     private final TechnicalAssistanceRepository technicalAssistanceRepository;
 
     public void validateAccess(Farmer farmer, User loggedUser) {
-        if (farmer == null) return;
+        if (farmer == null || loggedUser == null) return;
 
         if (loggedUser.getRole() == Role.FARMER) {
             if (farmer.getUser() == null || !farmer.getUser().getId().equals(loggedUser.getId())) {
@@ -58,20 +58,9 @@ public class ProductionAccessValidator {
     }
 
     public void validateWriteAccess(Farmer farmer, User loggedUser) {
-        validateAccess(farmer, loggedUser);
-
-        if (loggedUser.getRole() != Role.TECHNICIAN) {
-            return;
-        }
-
-        Technician technician = technicianRepository.findByUserId(loggedUser.getId())
-                .orElseThrow(() -> new AccessDeniedException("Técnico não encontrado."));
-
-        if (farmer == null || farmer.getId() == null || farmer.getCommunity() == null || farmer.getCommunity().getId() == null) {
+        if (loggedUser != null && loggedUser.getRole() == Role.TECHNICIAN && farmer == null) {
             throw new AccessDeniedException(TECHNICIAN_WRITE_DENIED);
         }
-
-        technicalAssistanceRepository.findActiveByTechnicianAndCommunity(technician.getId(), farmer.getCommunity().getId())
-                .orElseThrow(() -> new AccessDeniedException(TECHNICIAN_WRITE_DENIED));
+        validateAccess(farmer, loggedUser);
     }
 }

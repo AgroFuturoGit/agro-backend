@@ -5,10 +5,10 @@ import com.ufal.smartagro.adapters.in.web.dto.community.CommunityUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerResponseDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+import com.ufal.smartagro.application.service.community.DeleteCommunityUseCase;
 import com.ufal.smartagro.application.service.community.FindAllCommunitiesUseCase;
 import com.ufal.smartagro.application.service.community.FindCommunityByIdUseCase;
 import com.ufal.smartagro.application.service.community.UpdateCommunityUseCase;
-import com.ufal.smartagro.application.service.community.DeleteCommunityUseCase;
 import com.ufal.smartagro.application.service.farmer.RegisterFarmerUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
@@ -78,8 +78,10 @@ public class CommunityController {
             @RequestParam(required = false) UUID orgId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        java.util.List<Community> communities = findAllCommunitiesUseCase.findAll(orgId);
-        java.util.List<CommunityResponseDTO> response = communities.stream()
+        List<Community> communities = loggedUserDetails != null
+                ? findAllCommunitiesUseCase.findAll(orgId, resolveLoggedUser(loggedUserDetails))
+                : findAllCommunitiesUseCase.findAll(orgId);
+        List<CommunityResponseDTO> response = communities.stream()
                 .map(Mapper::toCommunityResponseDTO)
                 .toList();
         return ResponseEntity.ok(response);
@@ -97,7 +99,9 @@ public class CommunityController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        Community community = findCommunityByIdUseCase.findById(id);
+        Community community = loggedUserDetails != null
+                ? findCommunityByIdUseCase.findById(id, resolveLoggedUser(loggedUserDetails))
+                : findCommunityByIdUseCase.findById(id);
         CommunityResponseDTO response = Mapper.toCommunityResponseDTO(community);
         return ResponseEntity.ok(response);
     }
@@ -116,7 +120,9 @@ public class CommunityController {
             @Valid @RequestBody CommunityUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        Community community = updateCommunityUseCase.update(id, dto);
+        Community community = loggedUserDetails != null
+                ? updateCommunityUseCase.update(id, dto, resolveLoggedUser(loggedUserDetails))
+                : updateCommunityUseCase.update(id, dto);
         CommunityResponseDTO response = Mapper.toCommunityResponseDTO(community);
         return ResponseEntity.ok(response);
     }
@@ -133,7 +139,16 @@ public class CommunityController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        deleteCommunityUseCase.delete(id);
+        if (loggedUserDetails != null) {
+            deleteCommunityUseCase.delete(id, resolveLoggedUser(loggedUserDetails));
+        } else {
+            deleteCommunityUseCase.delete(id);
+        }
         return ResponseEntity.noContent().build();
+    }
+
+    private User resolveLoggedUser(UserDetailsImpl loggedUserDetails) {
+        return userRepository.findById(loggedUserDetails.getId())
+                .orElseThrow(UserNotFoundException::new);
     }
 }

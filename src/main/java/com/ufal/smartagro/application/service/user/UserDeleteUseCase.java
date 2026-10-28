@@ -23,6 +23,10 @@ public class UserDeleteUseCase {
             throw new AccessDeniedException();
         }
 
+        if (loggedUser.getId() != null && loggedUser.getId().equals(userId)) {
+            throw new IllegalArgumentException("O administrador não pode excluir a própria conta.");
+        }
+
         userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
 

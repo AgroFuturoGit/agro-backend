@@ -2,9 +2,7 @@ package com.ufal.smartagro.application.service.auth;
 
 import com.ufal.smartagro.adapters.in.web.dto.auth.LoginDTO;
 import com.ufal.smartagro.adapters.in.web.dto.auth.LoginResponseDTO;
-import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
-import com.ufal.smartagro.adapters.out.persistence.adapter.UserRepositoryImpl;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.config.security.service.JwtTokenService;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
@@ -16,6 +14,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
+
 @RequiredArgsConstructor
 @Service
 public class LoginUseCase {
@@ -25,9 +25,12 @@ public class LoginUseCase {
     private final JwtTokenService jwtTokenService;
 
     public LoginResponseDTO login(LoginDTO loginDTO) {
+        String normalizedEmail = loginDTO.email() != null
+                ? loginDTO.email().trim().toLowerCase(Locale.ROOT)
+                : "";
         UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
                 new UsernamePasswordAuthenticationToken(
-                        loginDTO.email(),
+                        normalizedEmail,
                         loginDTO.password()
                 );
         Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);

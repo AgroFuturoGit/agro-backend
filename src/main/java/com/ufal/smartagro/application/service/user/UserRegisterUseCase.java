@@ -9,10 +9,13 @@ import com.ufal.smartagro.domain.exception.EmailAlreadyExistsException;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.UserRepository;
+import com.ufal.smartagro.domain.util.CpfNormalizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Locale;
 
 @RequiredArgsConstructor
 @Service
@@ -37,11 +40,14 @@ public class UserRegisterUseCase {
 
     @Transactional
     public User createBaseUser(UserRegisterDTO dto) {
-        if (userRepository.existsByEmail(dto.email())) {
+        String normalizedEmail = dto.email() != null
+                ? dto.email().trim().toLowerCase(Locale.ROOT)
+                : null;
+        if (normalizedEmail != null && userRepository.existsByEmail(normalizedEmail)) {
             throw new EmailAlreadyExistsException();
         }
 
-        String normalizedCpf = com.ufal.smartagro.domain.util.CpfNormalizer.digitsOnly(dto.cpf());
+        String normalizedCpf = CpfNormalizer.digitsOnly(dto.cpf());
         if (normalizedCpf != null && userRepository.existsByCpf(normalizedCpf)) {
             throw new CpfAlreadyExistsException();
         }
@@ -51,8 +57,8 @@ public class UserRegisterUseCase {
         User baseUser = Mapper.toUser(dto, encodedPassword);
         User newUser = new User(
                 baseUser.getId(),
-                baseUser.getFullName(),
-                baseUser.getEmail(),
+                baseUser.getFullName() != null ? baseUser.getFullName().trim() : null,
+                normalizedEmail,
                 baseUser.getPassword(),
                 normalizedCpf,
                 baseUser.getRole()

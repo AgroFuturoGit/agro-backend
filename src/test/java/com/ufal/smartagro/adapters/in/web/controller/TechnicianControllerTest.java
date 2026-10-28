@@ -267,6 +267,11 @@ class TechnicianControllerTest {
                         .with(user(userDetails(techUser))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(farmer.getId().toString()));
+
+        mockMvc.perform(get("/technicians/me/producers")
+                        .with(user(userDetails(techUser))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(farmer.getId().toString()));
     }
 
     @Test
