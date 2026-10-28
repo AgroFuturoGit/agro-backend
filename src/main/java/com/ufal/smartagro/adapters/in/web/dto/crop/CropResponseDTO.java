@@ -2,9 +2,10 @@ package com.ufal.smartagro.adapters.in.web.dto.crop;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
-/** Representação da cultura devolvida pela API, com seus parâmetros de ciclo e colheita. */
+/** Representação da cultura devolvida pela API, com seus parâmetros de ciclo, colheita e versão. */
 public record CropResponseDTO(
         UUID id,
         String name,
@@ -17,6 +18,8 @@ public record CropResponseDTO(
 
         com.ufal.smartagro.domain.model.enums.HarvestType harvestType,
         com.ufal.smartagro.domain.model.enums.MeasurementUnit unit,
-        BigDecimal unitWeightKg
+        BigDecimal unitWeightKg,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
 }
