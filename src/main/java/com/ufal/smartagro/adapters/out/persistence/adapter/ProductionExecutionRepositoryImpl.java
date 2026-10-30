@@ -7,6 +7,7 @@ import com.ufal.smartagro.domain.port.out.ProductionExecutionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,10 +31,16 @@ public class ProductionExecutionRepositoryImpl implements ProductionExecutionRep
     }
 
     @Override
-    public java.util.List<ProductionExecution> findAllByProductionPlanId(UUID planId) {
+    public List<ProductionExecution> findAllByProductionPlanId(UUID planId) {
         return jpaRepository.findAllByProductionPlanId(planId).stream()
                 .map(productionExecutionMapper::toDomain)
                 .toList();
+    }
+
+    @Override
+    public Optional<ProductionExecution> findByPlanIdAndClientId(UUID planId, UUID clientId) {
+        return jpaRepository.findByProductionPlanIdAndClientId(planId, clientId)
+                .map(productionExecutionMapper::toDomain);
     }
 
     @Override

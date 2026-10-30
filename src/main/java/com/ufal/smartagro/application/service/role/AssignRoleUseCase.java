@@ -1,7 +1,7 @@
 package com.ufal.smartagro.application.service.role;
 
-import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
-import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+
+
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
@@ -20,13 +20,17 @@ public class AssignRoleUseCase {
     private final UserRepository userRepository;
 
     @Transactional
-    public UserResponseDTO assignRole(UUID userId, Role newRole, User loggedUser) {
+    public User assignRole(UUID userId, Role newRole, User loggedUser) {
         if (loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException();
         }
 
-        if (newRole == Role.MANAGER || newRole == Role.PRODUCER) {
-            throw new IllegalArgumentException("Para criar ou promover gestores e produtores, utilize as rotas específicas de Organização e Comunidade.");
+        if (newRole == Role.MANAGER || newRole == Role.FARMER || newRole == Role.TECHNICIAN) {
+            throw new IllegalArgumentException("Para criar ou promover gestores, produtores e técnicos, utilize as rotas específicas de perfil.");
+        }
+
+        if (loggedUser.getId() != null && loggedUser.getId().equals(userId) && newRole != Role.ADMIN) {
+            throw new IllegalArgumentException("O administrador não pode rebaixar o próprio papel.");
         }
 
         User user = userRepository.findById(userId)
@@ -34,10 +38,10 @@ public class AssignRoleUseCase {
 
         User updated = new User(
             user.getId(), user.getFullName(), user.getEmail(),
-            user.getPassword(), user.getCpf(), user.getDateOfBirth(),
+            user.getPassword(), user.getCpf(),
             newRole
         );
 
-        return Mapper.toUserResponseDTO(userRepository.save(updated));
+        return userRepository.save(updated);
     }
 }

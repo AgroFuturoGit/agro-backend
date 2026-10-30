@@ -11,7 +11,11 @@ import java.util.UUID;
 
 @Repository
 public interface JpaCropRepository extends JpaRepository<CropEntity, UUID> {
-    boolean existsByNameAndVariety(String name, String variety);
+
+    @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM CropEntity c " +
+           "WHERE LOWER(TRIM(c.name)) = LOWER(TRIM(:name)) " +
+           "AND LOWER(COALESCE(TRIM(c.variety), '')) = LOWER(COALESCE(TRIM(:variety), ''))")
+    boolean existsByNameAndVariety(@Param("name") String name, @Param("variety") String variety);
 
     @Modifying
     @Query("UPDATE CropEntity c SET c.deletedAt = CURRENT_TIMESTAMP WHERE c.id = :id")

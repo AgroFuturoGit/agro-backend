@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -14,7 +13,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import com.ufal.smartagro.domain.model.enums.ExecutionStatus;
 
+/** Registro persistido de cada apontamento periódico de colheita e sua validação. */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -28,15 +29,46 @@ public class ProductionExecutionEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(name = "client_id")
+    private UUID clientId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "production_plan_id", nullable = false)
     private ProductionPlanEntity productionPlan;
 
-    @Column(name = "actual_yield", nullable = false, precision = 10, scale = 2)
-    private BigDecimal actualYield;
+    @Column(nullable = false, precision = 14, scale = 4)
+    /** Quantidade na unidade definida pela cultura e equivalente em quilogramas. */
+    private BigDecimal quantity;
+    @Column(name = "quantity_kg", nullable = false, precision = 14, scale = 4)
+    private BigDecimal quantityKg;
+    @Column(name = "harvested_at", nullable = false)
+    private LocalDate harvestedAt;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    /** Resultado atual do fluxo de revisão do apontamento. */
+    private ExecutionStatus status;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "validated_by")
+    private UserEntity validatedBy;
+    @Column(name = "validated_at")
+    private LocalDateTime validatedAt;
+    @Column(columnDefinition = "text")
+    private String notes;
 
-    @Column(name = "harvest_date", nullable = false)
-    private LocalDate harvestDate;
+    @Column(name = "rejection_reason", columnDefinition = "text")
+    private String rejectionReason;
+
+    @Column(precision = 9, scale = 6)
+    private BigDecimal latitude;
+
+    @Column(precision = 9, scale = 6)
+    private BigDecimal longitude;
+
+    @Column(name = "location_accuracy", precision = 8, scale = 2)
+    private BigDecimal locationAccuracy;
+
+    @Column(name = "location_recorded_at")
+    private LocalDateTime locationRecordedAt;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

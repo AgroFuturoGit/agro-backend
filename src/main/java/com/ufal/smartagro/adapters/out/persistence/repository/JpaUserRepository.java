@@ -12,9 +12,14 @@ import java.util.UUID;
 
 @Repository
 public interface JpaUserRepository extends JpaRepository<UserEntity, UUID> {
-    Optional<UserEntity> findByEmail(String email);
+    @Query("SELECT u FROM UserEntity u WHERE LOWER(u.email) = LOWER(:email)")
+    Optional<UserEntity> findByEmail(@Param("email") String email);
+
     Optional<UserEntity> findByCpf(String cpf);
-    boolean existsByEmail(String email);
+
+    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM UserEntity u WHERE LOWER(u.email) = LOWER(:email)")
+    boolean existsByEmail(@Param("email") String email);
+
     boolean existsByCpf(String cpf);
 
     @Modifying

@@ -17,6 +17,6 @@ public class FindOrganizationByIdUseCase {
     @Transactional(readOnly = true)
     public Organization findById(UUID id) {
         return organizationRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Organização não encontrada."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Organização não encontrada."));
     }
 }
