@@ -30,6 +30,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.time.LocalDateTime;
 import java.util.Locale;
@@ -99,17 +100,6 @@ public class GlobalExceptionHandler {
         ));
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ApiError> handleBadCredentials(
-            BadCredentialsException ex, HttpServletRequest httpServletRequest){
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiError(
-                HttpStatus.UNAUTHORIZED.value(),
-                "Email ou senha inválidos.",
-                httpServletRequest.getRequestURI(),
-                LocalDateTime.now()
-        ));
-    }
-
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiError> handleAccessDenied(
             AccessDeniedException ex, HttpServletRequest httpServletRequest){
@@ -122,11 +112,44 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
-    public ResponseEntity<ApiError> handleSpringAccessDenied(
+    public ResponseEntity<ApiError> handleSpringSecurityAccessDenied(
             org.springframework.security.access.AccessDeniedException ex, HttpServletRequest httpServletRequest){
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiError(
                 HttpStatus.FORBIDDEN.value(),
                 "Acesso negado. Você não tem permissão para realizar esta ação.",
+                httpServletRequest.getRequestURI(),
+                LocalDateTime.now()
+        ));
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiError> handleBadCredentials(
+            BadCredentialsException ex, HttpServletRequest httpServletRequest){
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiError(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Credenciais inválidas.",
+                httpServletRequest.getRequestURI(),
+                LocalDateTime.now()
+        ));
+    }
+
+    @ExceptionHandler(InvalidStateTransitionException.class)
+    public ResponseEntity<ApiError> handleInvalidStateTransition(
+            InvalidStateTransitionException ex, HttpServletRequest httpServletRequest){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(),
+                httpServletRequest.getRequestURI(),
+                LocalDateTime.now()
+        ));
+    }
+
+    @ExceptionHandler(EntityInUseException.class)
+    public ResponseEntity<ApiError> handleEntityInUse(
+            EntityInUseException ex, HttpServletRequest httpServletRequest){
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiError(
+                HttpStatus.CONFLICT.value(),
+                ex.getMessage(),
                 httpServletRequest.getRequestURI(),
                 LocalDateTime.now()
         ));
@@ -176,28 +199,6 @@ public class GlobalExceptionHandler {
         ));
     }
 
-    @ExceptionHandler(EntityInUseException.class)
-    public ResponseEntity<ApiError> handleEntityInUse(
-            EntityInUseException ex, HttpServletRequest httpServletRequest){
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiError(
-                HttpStatus.CONFLICT.value(),
-                ex.getMessage(),
-                httpServletRequest.getRequestURI(),
-                LocalDateTime.now()
-        ));
-    }
-
-    @ExceptionHandler(InvalidStateTransitionException.class)
-    public ResponseEntity<ApiError> handleInvalidStateTransition(
-            InvalidStateTransitionException ex, HttpServletRequest httpServletRequest){
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiError(
-                HttpStatus.CONFLICT.value(),
-                ex.getMessage(),
-                httpServletRequest.getRequestURI(),
-                LocalDateTime.now()
-        ));
-    }
-
     @ExceptionHandler(ConcurrentUpdateException.class)
     public ResponseEntity<ConflictApiError> handleConcurrentUpdate(
             ConcurrentUpdateException ex, HttpServletRequest httpServletRequest){
@@ -221,6 +222,18 @@ public class GlobalExceptionHandler {
                         httpServletRequest.getRequestURI(),
                         LocalDateTime.now()
                 ));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiError> handleMaxUploadSizeExceeded(
+            MaxUploadSizeExceededException ex, HttpServletRequest httpServletRequest) {
+        log.warn("Arquivo excede o tamanho máximo permitido ao acessar {}: {}", httpServletRequest.getRequestURI(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(new ApiError(
+                HttpStatus.PAYLOAD_TOO_LARGE.value(),
+                "O arquivo enviado excede o tamanho máximo permitido de 5 MB.",
+                httpServletRequest.getRequestURI(),
+                LocalDateTime.now()
+        ));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -297,6 +310,14 @@ public class GlobalExceptionHandler {
             if (lower.contains("não encontrad") || lower.contains("nao encontrad") || lower.contains("not found")) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError(
                         HttpStatus.NOT_FOUND.value(),
+                        msg,
+                        httpServletRequest.getRequestURI(),
+                        LocalDateTime.now()
+                ));
+            }
+            if (lower.contains("excede o limite") || lower.contains("grande demais")) {
+                return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(new ApiError(
+                        HttpStatus.PAYLOAD_TOO_LARGE.value(),
                         msg,
                         httpServletRequest.getRequestURI(),
                         LocalDateTime.now()
