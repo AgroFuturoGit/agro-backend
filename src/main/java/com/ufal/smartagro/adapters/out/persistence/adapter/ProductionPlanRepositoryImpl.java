@@ -20,6 +20,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -41,6 +43,16 @@ public class ProductionPlanRepositoryImpl implements ProductionPlanRepository {
     @Override
     public Optional<ProductionPlan> findById(UUID id) {
         return jpaRepository.findById(id).map(productionPlanMapper::toDomain);
+    }
+
+    @Override
+    public List<ProductionPlan> findAllByFarmerIdIn(Collection<UUID> farmerIds) {
+        if (farmerIds == null || farmerIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return jpaRepository.findAllByFarmerIdIn(farmerIds).stream()
+                .map(productionPlanMapper::toDomain)
+                .toList();
     }
 
     @Override

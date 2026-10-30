@@ -7,20 +7,32 @@ import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.TechnicianAssistedFarmerRow;
 import com.ufal.smartagro.domain.model.TechnicianPlanSummary;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface ProductionPlanRepository {
     ProductionPlan save(ProductionPlan productionPlan);
+
     Optional<ProductionPlan> findById(UUID id);
+
     List<ProductionPlan> findAllByFarmerId(UUID farmerId);
+
+    List<ProductionPlan> findAllByFarmerIdIn(Collection<UUID> farmerIds);
+
     Optional<ProductionPlan> findByFarmerIdAndClientId(UUID farmerId, UUID clientId);
+
     void delete(UUID id);
+
     boolean existsByHarvestId(UUID harvestId);
+
     boolean existsByCropId(UUID cropId);
+
     long countByHarvestId(UUID harvestId);
+
     long countByCropId(UUID cropId);
+
     List<FarmerPlanSummary> findPlanSummariesByFarmer(UUID farmerId, UUID harvestId, boolean includeActiveContinuous);
 
     default List<FarmerPlanSummary> findPlanSummariesByFarmer(UUID farmerId, UUID harvestId) {
@@ -34,15 +46,13 @@ public interface ProductionPlanRepository {
             UUID communityId,
             UUID cropId,
             UUID harvestId,
-            boolean includeActiveContinuous
-    );
+            boolean includeActiveContinuous);
 
     default List<TechnicianPlanSummary> findPlanSummariesByTechnician(
             UUID technicianId,
             UUID communityId,
             UUID cropId,
-            UUID harvestId
-    ) {
+            UUID harvestId) {
         return findPlanSummariesByTechnician(technicianId, communityId, cropId, harvestId, false);
     }
 
@@ -51,6 +61,5 @@ public interface ProductionPlanRepository {
     List<ManagementOrgHarvestSummaryRow> findManagementHarvestSummary(
             UUID organizationId,
             UUID communityId,
-            UUID harvestId
-    );
+            UUID harvestId);
 }

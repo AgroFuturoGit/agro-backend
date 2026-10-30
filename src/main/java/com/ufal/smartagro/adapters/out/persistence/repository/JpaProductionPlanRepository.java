@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,6 +24,9 @@ public interface JpaProductionPlanRepository extends JpaRepository<ProductionPla
 
     @EntityGraph(attributePaths = {"farmer", "crop", "harvest"})
     List<ProductionPlanEntity> findAllByFarmerId(UUID farmerId);
+
+    @EntityGraph(attributePaths = {"farmer", "crop", "harvest"})
+    List<ProductionPlanEntity> findAllByFarmerIdIn(Collection<UUID> farmerIds);
 
     @EntityGraph(attributePaths = {"farmer", "crop", "harvest"})
     Optional<ProductionPlanEntity> findByFarmerIdAndClientId(UUID farmerId, UUID clientId);
