@@ -83,9 +83,7 @@ public class ProductionDashboardUseCase {
                 .orElseThrow(() -> new AccessDeniedException("Gestor não encontrado."));
         if (manager.getOrganization() == null) throw new AccessDeniedException("Gestor não possui organização vinculada.");
         UUID orgId = manager.getOrganization().getId();
-        return farmerRepository.findAll().stream().filter(f -> f.getDeletedAt() == null)
-                .filter(f -> f.getCommunity() != null && f.getCommunity().getOrganization() != null
-                        && orgId.equals(f.getCommunity().getOrganization().getId())).toList();
+        return farmerRepository.findAllByOrganizationId(orgId);
     }
 
     private static BigDecimal percentage(BigDecimal actual, BigDecimal expected) {
@@ -100,10 +98,16 @@ public class ProductionDashboardUseCase {
         private long plans;
         private BigDecimal expected = BigDecimal.ZERO;
         private BigDecimal actual = BigDecimal.ZERO;
-        private CommunityTotals(UUID id, String name) { this.id = id; this.name = name; }
-        private ProductionDashboardDTO.CommunityProductionDTO toDto() {
-            return new ProductionDashboardDTO.CommunityProductionDTO(id, name, farmers, plans, expected, actual,
-                    actual.subtract(expected), percentage(actual, expected));
+
+        CommunityTotals(UUID id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        ProductionDashboardDTO.CommunityProductionDTO toDto() {
+            BigDecimal diff = actual.subtract(expected);
+            return new ProductionDashboardDTO.CommunityProductionDTO(id, name, farmers, plans,
+                    expected, actual, diff, percentage(actual, expected));
         }
     }
 }

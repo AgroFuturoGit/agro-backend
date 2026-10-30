@@ -1,7 +1,5 @@
 package com.ufal.smartagro.application.service.user;
 
-
-
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.Manager;
@@ -39,13 +37,11 @@ public class FindAllUsersUseCase {
             return userRepository.findAll()
                     .stream()
                     .filter(u -> allowedUserIds.contains(u.getId()))
-
                     .collect(Collectors.toList());
         }
 
         return userRepository.findAll()
                 .stream()
-
                 .collect(Collectors.toList());
     }
 
@@ -69,12 +65,8 @@ public class FindAllUsersUseCase {
             }
         }
 
-        for (Farmer f : farmerRepository.findAll()) {
-            if (f.getCommunity() != null
-                    && f.getCommunity().getOrganization() != null
-                    && managerOrgId.equals(f.getCommunity().getOrganization().getId())
-                    && f.getUser() != null
-                    && f.getUser().getId() != null) {
+        for (Farmer f : farmerRepository.findAllByOrganizationId(managerOrgId)) {
+            if (f.getUser() != null && f.getUser().getId() != null) {
                 allowedUserIds.add(f.getUser().getId());
             }
         }

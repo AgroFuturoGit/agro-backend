@@ -1,6 +1,5 @@
 package com.ufal.smartagro.application.service.harvest;
 
-
 import com.ufal.smartagro.application.service.production.ProductionVersionGuard;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.HarvestAlreadyExistsException;
@@ -9,6 +8,7 @@ import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.HarvestRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,19 +16,11 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class HarvestUpdateUseCase {
 
     private final HarvestRepository harvestRepository;
     private final ProductionVersionGuard versionGuard;
-
-    public HarvestUpdateUseCase(HarvestRepository harvestRepository, ProductionVersionGuard versionGuard) {
-        this.harvestRepository = harvestRepository;
-        this.versionGuard = versionGuard != null ? versionGuard : new ProductionVersionGuard();
-    }
-
-    public HarvestUpdateUseCase(HarvestRepository harvestRepository) {
-        this(harvestRepository, new ProductionVersionGuard());
-    }
 
     @Transactional
     public Harvest execute(UUID id, Harvest updatedHarvestData, User loggedUser) {

@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
@@ -47,7 +48,8 @@ public class ExecutionAttachmentController {
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Anexo registrado"),
             @ApiResponse(responseCode = "200", description = "Anexo já existia para este clientId"),
-            @ApiResponse(responseCode = "400", description = "Arquivo vazio, grande demais ou em formato não aceito"),
+            @ApiResponse(responseCode = "400", description = "Arquivo vazio ou formato não aceito"),
+            @ApiResponse(responseCode = "413", description = "Arquivo grande demais (acima de 5 MB)"),
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
             @ApiResponse(responseCode = "404", description = "Apontamento não encontrado")
     })
@@ -61,11 +63,16 @@ public class ExecutionAttachmentController {
 
         User loggedUser = loadUser(loggedUserDetails);
 
+        byte[] content;
+        try (InputStream inputStream = file.getInputStream()) {
+            content = inputStream.readAllBytes();
+        }
+
         var incoming = new NewExecutionAttachment(
-            clientId,
-            file.getOriginalFilename(),
-            file.getContentType(),
-            file.getBytes());
+                clientId,
+                file.getOriginalFilename(),
+                file.getContentType(),
+                content);
 
         AttachmentUploadResult result = uploadUseCase.upload(executionId, incoming, loggedUser);
 
@@ -123,5 +130,7 @@ public class ExecutionAttachmentController {
         return ResponseEntity.noContent().build();
     }
 
-    private User loadUser(UserDetailsImpl loggedUserDetails) { return loggedUserDetails.toDomainUser(); }
+    private User loadUser(UserDetailsImpl loggedUserDetails) {
+        return loggedUserDetails.toDomainUser();
+    }
 }

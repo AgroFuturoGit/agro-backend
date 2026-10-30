@@ -1,6 +1,5 @@
 package com.ufal.smartagro.application.service.crop;
 
-
 import com.ufal.smartagro.application.service.production.ProductionVersionGuard;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.CropAlreadyExistsException;
@@ -9,6 +8,7 @@ import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CropRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,19 +17,11 @@ import java.util.UUID;
 
 /** Atualiza a cultura após validar permissão e evitar duplicidade de nome/variedade. */
 @Service
+@RequiredArgsConstructor
 public class CropUpdateUseCase {
 
     private final CropRepository cropRepository;
     private final ProductionVersionGuard versionGuard;
-
-    public CropUpdateUseCase(CropRepository cropRepository, ProductionVersionGuard versionGuard) {
-        this.cropRepository = cropRepository;
-        this.versionGuard = versionGuard != null ? versionGuard : new ProductionVersionGuard();
-    }
-
-    public CropUpdateUseCase(CropRepository cropRepository) {
-        this(cropRepository, new ProductionVersionGuard());
-    }
 
     /** Retrocompatibilidade sem baseUpdatedAt. */
     @Transactional

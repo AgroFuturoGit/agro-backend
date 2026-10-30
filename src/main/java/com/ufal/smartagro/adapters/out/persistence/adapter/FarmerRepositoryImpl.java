@@ -8,8 +8,12 @@ import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -46,17 +50,34 @@ public class FarmerRepositoryImpl implements FarmerRepository {
     }
 
     @Override
-    public java.util.List<Farmer> findAll() {
+    public List<Farmer> findAll() {
         return jpaRepository.findAll().stream()
                 .map(mapper::toDomain)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
     }
 
     @Override
-    public java.util.List<Farmer> findAllByCommunityId(UUID communityId) {
+    public List<Farmer> findAllByCommunityId(UUID communityId) {
         return jpaRepository.findAllByCommunityId(communityId).stream()
                 .map(mapper::toDomain)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Farmer> findAllByOrganizationId(UUID organizationId) {
+        return jpaRepository.findAllByOrganizationId(organizationId).stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Farmer> findAllByCommunityIdIn(Collection<UUID> communityIds) {
+        if (communityIds == null || communityIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return jpaRepository.findAllByCommunityIdIn(communityIds).stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
     }
 
     @Override

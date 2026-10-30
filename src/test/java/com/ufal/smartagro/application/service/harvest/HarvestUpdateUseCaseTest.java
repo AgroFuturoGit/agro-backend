@@ -1,5 +1,6 @@
 package com.ufal.smartagro.application.service.harvest;
 
+import com.ufal.smartagro.application.service.production.ProductionVersionGuard;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.ConcurrentUpdateException;
 import com.ufal.smartagro.domain.exception.HarvestAlreadyExistsException;
@@ -38,7 +39,7 @@ class HarvestUpdateUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new HarvestUpdateUseCase(harvestRepository);
+        useCase = new HarvestUpdateUseCase(harvestRepository, new ProductionVersionGuard());
     }
 
     private Harvest existingHarvest() {

@@ -1,5 +1,6 @@
 package com.ufal.smartagro.application.service.crop;
 
+import com.ufal.smartagro.application.service.production.ProductionVersionGuard;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.ConcurrentUpdateException;
 import com.ufal.smartagro.domain.exception.CropAlreadyExistsException;
@@ -40,7 +41,7 @@ class CropUpdateUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new CropUpdateUseCase(cropRepository);
+        useCase = new CropUpdateUseCase(cropRepository, new ProductionVersionGuard());
     }
 
     private Crop existingCrop() {

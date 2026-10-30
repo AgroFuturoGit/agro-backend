@@ -59,11 +59,7 @@ public class FindAllFarmersUseCase {
                 return farmerRepository.findAllByCommunityId(communityId);
             }
 
-            return farmerRepository.findAll().stream()
-                    .filter(f -> f.getCommunity() != null
-                            && f.getCommunity().getOrganization() != null
-                            && managerOrgId.equals(f.getCommunity().getOrganization().getId()))
-                    .toList();
+            return farmerRepository.findAllByOrganizationId(managerOrgId);
         }
 
         if (loggedUser != null && loggedUser.getRole() == Role.TECHNICIAN) {
@@ -84,9 +80,7 @@ public class FindAllFarmersUseCase {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
 
-            return farmerRepository.findAll().stream()
-                    .filter(f -> f.getCommunity() != null && assistedCommunityIds.contains(f.getCommunity().getId()))
-                    .toList();
+            return farmerRepository.findAllByCommunityIdIn(assistedCommunityIds);
         }
 
         if (communityId != null) {
