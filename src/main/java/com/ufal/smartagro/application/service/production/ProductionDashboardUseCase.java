@@ -38,6 +38,38 @@ public class ProductionDashboardUseCase {
             default -> throw new AccessDeniedException("Acesso negado ao painel de produção.");
         };
 
+        List<UUID> farmerIds = farmers.stream()
+                .filter(f -> f.getDeletedAt() == null)
+                .map(Farmer::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        List<ProductionPlan> allPlans = farmerIds.isEmpty() ? List.of()
+                : planRepository.findAllByFarmerIdIn(farmerIds);
+
+        List<ProductionPlan> activePlans = allPlans.stream()
+                .filter(p -> p.getDeletedAt() == null && p.getStatus() != PlanStatus.CANCELED)
+                .toList();
+
+        List<UUID> planIds = activePlans.stream()
+                .map(ProductionPlan::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        List<ProductionExecution> allExecutions = planIds.isEmpty() ? List.of()
+                : executionRepository.findAllByProductionPlanIdIn(planIds);
+
+        Map<UUID, List<ProductionPlan>> plansByFarmer = activePlans.stream()
+                .filter(p -> p.getFarmer() != null && p.getFarmer().getId() != null)
+                .collect(Collectors.groupingBy(p -> p.getFarmer().getId()));
+
+        Map<UUID, BigDecimal> validatedYieldByPlan = allExecutions.stream()
+                .filter(e -> e.getStatus() == ExecutionStatus.VALIDATED && e.getProductionPlan() != null && e.getProductionPlan().getId() != null)
+                .collect(Collectors.groupingBy(
+                        e -> e.getProductionPlan().getId(),
+                        Collectors.reducing(BigDecimal.ZERO, ProductionExecution::getQuantityKg, BigDecimal::add)
+                ));
+
         Map<UUID, CommunityTotals> totals = new LinkedHashMap<>();
         BigDecimal expected = BigDecimal.ZERO;
         BigDecimal actual = BigDecimal.ZERO;
@@ -48,12 +80,12 @@ public class ProductionDashboardUseCase {
             String communityName = farmer.getCommunity() == null ? "Sem comunidade" : farmer.getCommunity().getName();
             CommunityTotals community = totals.computeIfAbsent(communityId, id -> new CommunityTotals(id, communityName));
             community.farmers++;
-            for (ProductionPlan plan : planRepository.findAllByFarmerId(farmer.getId())) {
-                if (plan.getDeletedAt() != null || plan.getStatus() == PlanStatus.CANCELED) continue;
-                BigDecimal target = plan.getExpectedYield();
-                BigDecimal realized = executionRepository.findAllByProductionPlanId(plan.getId()).stream()
-                        .filter(e -> e.getStatus() == ExecutionStatus.VALIDATED)
-                        .map(ProductionExecution::getQuantityKg).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            List<ProductionPlan> plans = plansByFarmer.getOrDefault(farmer.getId(), List.of());
+            for (ProductionPlan plan : plans) {
+                BigDecimal target = plan.getExpectedYield() != null ? plan.getExpectedYield() : BigDecimal.ZERO;
+                BigDecimal realized = validatedYieldByPlan.getOrDefault(plan.getId(), BigDecimal.ZERO);
+
                 expected = expected.add(target);
                 actual = actual.add(realized);
                 planCount++;
@@ -74,8 +106,10 @@ public class ProductionDashboardUseCase {
         Set<UUID> communityIds = assistanceRepository.findByTechnicianId(technician.getId()).stream()
                 .filter(TechnicalAssistance::isActive).map(TechnicalAssistance::getCommunity)
                 .filter(Objects::nonNull).map(Community::getId).collect(Collectors.toSet());
-        return communityIds.stream().flatMap(id -> farmerRepository.findAllByCommunityId(id).stream())
-                .filter(f -> f.getDeletedAt() == null).toList();
+        if (communityIds.isEmpty()) {
+            return List.of();
+        }
+        return farmerRepository.findAllByCommunityIdIn(communityIds);
     }
 
     private List<Farmer> organizationFarmers(User user) {

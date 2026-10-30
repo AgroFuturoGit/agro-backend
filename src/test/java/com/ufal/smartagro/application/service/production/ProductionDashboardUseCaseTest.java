@@ -32,6 +32,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -76,8 +77,8 @@ class ProductionDashboardUseCaseTest {
             Farmer farmer = UserTestFactory.farmerProfile().user(farmerUser).build();
             ProductionPlan plan = plan(farmer, "10", "10");
             when(farmerRepository.findByUserId(farmerUser.getId())).thenReturn(Optional.of(farmer));
-            when(planRepository.findAllByFarmerId(farmer.getId())).thenReturn(List.of(plan));
-            when(executionRepository.findAllByProductionPlanId(plan.getId())).thenReturn(List.of(
+            when(planRepository.findAllByFarmerIdIn(List.of(farmer.getId()))).thenReturn(List.of(plan));
+            when(executionRepository.findAllByProductionPlanIdIn(List.of(plan.getId()))).thenReturn(List.of(
                     execution(plan, "40", ExecutionStatus.VALIDATED),
                     execution(plan, "30", ExecutionStatus.PENDING),
                     execution(plan, "20", ExecutionStatus.REJECTED)));
@@ -91,7 +92,7 @@ class ProductionDashboardUseCaseTest {
             assertThat(result.difference()).isEqualByComparingTo("-60");
             assertThat(result.percentageRealized()).isEqualByComparingTo("40.00");
             verify(farmerRepository, never()).findAll();
-            verify(farmerRepository, never()).findAllByCommunityId(any());
+            verify(farmerRepository, never()).findAllByCommunityIdIn(any());
         }
 
         @Test
@@ -124,9 +125,9 @@ class ProductionDashboardUseCaseTest {
             when(assistanceRepository.findByTechnicianId(technician.getId())).thenReturn(List.of(
                     UserTestFactory.technicalAssistance().technician(technician).community(assisted).build(),
                     UserTestFactory.technicalAssistance().technician(technician).community(ended).ended().build()));
-            when(farmerRepository.findAllByCommunityId(assisted.getId())).thenReturn(List.of(first, second));
-            when(planRepository.findAllByFarmerId(first.getId())).thenReturn(List.of(plan));
-            when(executionRepository.findAllByProductionPlanId(plan.getId()))
+            when(farmerRepository.findAllByCommunityIdIn(Set.of(assisted.getId()))).thenReturn(List.of(first, second));
+            when(planRepository.findAllByFarmerIdIn(List.of(first.getId(), second.getId()))).thenReturn(List.of(plan));
+            when(executionRepository.findAllByProductionPlanIdIn(List.of(plan.getId())))
                     .thenReturn(List.of(execution(plan, "50", ExecutionStatus.VALIDATED)));
 
             ProductionDashboardDTO result = useCase.getDashboard(techUser);
@@ -137,7 +138,6 @@ class ProductionDashboardUseCaseTest {
             assertThat(result.communities().get(0).communityId()).isEqualTo(assisted.getId());
             assertThat(result.communities().get(0).farmerCount()).isEqualTo(2);
             assertThat(result.percentageRealized()).isEqualByComparingTo("50.00");
-            verify(farmerRepository, never()).findAllByCommunityId(ended.getId());
             verify(farmerRepository, never()).findAll();
         }
 
@@ -190,8 +190,8 @@ class ProductionDashboardUseCaseTest {
             ProductionPlan plan = plan(own, "10", "10");
             when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
             when(farmerRepository.findAllByOrganizationId(ownOrg.getId())).thenReturn(List.of(own));
-            when(planRepository.findAllByFarmerId(own.getId())).thenReturn(List.of(plan));
-            when(executionRepository.findAllByProductionPlanId(plan.getId()))
+            when(planRepository.findAllByFarmerIdIn(List.of(own.getId()))).thenReturn(List.of(plan));
+            when(executionRepository.findAllByProductionPlanIdIn(List.of(plan.getId())))
                     .thenReturn(List.of(execution(plan, "100", ExecutionStatus.VALIDATED)));
 
             ProductionDashboardDTO result = useCase.getDashboard(managerUser);
@@ -200,8 +200,7 @@ class ProductionDashboardUseCaseTest {
             assertThat(result.communities()).hasSize(1);
             assertThat(result.communities().get(0).communityId()).isEqualTo(own.getCommunity().getId());
             assertThat(result.percentageRealized()).isEqualByComparingTo("100.00");
-            verify(planRepository, never()).findAllByFarmerId(foreign.getId());
-            verify(planRepository, never()).findAllByFarmerId(withoutCommunity.getId());
+            verify(planRepository).findAllByFarmerIdIn(List.of(own.getId()));
         }
 
         @Test
@@ -245,12 +244,12 @@ class ProductionDashboardUseCaseTest {
             ProductionPlan planA = plan(farmerA, "10", "10");
             ProductionPlan planB = plan(farmerB, "10", "10");
             when(farmerRepository.findAll()).thenReturn(List.of(farmerA, farmerB, removed));
-            when(planRepository.findAllByFarmerId(farmerA.getId())).thenReturn(List.of(planA));
-            when(planRepository.findAllByFarmerId(farmerB.getId())).thenReturn(List.of(planB));
-            when(executionRepository.findAllByProductionPlanId(planA.getId()))
-                    .thenReturn(List.of(execution(planA, "100", ExecutionStatus.VALIDATED)));
-            when(executionRepository.findAllByProductionPlanId(planB.getId()))
-                    .thenReturn(List.of(execution(planB, "50", ExecutionStatus.VALIDATED)));
+            when(planRepository.findAllByFarmerIdIn(List.of(farmerA.getId(), farmerB.getId())))
+                    .thenReturn(List.of(planA, planB));
+            when(executionRepository.findAllByProductionPlanIdIn(List.of(planA.getId(), planB.getId())))
+                    .thenReturn(List.of(
+                            execution(planA, "100", ExecutionStatus.VALIDATED),
+                            execution(planB, "50", ExecutionStatus.VALIDATED)));
 
             ProductionDashboardDTO result = useCase.getDashboard(admin);
 
@@ -262,7 +261,7 @@ class ProductionDashboardUseCaseTest {
             assertThat(result.percentageRealized()).isEqualByComparingTo("75.00");
             assertThat(result.communities()).extracting(ProductionDashboardDTO.CommunityProductionDTO::communityName)
                     .containsExactly("A", "B");
-            verify(planRepository, never()).findAllByFarmerId(removed.getId());
+            verify(planRepository).findAllByFarmerIdIn(List.of(farmerA.getId(), farmerB.getId()));
         }
 
         @Test
@@ -272,8 +271,8 @@ class ProductionDashboardUseCaseTest {
             Farmer farmer = UserTestFactory.farmerProfile().community(null).build();
             ProductionPlan plan = plan(farmer, "10", "10");
             when(farmerRepository.findAll()).thenReturn(List.of(farmer));
-            when(planRepository.findAllByFarmerId(farmer.getId())).thenReturn(List.of(plan));
-            when(executionRepository.findAllByProductionPlanId(plan.getId())).thenReturn(List.of());
+            when(planRepository.findAllByFarmerIdIn(List.of(farmer.getId()))).thenReturn(List.of(plan));
+            when(executionRepository.findAllByProductionPlanIdIn(List.of(plan.getId()))).thenReturn(List.of());
 
             ProductionDashboardDTO result = useCase.getDashboard(admin);
 
@@ -290,8 +289,8 @@ class ProductionDashboardUseCaseTest {
             Farmer farmer = UserTestFactory.farmerProfile().build();
             ProductionPlan zeroTarget = plan(farmer, "10", "0");
             when(farmerRepository.findAll()).thenReturn(List.of(farmer));
-            when(planRepository.findAllByFarmerId(farmer.getId())).thenReturn(List.of(zeroTarget));
-            when(executionRepository.findAllByProductionPlanId(zeroTarget.getId()))
+            when(planRepository.findAllByFarmerIdIn(List.of(farmer.getId()))).thenReturn(List.of(zeroTarget));
+            when(executionRepository.findAllByProductionPlanIdIn(List.of(zeroTarget.getId())))
                     .thenReturn(List.of(execution(zeroTarget, "10", ExecutionStatus.VALIDATED)));
 
             ProductionDashboardDTO result = useCase.getDashboard(admin);

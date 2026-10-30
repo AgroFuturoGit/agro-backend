@@ -23,8 +23,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Locale;
-
 @Tag(name = "Autenticação", description = "Endpoints de login e dados do usuário autenticado")
 @RequiredArgsConstructor
 @RestController
@@ -43,8 +41,8 @@ public class AuthController {
     })
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginDTO loginDTO, HttpServletRequest request) {
-        String clientKey = resolveClientKey(request, loginDTO.email());
-        rateLimiter.checkAndIncrement(clientKey);
+        String clientIp = resolveClientIp(request);
+        rateLimiter.checkAndIncrement(clientIp);
 
         var loginResult = loginUseCase.login(loginDTO);
         return ResponseEntity.ok(Mapper.toLoginResponseDTO(loginResult.token(), loginResult.user()));
@@ -65,14 +63,12 @@ public class AuthController {
         return ResponseEntity.ok(Mapper.toUserResponseDTO(userDetails.getUser()));
     }
 
-    private String resolveClientKey(HttpServletRequest request, String email) {
+    private String resolveClientIp(HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
         if (ip != null && !ip.isBlank()) {
-            ip = ip.split(",")[0].trim();
-        } else {
-            ip = request.getRemoteAddr();
+            return ip.split(",")[0].trim();
         }
-        String normalizedEmail = email != null ? email.trim().toLowerCase(Locale.ROOT) : "";
-        return (ip != null ? ip : "unknown") + ":" + normalizedEmail;
+        String remoteAddr = request.getRemoteAddr();
+        return (remoteAddr != null && !remoteAddr.isBlank()) ? remoteAddr : "unknown";
     }
 }

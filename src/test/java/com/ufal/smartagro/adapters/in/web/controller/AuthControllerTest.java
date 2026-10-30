@@ -27,6 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -79,6 +80,22 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.token").value("fake-jwt-token"))
                 .andExpect(jsonPath("$.userResponseDTO.email").value("admin@smartagro.test"))
                 .andExpect(jsonPath("$.userResponseDTO.fullName").value("Admin Teste"));
+    }
+
+    @Test
+    @DisplayName("Given requisição com X-Forwarded-For When login Then limita estritamente pelo IP do cliente")
+    void givenLoginWithForwardedFor_whenLogin_thenLimitsByIp() throws Exception {
+        LoginDTO loginDTO = new LoginDTO("user@test.com", "password");
+        User user = UserTestFactory.user().farmer().build();
+        when(loginUseCase.login(any(LoginDTO.class))).thenReturn(new LoginResult("fake-token", user));
+
+        mockMvc.perform(post("/auth/login")
+                        .header("X-Forwarded-For", "203.0.113.195, 70.41.3.18")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginDTO)))
+                .andExpect(status().isOk());
+
+        verify(rateLimiter).checkAndIncrement("203.0.113.195");
     }
 
     @Test
