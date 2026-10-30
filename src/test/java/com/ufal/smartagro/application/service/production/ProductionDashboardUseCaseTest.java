@@ -189,7 +189,7 @@ class ProductionDashboardUseCaseTest {
             Farmer withoutCommunity = UserTestFactory.farmerProfile().community(null).build();
             ProductionPlan plan = plan(own, "10", "10");
             when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
-            when(farmerRepository.findAll()).thenReturn(List.of(own, foreign, withoutCommunity));
+            when(farmerRepository.findAllByOrganizationId(ownOrg.getId())).thenReturn(List.of(own));
             when(planRepository.findAllByFarmerId(own.getId())).thenReturn(List.of(plan));
             when(executionRepository.findAllByProductionPlanId(plan.getId()))
                     .thenReturn(List.of(execution(plan, "100", ExecutionStatus.VALIDATED)));
