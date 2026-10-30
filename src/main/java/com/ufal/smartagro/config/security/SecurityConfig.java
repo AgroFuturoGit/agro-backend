@@ -3,7 +3,7 @@ package com.ufal.smartagro.config.security;
 import com.ufal.smartagro.config.security.filter.JwtAuthenticationFilter;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -25,13 +25,19 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
-@RequiredArgsConstructor
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Value("${springdoc.api-docs.enabled:false}")
+    private boolean swaggerEnabled = false;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -44,16 +50,20 @@ public class SecurityConfig {
                     .authenticationEntryPoint(authenticationEntryPoint())
                     .accessDeniedHandler(accessDeniedHandler())
             )
-            .authorizeHttpRequests(auth -> auth
+            .authorizeHttpRequests(auth -> {
+                auth
                     .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                     .requestMatchers("/error").permitAll()
                     .requestMatchers("/auth/login").permitAll()
                     // Actuator restrito ao healthcheck público
-                    .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                    // Swagger / OpenAPI
-                    .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
-                    .anyRequest().authenticated()
-            )
+                    .requestMatchers("/actuator/health", "/actuator/info").permitAll();
+
+                if (swaggerEnabled) {
+                    auth.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll();
+                }
+
+                auth.anyRequest().authenticated();
+            })
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

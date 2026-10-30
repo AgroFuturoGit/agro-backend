@@ -14,6 +14,7 @@ import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.exception.HarvestAlreadyExistsException;
 import com.ufal.smartagro.domain.exception.HarvestNotFoundException;
 import com.ufal.smartagro.domain.exception.InvalidStateTransitionException;
+import com.ufal.smartagro.domain.exception.RateLimitExceededException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -207,6 +208,19 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 ex.getCurrent()
         ));
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ApiError> handleRateLimitExceeded(
+            RateLimitExceededException ex, HttpServletRequest httpServletRequest) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
+                .body(new ApiError(
+                        HttpStatus.TOO_MANY_REQUESTS.value(),
+                        ex.getMessage(),
+                        httpServletRequest.getRequestURI(),
+                        LocalDateTime.now()
+                ));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

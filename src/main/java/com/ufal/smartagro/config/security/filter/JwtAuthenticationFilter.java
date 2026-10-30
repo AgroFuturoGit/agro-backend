@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,6 +23,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenService jwtTokenService;
     private final UserDetailsService userDetailsService;
 
+    @Value("${springdoc.api-docs.enabled:false}")
+    private boolean swaggerEnabled = false;
+
     public JwtAuthenticationFilter(JwtTokenService jwtTokenService, UserDetailsService userDetailsService) {
         this.jwtTokenService = jwtTokenService;
         this.userDetailsService = userDetailsService;
@@ -36,10 +40,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (path == null) {
             return false;
         }
-        return "/auth/login".equals(path)
-                || "/error".equals(path)
-                || path.startsWith("/swagger-ui")
-                || path.startsWith("/v3/api-docs");
+
+        boolean isPublicPath = "/auth/login".equals(path) || "/error".equals(path);
+        if (swaggerEnabled) {
+            isPublicPath = isPublicPath || path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs");
+        }
+        return isPublicPath;
     }
 
     @Override

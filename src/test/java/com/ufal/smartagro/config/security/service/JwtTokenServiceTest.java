@@ -11,11 +11,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import javax.crypto.SecretKey;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -35,9 +37,13 @@ class JwtTokenServiceTest {
     @BeforeEach
     void setUp() throws Exception {
         jwtTokenService = new JwtTokenService();
-        Field secretField = JwtTokenService.class.getDeclaredField("secret");
-        secretField.setAccessible(true);
-        secretField.set(jwtTokenService, SECRET);
+        setField(jwtTokenService, "secret", SECRET);
+    }
+
+    private void setField(Object target, String fieldName, Object value) throws Exception {
+        Field field = target.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(target, value);
     }
 
     @Nested
@@ -45,7 +51,7 @@ class JwtTokenServiceTest {
     class GenerateToken {
 
         @Test
-        @DisplayName("Then emite JWT com issuer, subject (email), id, name, role e expiração de 4h")
+        @DisplayName("Then emite JWT com issuer, subject (email), id, name, role e expiração de 4h por padrão")
         void givenAdminDetails_whenGenerateToken_thenContainsExpectedClaims() {
             UUID userId = UUID.randomUUID();
             UserDetailsImpl details = new UserDetailsImpl(
@@ -69,6 +75,22 @@ class JwtTokenServiceTest {
                     .isCloseTo(Instant.now().plus(4, ChronoUnit.HOURS), within(15, ChronoUnit.SECONDS));
         }
 
+        @Test
+        @DisplayName("Then respeita jwt.expiration quando configurado explicitamente")
+        void givenCustomExpiration_whenGenerateToken_thenUsesCustomDuration() throws Exception {
+            setField(jwtTokenService, "expiration", "2h");
+
+            UserDetailsImpl details = new UserDetailsImpl(
+                    UserTestFactory.user().technician().email("tech@smartagro.test").toEntity()
+            );
+
+            String token = jwtTokenService.generateToken(details);
+            Claims claims = parseClaims(token);
+
+            assertThat(claims.getExpiration().toInstant())
+                    .isCloseTo(Instant.now().plus(2, ChronoUnit.HOURS), within(15, ChronoUnit.SECONDS));
+        }
+
         @ParameterizedTest(name = "Then claim role reflete Role.{0}")
         @EnumSource(Role.class)
         void givenEachRole_whenGenerateToken_thenRoleClaimMatches(Role role) {
@@ -80,6 +102,37 @@ class JwtTokenServiceTest {
 
             assertThat(claims.get("role", String.class)).isEqualTo(role.name());
             assertThat(claims.getSubject()).isEqualTo(details.getUsername());
+        }
+    }
+
+    @Nested
+    @DisplayName("Given diferentes formatos de jwt.expiration")
+    class ExpirationParsing {
+
+        @ParameterizedTest
+        @CsvSource({
+                "1d, 86400",
+                "2h, 7200",
+                "30m, 1800",
+                "60s, 60",
+                "PT3H, 10800",
+                "3600, 3600"
+        })
+        @DisplayName("Then calcula duração correta para formatos suportados")
+        void givenSupportedFormats_whenResolveDuration_thenReturnsExpectedSeconds(String expression, long expectedSeconds) throws Exception {
+            setField(jwtTokenService, "expiration", expression);
+            Duration duration = jwtTokenService.resolveExpirationDuration();
+            assertThat(duration.getSeconds()).isEqualTo(expectedSeconds);
+        }
+
+        @Test
+        @DisplayName("Then fallback para expirationHours quando jwt.expiration for em branco")
+        void givenEmptyExpiration_whenResolveDuration_thenFallbacksToExpirationHours() throws Exception {
+            setField(jwtTokenService, "expiration", "");
+            setField(jwtTokenService, "expirationHours", 8L);
+
+            Duration duration = jwtTokenService.resolveExpirationDuration();
+            assertThat(duration.toHours()).isEqualTo(8);
         }
     }
 
