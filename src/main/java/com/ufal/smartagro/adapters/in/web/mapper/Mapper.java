@@ -6,6 +6,9 @@ import com.ufal.smartagro.adapters.in.web.dto.crop.CropResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.crop.CropUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionExecutionResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionPlanResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.production.occurrence.FieldOccurrenceResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.farmer.family.FamilyCompositionResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.farmer.financing.FinancingResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestRegisterDTO;
@@ -14,25 +17,41 @@ import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.manager.ManagerResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.community.CommunityResponseDTO;
-import com.ufal.smartagro.adapters.in.web.dto.producer.ProducerResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.technician.TechnicianResponseDTO;
 import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.Organization;
 import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Community;
-import com.ufal.smartagro.domain.model.Producer;
+import com.ufal.smartagro.domain.model.Farmer;
+import com.ufal.smartagro.domain.model.Technician;
+import com.ufal.smartagro.domain.model.TechnicalAssistance;
+import com.ufal.smartagro.adapters.out.persistence.entity.UserEntity;
+import com.ufal.smartagro.adapters.in.web.dto.technicalassistance.TechnicalAssistanceResponseDTO;
 
+/** Conversões entre objetos de domínio e DTOs expostos pelos endpoints HTTP. */
 public class Mapper {
 
     public static UserResponseDTO toUserResponseDTO(User user) {
+        if (user == null) return null;
         return new UserResponseDTO(
                 user.getId(),
                 user.getFullName(),
                 user.getEmail(),
                 user.getCpf(),
-                user.getRole(),
-                user.getDateOfBirth());
+                user.getRole());
+    }
+
+    public static UserResponseDTO toUserResponseDTO(UserEntity entity) {
+        if (entity == null) return null;
+        return new UserResponseDTO(
+                entity.getId(),
+                entity.getFullName(),
+                entity.getEmail(),
+                entity.getCpf(),
+                entity.getRole());
     }
 
     public static LoginResponseDTO toLoginResponseDTO(String token, User user){
@@ -48,35 +67,44 @@ public class Mapper {
                 dto.email(),
                 encodedPassword,
                 dto.cpf(),
-                dto.dateOfBirth(),
                 dto.role()
         );
     }
 
+    /** Inclui os novos parâmetros da cultura na representação da API. */
     public static CropResponseDTO toCropResponseDTO(Crop crop) {
+        if (crop == null) return null;
         return new CropResponseDTO(
                 crop.getId(),
                 crop.getName(),
                 crop.getVariety(),
-                crop.getIsPriority()
+                crop.getIsPriority(),
+                crop.getCycleDays(),
+                crop.getExpectedProductivity(),
+                crop.getHarvestType(),
+                crop.getUnit(),
+                crop.getUnitWeightKg(),
+                crop.getCreatedAt(),
+                crop.getUpdatedAt()
         );
     }
 
+    /** Constrói a cultura de domínio com todos os dados enviados no cadastro. */
     public static Crop toCrop(CropRegisterDTO dto) {
         return new Crop(
                 null,
                 dto.name(),
                 dto.variety(),
-                dto.isPriority()
+                dto.isPriority(), dto.cycleDays(), dto.expectedProductivity(), dto.harvestType(), dto.unit(), dto.unitWeightKg()
         );
     }
 
     public static Crop toCrop(CropUpdateDTO dto) {
         return new Crop(
-                null, 
+                null,
                 dto.name(),
                 dto.variety(),
-                dto.isPriority()
+                dto.isPriority(), dto.cycleDays(), dto.expectedProductivity(), dto.harvestType(), dto.unit(), dto.unitWeightKg()
         );
     }
 
@@ -90,11 +118,14 @@ public class Mapper {
     }
 
     public static HarvestResponseDTO toHarvestResponseDTO(Harvest harvest) {
+        if (harvest == null) return null;
         return new HarvestResponseDTO(
                 harvest.getId(),
                 harvest.getLabel(),
                 harvest.getStartDate(),
-                harvest.getEndDate()
+                harvest.getEndDate(),
+                harvest.getCreatedAt(),
+                harvest.getUpdatedAt()
         );
     }
 
@@ -141,41 +172,135 @@ public class Mapper {
         );
     }
 
-    public static ProducerResponseDTO toProducerResponseDTO(Producer producer) {
-        if (producer == null) return null;
-        return new ProducerResponseDTO(
-                producer.getId(),
-                toUserResponseDTO(producer.getUser()),
-                toCommunityResponseDTO(producer.getCommunity()),
-                producer.getAliasName(),
-                producer.getIsCompliant(),
-                producer.getCreatedAt(),
-                producer.getUpdatedAt()
+    public static FarmerResponseDTO toFarmerResponseDTO(Farmer farmer) {
+        if (farmer == null) return null;
+        return new FarmerResponseDTO(
+                farmer.getId(),
+                toUserResponseDTO(farmer.getUser()),
+                toCommunityResponseDTO(farmer.getCommunity()),
+                farmer.getFullName(),
+                farmer.getCpf(),
+                farmer.getDateOfBirth(),
+                farmer.getMotherName(),
+                farmer.getOrigin(),
+                farmer.getEducationLevel(),
+                farmer.getPhone(),
+                farmer.getLocalName(),
+                farmer.getStreet(),
+                farmer.getCity(),
+                farmer.getState(),
+                farmer.getIbgeCode(),
+                farmer.getLatitude(),
+                farmer.getLongitude(),
+                farmer.getRegistrationSource(),
+                farmer.getIsCompliant(),
+                farmer.getCreatedAt(),
+                farmer.getUpdatedAt()
         );
     }
+
+    /** Retorna o plano com produtividade snapshot, datas esperadas e localização. */
     public static ProductionPlanResponseDTO toProductionPlanResponseDTO(com.ufal.smartagro.domain.model.ProductionPlan plan) {
         if (plan == null) return null;
         return new ProductionPlanResponseDTO(
                 plan.getId(),
-                toProducerResponseDTO(plan.getProducer()),
+                plan.getClientId(),
+                toFarmerResponseDTO(plan.getFarmer()),
                 toHarvestResponseDTO(plan.getHarvest()),
                 toCropResponseDTO(plan.getCrop()),
                 plan.getPlantedArea(),
-                plan.getExpectedYield(),
+                plan.getStatus(), plan.getExpectedHarvestStart(), plan.getExpectedHarvestEnd(), plan.getExpectedProductivity(),
+                plan.getLocationDescription(), plan.getLatitude(), plan.getLongitude(),
                 plan.getPlannedPlantingDate(),
                 plan.getPlannedCalendar(),
-                plan.getCreatedAt()
+                plan.getCreatedAt(),
+                plan.getUpdatedAt()
         );
     }
 
+    /** Retorna o apontamento com horário, quantidades e dados de validação. */
     public static ProductionExecutionResponseDTO toProductionExecutionResponseDTO(com.ufal.smartagro.domain.model.ProductionExecution exec) {
         if (exec == null) return null;
         return new ProductionExecutionResponseDTO(
                 exec.getId(),
+                exec.getClientId(),
                 exec.getProductionPlan() != null ? exec.getProductionPlan().getId() : null,
-                exec.getActualYield(),
-                exec.getHarvestDate(),
-                exec.getCreatedAt()
+                exec.getQuantity(), exec.getQuantityKg(), exec.getHarvestedAt(), exec.getStatus(),
+                exec.getValidatedBy() != null ? exec.getValidatedBy().getId() : null,
+                exec.getValidatedAt(), exec.getNotes(),
+                exec.getRejectionReason(),
+                exec.getLatitude(),
+                exec.getLongitude(),
+                exec.getLocationAccuracy(),
+                exec.getLocationRecordedAt(),
+                exec.getCreatedAt(),
+                exec.getUpdatedAt()
+        );
+    }
+
+    public static TechnicianResponseDTO toTechnicianResponseDTO(Technician technician) {
+        if (technician == null) return null;
+        return new TechnicianResponseDTO(
+                technician.getId(),
+                toUserResponseDTO(technician.getUser()),
+                technician.getRegistrationType(),
+                technician.getRegistrationNumber(),
+                technician.getProfessionalId(),
+                technician.getSpecialty(),
+                toUserResponseDTO(technician.getCreatedBy()),
+                technician.getCreatedAt(),
+                technician.getUpdatedAt()
+        );
+    }
+    public static FinancingResponseDTO toFinancingResponseDTO(com.ufal.smartagro.domain.model.Financing fin) {
+        if (fin == null) return null;
+        return new FinancingResponseDTO(
+                fin.getId(),
+                fin.getFarmer() != null ? fin.getFarmer().getId() : null,
+                fin.getDescription(),
+                fin.getStatus(),
+                fin.getAmount(),
+                fin.getCreatedAt(),
+                fin.getUpdatedAt()
+        );
+    }
+
+    public static FamilyCompositionResponseDTO toFamilyCompositionResponseDTO(com.ufal.smartagro.domain.model.FamilyComposition comp) {
+        if (comp == null) return null;
+        return new FamilyCompositionResponseDTO(
+                comp.getId(),
+                comp.getFarmer() != null ? comp.getFarmer().getId() : null,
+                comp.getName(),
+                comp.getKinship(),
+                comp.getAge(),
+                comp.getCreatedAt(),
+                comp.getUpdatedAt()
+        );
+    }
+
+    public static FieldOccurrenceResponseDTO toFieldOccurrenceResponseDTO(com.ufal.smartagro.domain.model.FieldOccurrence occ) {
+        if (occ == null) return null;
+        return new FieldOccurrenceResponseDTO(
+                occ.getId(),
+                occ.getClientId(),
+                occ.getExecution() != null ? occ.getExecution().getId() : null,
+                occ.getLogType(),
+                occ.getDescription(),
+                occ.getWeatherObservation(),
+                occ.getEvidenceUrl(),
+                occ.getCreatedAt(),
+                occ.getUpdatedAt()
+        );
+    }
+
+    public static TechnicalAssistanceResponseDTO toTechnicalAssistanceResponseDTO(TechnicalAssistance assistance) {
+        if (assistance == null) return null;
+        return new TechnicalAssistanceResponseDTO(
+                assistance.getId(),
+                assistance.getTechnician() != null ? assistance.getTechnician().getId() : null,
+                assistance.getCommunity() != null ? assistance.getCommunity().getId() : null,
+                assistance.getStartDate(),
+                assistance.getEndDate()
         );
     }
 }

@@ -7,17 +7,24 @@ import com.ufal.smartagro.application.service.production.*;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.ProductionPlan;
+import com.ufal.smartagro.domain.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Produção Agrícola", description = "Planejamento e execução de safras e acompanhamento produtivo")
 @RequiredArgsConstructor
 @RestController
 @RequestMapping
@@ -29,136 +36,292 @@ public class ProductionController {
     private final ListProductionPlansUseCase listProductionPlansUseCase;
     private final FindProductionPlanByIdUseCase findProductionPlanByIdUseCase;
     private final DeleteProductionPlanUseCase deleteProductionPlanUseCase;
-    
+
     private final UpdateProductionExecutionUseCase updateProductionExecutionUseCase;
+    private final ValidateProductionExecutionUseCase validateProductionExecutionUseCase;
+    private final RejectProductionExecutionUseCase rejectProductionExecutionUseCase;
     private final ListProductionExecutionsUseCase listProductionExecutionsUseCase;
     private final CompareProductionUseCase compareProductionUseCase;
+    private final ProductionDashboardUseCase productionDashboardUseCase;
     private final FindProductionExecutionByIdUseCase findProductionExecutionByIdUseCase;
     private final DeleteProductionExecutionUseCase deleteProductionExecutionUseCase;
 
-    @PreAuthorize("hasRole('PRODUCER')")
-    @PostMapping("/producers/{producerId}/production-plans")
+    @Operation(summary = "Painel de produção conforme o perfil", description = "Compara a meta prevista com a produção validada no escopo permitido ao usuário.", security = @SecurityRequirement(name = "bearerAuth"))
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN', 'FARMER')")
+    @GetMapping("/production/dashboard")
+    public ResponseEntity<ProductionDashboardDTO> productionDashboard(
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+        User loggedUser = loggedUserDetails.toDomainUser();
+        return ResponseEntity.ok(productionDashboardUseCase.getDashboard(loggedUser));
+    }
+
+    @Operation(summary = "Criar plano de produção", description = "Cria um plano de produção agrícola para determinado agricultor. Suporta deduplicação idempotente via clientId no corpo ou header Idempotency-Key com header Location.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Plano de produção criado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Agricultor não encontrado")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
+    @PostMapping("/farmers/{farmerId}/production-plans")
     public ResponseEntity<ProductionPlanResponseDTO> createProductionPlan(
-            @PathVariable UUID producerId,
+            @PathVariable UUID farmerId,
+            @RequestHeader(value = "Idempotency-Key", required = false) UUID idempotencyKey,
             @Valid @RequestBody ProductionPlanRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        ProductionPlan plan = createProductionPlanUseCase.create(producerId, dto);
+        User loggedUser = loggedUserDetails.toDomainUser();
+
+        if (dto.clientId() == null && idempotencyKey != null) {
+            dto = dto.withClientId(idempotencyKey);
+        }
+
+        ProductionPlan plan = createProductionPlanUseCase.create(farmerId, dto, loggedUser);
         ProductionPlanResponseDTO response = Mapper.toProductionPlanResponseDTO(plan);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        URI location = URI.create("/production-plans/" + plan.getId());
+        return ResponseEntity.created(location).body(response);
     }
 
-    @PreAuthorize("hasRole('PRODUCER')")
+    @Operation(summary = "Registrar execução de produção", description = "Registra um evento de execução referente a um plano de produção. Suporta deduplicação idempotente via clientId no corpo ou header Idempotency-Key com header Location.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Execução registrada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Plano de produção não encontrado")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
     @PostMapping("/production-plans/{planId}/executions")
     public ResponseEntity<ProductionExecutionResponseDTO> createProductionExecution(
             @PathVariable UUID planId,
+            @RequestHeader(value = "Idempotency-Key", required = false) UUID idempotencyKey,
             @Valid @RequestBody ProductionExecutionRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        ProductionExecution execution = createProductionExecutionUseCase.create(planId, dto);
+        User loggedUser = loggedUserDetails.toDomainUser();
+
+        if (dto.clientId() == null && idempotencyKey != null) {
+            dto = dto.withClientId(idempotencyKey);
+        }
+
+        ProductionExecution execution = createProductionExecutionUseCase.create(planId, dto, loggedUser);
         ProductionExecutionResponseDTO response = Mapper.toProductionExecutionResponseDTO(execution);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        URI location = URI.create("/production-executions/" + execution.getId());
+        return ResponseEntity.created(location).body(response);
     }
 
-    @PreAuthorize("hasRole('PRODUCER')")
+    @Operation(summary = "Atualizar plano de produção", description = "Atualiza os dados de um plano de produção existente.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Plano de produção atualizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Plano de produção não encontrado")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
     @PutMapping("/production-plans/{planId}")
     public ResponseEntity<ProductionPlanResponseDTO> updateProductionPlan(
             @PathVariable UUID planId,
             @Valid @RequestBody ProductionPlanUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        ProductionPlan plan = updateProductionPlanUseCase.update(planId, dto);
+        User loggedUser = loggedUserDetails.toDomainUser();
+
+        ProductionPlan plan = updateProductionPlanUseCase.update(planId, dto, loggedUser);
         ProductionPlanResponseDTO response = Mapper.toProductionPlanResponseDTO(plan);
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasRole('PRODUCER')")
-    @GetMapping("/producers/{producerId}/production-plans")
-    public ResponseEntity<List<ProductionPlanResponseDTO>> listProductionPlansByProducer(
-            @PathVariable UUID producerId,
+    @Operation(summary = "Listar planos de produção do agricultor", description = "Retorna todos os planos de produção vinculados a um agricultor.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Agricultor não encontrado")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
+    @GetMapping("/farmers/{farmerId}/production-plans")
+    public ResponseEntity<List<ProductionPlanResponseDTO>> listProductionPlansByFarmer(
+            @PathVariable UUID farmerId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        List<ProductionPlan> plans = listProductionPlansUseCase.listByProducer(producerId);
+        User loggedUser = loggedUserDetails.toDomainUser();
+
+        List<ProductionPlan> plans = listProductionPlansUseCase.listByFarmer(farmerId, loggedUser);
         List<ProductionPlanResponseDTO> response = plans.stream()
                 .map(Mapper::toProductionPlanResponseDTO)
                 .toList();
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasRole('PRODUCER')")
+    @Operation(summary = "Buscar plano de produção por ID", description = "Recupera os detalhes de um plano de produção específico.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Plano de produção encontrado"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Plano de produção não encontrado")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping("/production-plans/{planId}")
     public ResponseEntity<ProductionPlanResponseDTO> findProductionPlanById(
             @PathVariable UUID planId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        ProductionPlan plan = findProductionPlanByIdUseCase.findById(planId);
+        User loggedUser = loggedUserDetails.toDomainUser();
+
+        ProductionPlan plan = findProductionPlanByIdUseCase.findById(planId, loggedUser);
         ProductionPlanResponseDTO response = Mapper.toProductionPlanResponseDTO(plan);
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasRole('PRODUCER')")
+    @Operation(summary = "Excluir plano de produção", description = "Remove um plano de produção do sistema.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Plano de produção excluído com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Plano de produção não encontrado")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
     @DeleteMapping("/production-plans/{planId}")
     public ResponseEntity<Void> deleteProductionPlan(
             @PathVariable UUID planId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        deleteProductionPlanUseCase.delete(planId);
+        User loggedUser = loggedUserDetails.toDomainUser();
+
+        deleteProductionPlanUseCase.delete(planId, loggedUser);
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasRole('PRODUCER')")
+    @Operation(summary = "Atualizar execução de produção", description = "Atualiza os dados de uma execução de produção já registrada.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Execução atualizada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Execução não encontrada")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
     @PutMapping("/production-executions/{executionId}")
     public ResponseEntity<ProductionExecutionResponseDTO> updateProductionExecution(
             @PathVariable UUID executionId,
             @Valid @RequestBody ProductionExecutionUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        ProductionExecution execution = updateProductionExecutionUseCase.update(executionId, dto);
+        User loggedUser = loggedUserDetails.toDomainUser();
+
+        ProductionExecution execution = updateProductionExecutionUseCase.update(executionId, dto, loggedUser);
         ProductionExecutionResponseDTO response = Mapper.toProductionExecutionResponseDTO(execution);
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasRole('PRODUCER')")
+    @Operation(summary = "Listar execuções de um plano", description = "Retorna o histórico de execuções registradas para determinado plano.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Plano não encontrado")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping("/production-plans/{planId}/executions")
     public ResponseEntity<List<ProductionExecutionResponseDTO>> listProductionExecutions(
             @PathVariable UUID planId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        List<ProductionExecution> executions = listProductionExecutionsUseCase.listByProductionPlan(planId);
+        User loggedUser = loggedUserDetails.toDomainUser();
+
+        List<ProductionExecution> executions = listProductionExecutionsUseCase.listByProductionPlan(planId, loggedUser);
         List<ProductionExecutionResponseDTO> response = executions.stream()
                 .map(Mapper::toProductionExecutionResponseDTO)
                 .toList();
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasRole('PRODUCER')")
+    @Operation(summary = "Comparar planejado vs executado", description = "Gera um comparativo de métricas e produtividade entre o plano e as execuções realizadas.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Comparativo gerado com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Plano não encontrado")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping("/production-plans/{planId}/comparison")
     public ResponseEntity<ProductionComparisonDTO> compareProduction(
             @PathVariable UUID planId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        ProductionComparisonDTO response = compareProductionUseCase.compare(planId);
+        User loggedUser = loggedUserDetails.toDomainUser();
+
+        ProductionComparisonDTO response = compareProductionUseCase.compare(planId, loggedUser);
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasRole('PRODUCER')")
+    @Operation(summary = "Buscar execução de produção por ID", description = "Recupera os detalhes de uma execução específica.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Execução encontrada"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Execução não encontrada")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping("/production-executions/{executionId}")
     public ResponseEntity<ProductionExecutionResponseDTO> findProductionExecutionById(
             @PathVariable UUID executionId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        ProductionExecution execution = findProductionExecutionByIdUseCase.findById(executionId);
+        User loggedUser = loggedUserDetails.toDomainUser();
+
+        ProductionExecution execution = findProductionExecutionByIdUseCase.findById(executionId, loggedUser);
         ProductionExecutionResponseDTO response = Mapper.toProductionExecutionResponseDTO(execution);
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasRole('PRODUCER')")
+    @Operation(summary = "Excluir execução de produção", description = "Remove um registro de execução de produção.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Execução excluída com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Execução não encontrada")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'FARMER')")
     @DeleteMapping("/production-executions/{executionId}")
     public ResponseEntity<Void> deleteProductionExecution(
             @PathVariable UUID executionId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        deleteProductionExecutionUseCase.delete(executionId);
+        User loggedUser = loggedUserDetails.toDomainUser();
+
+        deleteProductionExecutionUseCase.delete(executionId, loggedUser);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Validar execução de produção", description = "Valida um apontamento de colheita.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Execução validada com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Execução não encontrada")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER')")
+    @PostMapping("/production-executions/{executionId}/validate")
+    public ResponseEntity<ProductionExecutionResponseDTO> validateProductionExecution(
+            @PathVariable UUID executionId,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        User loggedUser = loggedUserDetails.toDomainUser();
+
+        ProductionExecution execution = validateProductionExecutionUseCase.validate(executionId, loggedUser);
+        ProductionExecutionResponseDTO response = Mapper.toProductionExecutionResponseDTO(execution);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Rejeitar execução de produção", description = "Rejeita um apontamento de colheita com justificativa.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Execução rejeitada com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Execução não encontrada")
+    })
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER')")
+    @PostMapping("/production-executions/{executionId}/reject")
+    public ResponseEntity<ProductionExecutionResponseDTO> rejectProductionExecution(
+            @PathVariable UUID executionId,
+            @RequestBody(required = false) RejectExecutionDTO dto,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        User loggedUser = loggedUserDetails.toDomainUser();
+
+        String reason = dto != null ? dto.reason() : null;
+        ProductionExecution execution = rejectProductionExecutionUseCase.reject(executionId, reason, loggedUser);
+        ProductionExecutionResponseDTO response = Mapper.toProductionExecutionResponseDTO(execution);
+        return ResponseEntity.ok(response);
     }
 }

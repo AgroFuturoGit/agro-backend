@@ -18,11 +18,20 @@ public class UpdateOrganizationUseCase {
     @Transactional
     public Organization update(UUID id, OrganizationUpdateDTO dto) {
         Organization existingOrganization = organizationRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Organização não encontrada."));
+                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Organização não encontrada."));
+
+        String targetName = existingOrganization.getName();
+        if (dto.name() != null) {
+            String trimmed = dto.name().trim();
+            if (trimmed.isEmpty()) {
+                throw new IllegalArgumentException("O nome da organização não pode ser vazio.");
+            }
+            targetName = trimmed;
+        }
 
         Organization updatedOrganization = new Organization(
                 existingOrganization.getId(),
-                dto.name() != null ? dto.name() : existingOrganization.getName(),
+                targetName,
                 existingOrganization.getTaxId(),
                 dto.type() != null ? dto.type() : existingOrganization.getType(),
                 existingOrganization.getCreatedAt(),

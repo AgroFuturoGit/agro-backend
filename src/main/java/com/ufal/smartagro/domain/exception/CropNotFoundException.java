@@ -2,7 +2,7 @@ package com.ufal.smartagro.domain.exception;
 
 public class CropNotFoundException extends RuntimeException {
     public CropNotFoundException() {
-        super("Crop not found.");
+        super("Cultura não encontrada.");
     }
 
     public CropNotFoundException(String message) {

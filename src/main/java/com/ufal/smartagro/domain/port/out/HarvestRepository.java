@@ -2,6 +2,7 @@ package com.ufal.smartagro.domain.port.out;
 
 import com.ufal.smartagro.domain.model.Harvest;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,4 +18,6 @@ public interface HarvestRepository {
     boolean existsByLabel(String label);
 
     void deleteById(UUID id);
+
+    Optional<Harvest> findActiveHarvest(LocalDate date);
 }

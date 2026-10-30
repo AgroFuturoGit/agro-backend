@@ -26,10 +26,30 @@ public class HarvestRegisterUseCase {
             throw new IllegalArgumentException("A data de início não pode ser superior à data de término.");
         }
 
-        if (harvestRepository.existsByLabel(harvest.getLabel())) {
-            throw new HarvestAlreadyExistsException("Já existe uma safra com o rótulo: " + harvest.getLabel());
+        String trimmedLabel = harvest.getLabel() != null ? harvest.getLabel().trim() : null;
+        if (trimmedLabel == null || trimmedLabel.isBlank()) {
+            throw new IllegalArgumentException("O rótulo da safra não pode ser vazio.");
         }
 
-        return harvestRepository.save(harvest);
+        if (harvestRepository.existsByLabel(trimmedLabel)) {
+            throw new HarvestAlreadyExistsException("Já existe uma safra com o rótulo: " + trimmedLabel);
+        }
+
+        boolean hasOverlap = harvestRepository.findAll().stream()
+                .anyMatch(existing -> existing.getStartDate() != null && existing.getEndDate() != null
+                        && !harvest.getEndDate().isBefore(existing.getStartDate())
+                        && !harvest.getStartDate().isAfter(existing.getEndDate()));
+        if (hasOverlap) {
+            throw new IllegalArgumentException("Já existe uma safra cadastrada com período sobreposto.");
+        }
+
+        Harvest harvestToSave = new Harvest(
+                harvest.getId(),
+                trimmedLabel,
+                harvest.getStartDate(),
+                harvest.getEndDate()
+        );
+
+        return harvestRepository.save(harvestToSave);
     }
 }
