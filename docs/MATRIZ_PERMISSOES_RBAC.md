@@ -36,7 +36,8 @@ Este documento especifica a política de controle de acesso aos recursos do back
 
 | Módulo | Método | Endpoint | Papéis Permitidos | Regra de Escopo / Dono |
 | :--- | :--- | :--- | :--- | :--- |
-| Org | `GET` | `/organizations` | `ADMIN, MANAGER, TECHNICIAN, FARMER` | Leitura do catálogo de organizações. |
+| Org | `GET` | `/organizations` | `ADMIN` | Listagem geral de organizações (restrita a administradores). |
+| Org | `GET` | `/organizations/{id}` | `ADMIN, MANAGER` | Consulta por ID. Gestor restrito exclusivamente à sua própria organização. |
 | Org | `POST` | `/organizations` | `ADMIN` | Criação restrita a administradores. |
 | Org | `PUT` | `/organizations/{id}` | `ADMIN` | Edição restrita a administradores. |
 | Org | `DELETE`| `/organizations/{id}` | `ADMIN` | Soft delete restrito a administradores. |
