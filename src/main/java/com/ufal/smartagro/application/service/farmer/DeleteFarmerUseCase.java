@@ -1,10 +1,12 @@
 package com.ufal.smartagro.application.service.farmer;
 
 import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
+import com.ufal.smartagro.domain.exception.EntityInUseException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
+import com.ufal.smartagro.domain.port.out.ProductionPlanRepository;
 import com.ufal.smartagro.domain.port.out.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ public class DeleteFarmerUseCase {
 
     private final FarmerRepository farmerRepository;
     private final UserRepository userRepository;
+    private final ProductionPlanRepository productionPlanRepository;
     private final ProductionAccessValidator accessValidator;
 
     @Transactional
@@ -34,6 +37,13 @@ public class DeleteFarmerUseCase {
 
         if (loggedUser != null) {
             accessValidator.validateAccess(existingFarmer, loggedUser);
+        }
+
+        int planCount = productionPlanRepository.findAllByFarmerId(id).size();
+        if (planCount > 0) {
+            throw new EntityInUseException(
+                    "Não é possível excluir um agricultor que possui " + planCount + " planos de produção vinculados."
+            );
         }
 
         farmerRepository.delete(id);

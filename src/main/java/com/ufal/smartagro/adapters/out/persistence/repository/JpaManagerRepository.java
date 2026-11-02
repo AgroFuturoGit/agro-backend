@@ -12,6 +12,8 @@ import java.util.UUID;
 public interface JpaManagerRepository extends JpaRepository<ManagerEntity, UUID> {
     Optional<ManagerEntity> findByUserId(UUID userId);
 
+    long countByOrganizationId(UUID organizationId);
+
     @Modifying
     @Query("UPDATE ManagerEntity m SET m.deletedAt = CURRENT_TIMESTAMP WHERE m.id = :id")
     void softDeleteById(@Param("id") UUID id);

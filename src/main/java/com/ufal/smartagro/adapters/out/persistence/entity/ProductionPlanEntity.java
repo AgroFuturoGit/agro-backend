@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
@@ -37,14 +39,17 @@ public class ProductionPlanEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "farmer_id", nullable = false)
+    @NotFound(action = NotFoundAction.IGNORE)
     private FarmerEntity farmer;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "harvest_id", nullable = false)
+    @NotFound(action = NotFoundAction.IGNORE)
     private HarvestEntity harvest;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "crop_id", nullable = false)
+    @NotFound(action = NotFoundAction.IGNORE)
     private CropEntity crop;
 
     @Column(name = "planted_area", nullable = false, precision = 10, scale = 2)

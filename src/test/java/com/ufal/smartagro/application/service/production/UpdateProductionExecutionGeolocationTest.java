@@ -36,6 +36,8 @@ class UpdateProductionExecutionGeolocationTest {
 
     @Mock
     private ProductionVersionGuard versionGuard;
+    @Mock
+    private com.ufal.smartagro.application.service.audit.AuditLogService auditLogService;
 
     private UpdateProductionExecutionUseCase useCase;
 
@@ -50,7 +52,7 @@ class UpdateProductionExecutionGeolocationTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new UpdateProductionExecutionUseCase(repository, accessValidator, versionGuard);
+        useCase = new UpdateProductionExecutionUseCase(repository, accessValidator, versionGuard, auditLogService);
     }
 
     /** O acesso é validado por um colaborador mockado; o papel aqui é indiferente. */

@@ -31,6 +31,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.Locale;
@@ -48,6 +50,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError(
                 HttpStatus.NOT_FOUND.value(),
                 ex.getMessage(),
+                httpServletRequest.getRequestURI(),
+                LocalDateTime.now()
+        ));
+    }
+
+    @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
+    public ResponseEntity<ApiError> handleNoResourceFound(
+            Exception ex, HttpServletRequest httpServletRequest) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError(
+                HttpStatus.NOT_FOUND.value(),
+                "Recurso ou rota não encontrada.",
                 httpServletRequest.getRequestURI(),
                 LocalDateTime.now()
         ));

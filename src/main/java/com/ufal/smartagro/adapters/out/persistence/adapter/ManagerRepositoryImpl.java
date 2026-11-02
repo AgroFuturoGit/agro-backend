@@ -43,6 +43,11 @@ public class ManagerRepositoryImpl implements ManagerRepository {
     }
 
     @Override
+    public long countByOrganizationId(UUID organizationId) {
+        return jpaRepository.countByOrganizationId(organizationId);
+    }
+
+    @Override
     public void delete(UUID id) {
         jpaRepository.softDeleteById(id);
     }

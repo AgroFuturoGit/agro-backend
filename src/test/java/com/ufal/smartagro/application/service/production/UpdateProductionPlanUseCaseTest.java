@@ -28,7 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("UpdateProductionPlanUseCase — limpeza de campos e coerência de datas")
+@DisplayName("UpdateProductionPlanUseCase — limpeza de campos, coerência de datas e updatedAt (API-19)")
 class UpdateProductionPlanUseCaseTest {
 
     @Mock
@@ -64,8 +64,8 @@ class UpdateProductionPlanUseCaseTest {
     }
 
     @Test
-    @DisplayName("clearPlannedPlantingDate = true limpa a data de plantio planejada")
-    void givenClearPlannedPlantingDate_whenUpdate_thenClearsPlantingDate() {
+    @DisplayName("clearPlannedPlantingDate = true limpa a data de plantio planejada e preenche updatedAt (API-19)")
+    void givenClearPlannedPlantingDate_whenUpdate_thenClearsPlantingDateAndPopulatesUpdatedAt() {
         User admin = UserTestFactory.user().admin().build();
         ProductionPlan existing = existingPlan();
         when(productionPlanRepository.findById(PLAN_ID)).thenReturn(Optional.of(existing));
@@ -81,9 +81,11 @@ class UpdateProductionPlanUseCaseTest {
         ProductionPlan updated = useCase.update(PLAN_ID, dto, admin);
 
         assertThat(updated.getPlannedPlantingDate()).isNull();
+        assertThat(updated.getUpdatedAt()).isNotNull();
         ArgumentCaptor<ProductionPlan> captor = ArgumentCaptor.forClass(ProductionPlan.class);
         verify(productionPlanRepository).save(captor.capture());
         assertThat(captor.getValue().getPlannedPlantingDate()).isNull();
+        assertThat(captor.getValue().getUpdatedAt()).isNotNull();
     }
 
     @Test
@@ -103,6 +105,48 @@ class UpdateProductionPlanUseCaseTest {
         assertThatThrownBy(() -> useCase.update(PLAN_ID, dto, admin))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("A data prevista de início da colheita não pode ser posterior à data de término.");
+
+        verify(productionPlanRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Data de plantio fora do período da safra lança IllegalArgumentException")
+    void givenPlantingDateOutsideHarvestWindow_whenUpdate_thenThrowsIllegalArgumentException() {
+        User admin = UserTestFactory.user().admin().build();
+        ProductionPlan existing = existingPlan();
+        when(productionPlanRepository.findById(PLAN_ID)).thenReturn(Optional.of(existing));
+
+        // existingPlan harvest is 2026-01-01 to 2026-06-30
+        ProductionPlanUpdateDTO dto = new ProductionPlanUpdateDTO(
+                null, null, null, null, null, null, null, null,
+                LocalDate.of(2025, 12, 31), // Fora da safra
+                null, false, false, null
+        );
+
+        assertThatThrownBy(() -> useCase.update(PLAN_ID, dto, admin))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("A data de plantio deve estar dentro do período da safra");
+
+        verify(productionPlanRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Data de plantio posterior ao início da colheita lança IllegalArgumentException")
+    void givenPlantingDateAfterHarvestStart_whenUpdate_thenThrowsIllegalArgumentException() {
+        User admin = UserTestFactory.user().admin().build();
+        ProductionPlan existing = existingPlan();
+        when(productionPlanRepository.findById(PLAN_ID)).thenReturn(Optional.of(existing));
+
+        // existingPlan harvestStart is 2026-04-01
+        ProductionPlanUpdateDTO dto = new ProductionPlanUpdateDTO(
+                null, null, null, null, null, null, null, null,
+                LocalDate.of(2026, 4, 15), // Posterior ao harvestStart
+                null, false, false, null
+        );
+
+        assertThatThrownBy(() -> useCase.update(PLAN_ID, dto, admin))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("A data planejada de plantio não pode ser posterior ao início previsto da colheita.");
 
         verify(productionPlanRepository, never()).save(any());
     }

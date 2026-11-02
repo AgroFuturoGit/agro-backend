@@ -22,7 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("UpdateOrganizationUseCase — validações e normalização")
+@DisplayName("UpdateOrganizationUseCase — validações, normalização e updatedAt (API-19)")
 class UpdateOrganizationUseCaseTest {
 
     @Mock
@@ -38,8 +38,8 @@ class UpdateOrganizationUseCaseTest {
     }
 
     @Test
-    @DisplayName("Atualização bem-sucedida com trim no nome")
-    void givenValidName_whenUpdate_thenTrimsAndSaves() {
+    @DisplayName("Atualização bem-sucedida com trim no nome e updatedAt preenchido (API-19)")
+    void givenValidName_whenUpdate_thenTrimsAndSavesWithUpdatedAt() {
         Organization existing = new Organization(ORG_ID, "Cooperativa Original", "12345678000199", OrganizationType.COOP, null, null, null);
         when(organizationRepository.findById(ORG_ID)).thenReturn(Optional.of(existing));
         when(organizationRepository.save(any(Organization.class))).thenAnswer(i -> i.getArgument(0));
@@ -50,10 +50,12 @@ class UpdateOrganizationUseCaseTest {
 
         assertThat(updated.getName()).isEqualTo("Cooperativa Nova");
         assertThat(updated.getType()).isEqualTo(OrganizationType.ASSOC);
+        assertThat(updated.getUpdatedAt()).isNotNull();
 
         ArgumentCaptor<Organization> captor = ArgumentCaptor.forClass(Organization.class);
         verify(organizationRepository).save(captor.capture());
         assertThat(captor.getValue().getName()).isEqualTo("Cooperativa Nova");
+        assertThat(captor.getValue().getUpdatedAt()).isNotNull();
     }
 
     @Test

@@ -38,7 +38,7 @@ class AdminUserUpdateUseCaseTest {
     private AdminUserUpdateUseCase adminUserUpdateUseCase;
 
     @Test
-    @DisplayName("Given ADMIN When update Then muda nome, DOB e role e preserva email, CPF e senha")
+    @DisplayName("Given ADMIN When update mantendo mesmo papel Then muda nome e preserva email, CPF e senha")
     void givenAdmin_whenUpdate_thenKeepsEmailCpfAndPassword() {
         User admin = UserTestFactory.user().admin().build();
         User target = UserTestFactory.user()
@@ -48,8 +48,8 @@ class AdminUserUpdateUseCaseTest {
                 .password(UserTestFactory.ENCODED_PASSWORD)
                 .build();
         AdminUserUpdateDTO dto = new AdminUserUpdateDTO(
-                "Nome Admin Editado",
-                Role.ADMIN
+                "Nome Tecnico Editado",
+                Role.TECHNICIAN
         );
         when(userRepository.findById(target.getId())).thenReturn(Optional.of(target));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -62,8 +62,8 @@ class AdminUserUpdateUseCaseTest {
         assertThat(saved.getEmail()).isEqualTo("tech@smartagro.test");
         assertThat(saved.getCpf()).isEqualTo(UserTestFactory.VALID_CPF);
         assertThat(saved.getPassword()).isEqualTo(UserTestFactory.ENCODED_PASSWORD);
-        assertThat(saved.getFullName()).isEqualTo("Nome Admin Editado");
-        assertThat(saved.getRole()).isEqualTo(Role.ADMIN);
+        assertThat(saved.getFullName()).isEqualTo("Nome Tecnico Editado");
+        assertThat(saved.getRole()).isEqualTo(Role.TECHNICIAN);
         assertThat(response.getEmail()).isEqualTo(target.getEmail());
         assertThat(response.getCpf()).isEqualTo(target.getCpf());
     }
@@ -92,6 +92,21 @@ class AdminUserUpdateUseCaseTest {
         assertThatThrownBy(() -> adminUserUpdateUseCase.update(target.getId(), dto, admin))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Para criar ou promover gestores, produtores e técnicos, utilize as rotas específicas de perfil.");
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @ParameterizedTest(name = "Given ADMIN When tenta mudar usuário {0} para ADMIN Then IllegalArgumentException (API-08)")
+    @EnumSource(value = Role.class, names = {"MANAGER", "FARMER", "TECHNICIAN"})
+    void givenAdmin_whenChangeSpecializedRoleToAdmin_thenIllegalArgumentException(Role currentRole) {
+        User admin = UserTestFactory.user().admin().build();
+        User target = UserTestFactory.user().role(currentRole).build();
+        AdminUserUpdateDTO dto = new AdminUserUpdateDTO("Nome", Role.ADMIN);
+        when(userRepository.findById(target.getId())).thenReturn(Optional.of(target));
+
+        assertThatThrownBy(() -> adminUserUpdateUseCase.update(target.getId(), dto, admin))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Não é permitido alterar o papel de um usuário que já possui perfil de gestor, produtor ou técnico vinculado.");
 
         verify(userRepository, never()).save(any());
     }

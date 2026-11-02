@@ -2,24 +2,30 @@ package com.ufal.smartagro.application.service.technician;
 
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
+import com.ufal.smartagro.domain.model.Community;
+import com.ufal.smartagro.domain.model.TechnicalAssistance;
 import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.port.out.TechnicalAssistanceRepository;
 import com.ufal.smartagro.domain.port.out.TechnicianRepository;
+import com.ufal.smartagro.domain.port.out.UserRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class DeleteTechnicianUseCaseTest {
@@ -27,20 +33,43 @@ class DeleteTechnicianUseCaseTest {
     @Mock
     private TechnicianRepository technicianRepository;
 
-    @InjectMocks
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private TechnicalAssistanceRepository technicalAssistanceRepository;
+
     private DeleteTechnicianUseCase deleteTechnicianUseCase;
 
+    @BeforeEach
+    void setUp() {
+        deleteTechnicianUseCase = new DeleteTechnicianUseCase(technicianRepository, userRepository, technicalAssistanceRepository);
+    }
+
     @Test
-    @DisplayName("Given ADMIN When delete Then exclui com sucesso")
-    void givenAdmin_whenDelete_thenDeletesSuccessfully() {
+    @DisplayName("Given ADMIN When delete Then encerra assistências ativas, exclui técnico e faz softDelete do User")
+    void givenAdmin_whenDelete_thenEndsActiveAssistancesAndDeletesSuccessfully() {
+        User technicianUser = UserTestFactory.user().technician().build();
+        Technician technician = UserTestFactory.technicianProfile().user(technicianUser).build();
         User admin = UserTestFactory.user().admin().build();
-        Technician technician = UserTestFactory.technicianProfile().build();
+
+        TechnicalAssistance activeAssistance = new TechnicalAssistance(
+                UUID.randomUUID(), technician, mock(Community.class),
+                LocalDateTime.now().minusMonths(1), null,
+                LocalDateTime.now().minusMonths(1), null, null
+        );
 
         when(technicianRepository.findById(technician.getId())).thenReturn(Optional.of(technician));
+        when(technicalAssistanceRepository.findByTechnicianId(technician.getId())).thenReturn(List.of(activeAssistance));
 
         deleteTechnicianUseCase.delete(technician.getId(), admin);
 
+        ArgumentCaptor<TechnicalAssistance> captor = ArgumentCaptor.forClass(TechnicalAssistance.class);
+        verify(technicalAssistanceRepository).save(captor.capture());
+        assertThat(captor.getValue().getEndDate()).isNotNull();
+
         verify(technicianRepository).delete(technician.getId());
+        verify(userRepository).softDelete(technicianUser.getId());
     }
 
     @Test

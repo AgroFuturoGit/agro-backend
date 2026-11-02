@@ -28,21 +28,25 @@ public class RegisterTechnicianUseCase {
 
     @Transactional
     public Technician register(TechnicianRegisterDTO dto, User loggedUser) {
-        if (loggedUser == null || loggedUser.getRole() != Role.ADMIN) {
+        if (loggedUser == null || (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.MANAGER)) {
             throw new AccessDeniedException();
+        }
+
+        ProfessionalRegistrationType regType = dto.registrationType() != null
+                ? dto.registrationType()
+                : ProfessionalRegistrationType.CREA;
+        String rawRegNum = dto.registrationNumber() != null
+                ? dto.registrationNumber()
+                : dto.professionalId();
+        String regNum = rawRegNum != null ? rawRegNum.trim() : null;
+        if (regNum == null || regNum.isEmpty()) {
+            throw new IllegalArgumentException("O número de registro profissional é obrigatório.");
         }
 
         UserRegisterDTO userDto = new UserRegisterDTO(
                 dto.fullName(), dto.email(), dto.password(), dto.cpf(), Role.TECHNICIAN
         );
         User savedUser = userRegisterUseCase.createBaseUser(userDto);
-
-        ProfessionalRegistrationType regType = dto.registrationType() != null
-                ? dto.registrationType()
-                : ProfessionalRegistrationType.CREA;
-        String regNum = dto.registrationNumber() != null
-                ? dto.registrationNumber()
-                : dto.professionalId();
 
         Technician technician = Technician.builder()
                 .user(savedUser)

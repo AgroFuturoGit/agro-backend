@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import org.hibernate.annotations.SQLRestriction;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -30,10 +32,12 @@ public class FarmerEntity {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", unique = true)
+    @NotFound(action = NotFoundAction.IGNORE)
     private UserEntity user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "community_id")
+    @NotFound(action = NotFoundAction.IGNORE)
     private CommunityEntity community;
 
     @Column(name = "full_name", nullable = false)
@@ -84,6 +88,7 @@ public class FarmerEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
+    @NotFound(action = NotFoundAction.IGNORE)
     private UserEntity createdBy;
 
     @Column(name = "is_compliant", nullable = false)

@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -35,7 +36,7 @@ public class UpdateOrganizationUseCase {
                 existingOrganization.getTaxId(),
                 dto.type() != null ? dto.type() : existingOrganization.getType(),
                 existingOrganization.getCreatedAt(),
-                null,
+                LocalDateTime.now(),
                 existingOrganization.getDeletedAt()
         );
 

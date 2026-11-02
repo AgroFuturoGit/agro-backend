@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import org.hibernate.annotations.SQLRestriction;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -34,6 +36,7 @@ public class ProductionExecutionEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "production_plan_id", nullable = false)
+    @NotFound(action = NotFoundAction.IGNORE)
     private ProductionPlanEntity productionPlan;
 
     @Column(nullable = false, precision = 14, scale = 4)
@@ -49,6 +52,7 @@ public class ProductionExecutionEntity {
     private ExecutionStatus status;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "validated_by")
+    @NotFound(action = NotFoundAction.IGNORE)
     private UserEntity validatedBy;
     @Column(name = "validated_at")
     private LocalDateTime validatedAt;

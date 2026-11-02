@@ -3,6 +3,7 @@ package com.ufal.smartagro.application.service.organization;
 import com.ufal.smartagro.domain.exception.EntityInUseException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.port.out.CommunityRepository;
+import com.ufal.smartagro.domain.port.out.ManagerRepository;
 import com.ufal.smartagro.domain.port.out.OrganizationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ public class DeleteOrganizationUseCase {
 
     private final OrganizationRepository organizationRepository;
     private final CommunityRepository communityRepository;
+    private final ManagerRepository managerRepository;
 
     @Transactional
     public void delete(UUID id) {
@@ -26,6 +28,13 @@ public class DeleteOrganizationUseCase {
         if (communityCount > 0) {
             throw new EntityInUseException(
                     "Não é possível excluir uma organização que possui " + communityCount + " comunidades vinculadas."
+            );
+        }
+
+        long managerCount = managerRepository.countByOrganizationId(id);
+        if (managerCount > 0) {
+            throw new EntityInUseException(
+                    "Não é possível excluir uma organização que possui " + managerCount + " gestores vinculados."
             );
         }
 

@@ -49,7 +49,7 @@ public class CommunityController {
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
             @ApiResponse(responseCode = "404", description = "Comunidade não encontrada")
     })
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN')")
     @PostMapping("/{id}/farmers")
     public ResponseEntity<FarmerResponseDTO> registerFarmer(
             @PathVariable UUID id,
@@ -69,7 +69,7 @@ public class CommunityController {
             @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
             @ApiResponse(responseCode = "403", description = "Não autorizado")
     })
-    @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN', 'FARMER')")
     @GetMapping
     public ResponseEntity<List<CommunityResponseDTO>> findAllCommunities(
             @RequestParam(required = false) UUID orgId,
@@ -90,7 +90,7 @@ public class CommunityController {
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
             @ApiResponse(responseCode = "404", description = "Comunidade não encontrada")
     })
-    @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN', 'FARMER')")
     @GetMapping("/{id}")
     public ResponseEntity<CommunityResponseDTO> findCommunityById(
             @PathVariable UUID id,

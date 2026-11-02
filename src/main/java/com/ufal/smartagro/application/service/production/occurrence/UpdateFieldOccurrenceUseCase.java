@@ -2,8 +2,11 @@ package com.ufal.smartagro.application.service.production.occurrence;
 
 import com.ufal.smartagro.adapters.in.web.dto.production.occurrence.FieldOccurrenceUpdateDTO;
 import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.FieldOccurrence;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.ExecutionStatus;
+import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.FieldOccurrenceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +28,11 @@ public class UpdateFieldOccurrenceUseCase {
 
         if (existing.getExecution() != null && existing.getExecution().getProductionPlan() != null) {
             accessValidator.validateWriteAccess(existing.getExecution().getProductionPlan().getFarmer(), loggedUser);
+        }
+
+        if (existing.getExecution() != null && existing.getExecution().getStatus() == ExecutionStatus.VALIDATED
+                && loggedUser != null && loggedUser.getRole() == Role.FARMER) {
+            throw new AccessDeniedException("Não é permitido alterar ocorrências de um apontamento já validado.");
         }
 
         String description = existing.getDescription();

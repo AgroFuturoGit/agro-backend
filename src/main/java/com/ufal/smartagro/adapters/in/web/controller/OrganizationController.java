@@ -118,12 +118,13 @@ public class OrganizationController {
             @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
             @ApiResponse(responseCode = "403", description = "Não autorizado")
     })
-    @PreAuthorize("hasRole('ADMIN')")
+        @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<OrganizationResponseDTO>> findAllOrganizations(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        java.util.List<Organization> organizations = findAllOrganizationsUseCase.findAll();
+        User loggedUser = loggedUserDetails.toDomainUser();
+        java.util.List<Organization> organizations = findAllOrganizationsUseCase.findAll(loggedUser);
         java.util.List<OrganizationResponseDTO> response = organizations.stream()
                 .map(Mapper::toOrganizationResponseDTO)
                 .toList();
@@ -136,13 +137,14 @@ public class OrganizationController {
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
             @ApiResponse(responseCode = "404", description = "Organização não encontrada")
     })
-    @PreAuthorize("hasRole('ADMIN')")
+        @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @GetMapping("/{id}")
     public ResponseEntity<OrganizationResponseDTO> findOrganizationById(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        Organization organization = findOrganizationByIdUseCase.findById(id);
+        User loggedUser = loggedUserDetails.toDomainUser();
+        Organization organization = findOrganizationByIdUseCase.findById(id, loggedUser);
         OrganizationResponseDTO response = Mapper.toOrganizationResponseDTO(organization);
         return ResponseEntity.ok(response);
     }

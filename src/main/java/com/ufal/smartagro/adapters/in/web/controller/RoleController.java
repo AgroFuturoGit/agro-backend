@@ -37,7 +37,7 @@ public class RoleController {
             @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
             @ApiResponse(responseCode = "403", description = "Não autorizado")
     })
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN', 'FARMER')")
     @GetMapping
     public ResponseEntity<List<RoleResponseDTO>> listAll() {
         return ResponseEntity.ok(listRolesUseCase.listAll());

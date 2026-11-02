@@ -182,4 +182,19 @@ class UploadExecutionAttachmentTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Apontamento de colheita não encontrado");
     }
+
+    @Test
+    @DisplayName("recusa anexo para apontamento já validado quando usuário é agricultor")
+    void recusaQuandoValidadoParaFarmer() {
+        ProductionExecution validado = new ProductionExecution(
+                EXECUTION_ID, null, null, new BigDecimal("500"), new BigDecimal("500"),
+                LocalDate.of(2026, 9, 15), com.ufal.smartagro.domain.model.enums.ExecutionStatus.VALIDATED,
+                null, null, null, null, null, null, null, null, null, null, null
+        );
+        when(executionRepository.findById(EXECUTION_ID)).thenReturn(Optional.of(validado));
+
+        assertThatThrownBy(() -> useCase.upload(EXECUTION_ID, foto(CLIENT_ID, "image/jpeg", 1024), usuario()))
+                .isInstanceOf(com.ufal.smartagro.domain.exception.AccessDeniedException.class)
+                .hasMessageContaining("já validado");
+    }
 }

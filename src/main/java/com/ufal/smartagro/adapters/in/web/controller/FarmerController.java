@@ -77,7 +77,7 @@ public class FarmerController {
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
             @ApiResponse(responseCode = "404", description = "Agricultor não encontrado")
     })
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN', 'FARMER')")
     @GetMapping("/{id}")
     public ResponseEntity<FarmerResponseDTO> findFarmerById(
             @PathVariable UUID id,
@@ -97,7 +97,7 @@ public class FarmerController {
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
             @ApiResponse(responseCode = "404", description = "Agricultor não encontrado")
     })
-    @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN', 'FARMER')")
     @PutMapping("/{id}")
     public ResponseEntity<FarmerResponseDTO> updateFarmer(
             @PathVariable UUID id,

@@ -72,4 +72,34 @@ class UpdateFieldOccurrenceUseCaseTest {
         verify(accessValidator).validateWriteAccess(farmer, admin);
         verify(fieldOccurrenceRepository).save(any(FieldOccurrence.class));
     }
+
+    @Test
+    @DisplayName("Quando apontamento já validado e usuário é FARMER, lança AccessDeniedException ao atualizar ocorrência")
+    void givenValidatedExecutionAndFarmer_thenThrowsAccessDeniedException() {
+        UUID occurrenceId = UUID.randomUUID();
+        User farmerUser = UserTestFactory.user().farmer().build();
+        Farmer farmer = UserTestFactory.farmerProfile().user(farmerUser).build();
+        ProductionPlan plan = org.mockito.Mockito.mock(ProductionPlan.class);
+        org.mockito.Mockito.when(plan.getFarmer()).thenReturn(farmer);
+
+        ProductionExecution execution = ProductionExecution.builder()
+                .id(UUID.randomUUID())
+                .productionPlan(plan)
+                .status(com.ufal.smartagro.domain.model.enums.ExecutionStatus.VALIDATED)
+                .build();
+
+        FieldOccurrence occurrence = FieldOccurrence.builder()
+                .id(occurrenceId)
+                .execution(execution)
+                .description("Descrição antiga")
+                .build();
+
+        org.mockito.Mockito.when(fieldOccurrenceRepository.findById(occurrenceId)).thenReturn(java.util.Optional.of(occurrence));
+
+        FieldOccurrenceUpdateDTO dto = new FieldOccurrenceUpdateDTO(null, "Nova descrição", null, null);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> useCase.update(occurrenceId, dto, farmerUser))
+                .isInstanceOf(com.ufal.smartagro.domain.exception.AccessDeniedException.class)
+                .hasMessageContaining("já validado");
+    }
 }

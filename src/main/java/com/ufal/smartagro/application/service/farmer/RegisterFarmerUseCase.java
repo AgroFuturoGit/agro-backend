@@ -9,12 +9,15 @@ import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.Manager;
+import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.RegistrationSource;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CommunityRepository;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
+import com.ufal.smartagro.domain.port.out.TechnicalAssistanceRepository;
+import com.ufal.smartagro.domain.port.out.TechnicianRepository;
 import com.ufal.smartagro.domain.util.CpfNormalizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,11 +32,13 @@ public class RegisterFarmerUseCase {
     private final FarmerRepository farmerRepository;
     private final CommunityRepository communityRepository;
     private final ManagerRepository managerRepository;
+    private final TechnicianRepository technicianRepository;
+    private final TechnicalAssistanceRepository technicalAssistanceRepository;
     private final UserRegisterUseCase userRegisterUseCase;
 
     @Transactional
     public Farmer register(UUID communityId, FarmerRegisterDTO dto, User loggedUser) {
-        if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.MANAGER) {
+        if (loggedUser == null || (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.MANAGER && loggedUser.getRole() != Role.TECHNICIAN)) {
             throw new AccessDeniedException();
         }
 
@@ -60,6 +65,20 @@ public class RegisterFarmerUseCase {
             }
         }
 
+        if (loggedUser.getRole() == Role.TECHNICIAN) {
+            if (community == null) {
+                throw new AccessDeniedException("O técnico precisa vincular o agricultor a uma comunidade.");
+            }
+            Technician technician = technicianRepository.findByUserId(loggedUser.getId())
+                    .orElseThrow(() -> new AccessDeniedException("Técnico não encontrado."));
+            boolean hasAssistance = technicalAssistanceRepository
+                    .findActiveByTechnicianAndCommunity(technician.getId(), community.getId())
+                    .isPresent();
+            if (!hasAssistance) {
+                throw new AccessDeniedException("O técnico só pode cadastrar agricultores em comunidades sob sua assistência técnica.");
+            }
+        }
+
         User savedUser = null;
         if (dto.email() != null && !dto.email().isBlank() && dto.password() != null && !dto.password().isBlank()) {
             UserRegisterDTO userDto = new UserRegisterDTO(
@@ -68,9 +87,9 @@ public class RegisterFarmerUseCase {
             savedUser = userRegisterUseCase.createBaseUser(userDto);
         }
 
-        RegistrationSource source = (loggedUser.getRole() == Role.MANAGER)
-                ? RegistrationSource.MANAGER
-                : (loggedUser.getRole() == Role.TECHNICIAN ? RegistrationSource.TECHNICIAN : RegistrationSource.MANAGER);
+        RegistrationSource source = (loggedUser.getRole() == Role.TECHNICIAN)
+                ? RegistrationSource.TECHNICIAN
+                : RegistrationSource.MANAGER;
 
         Farmer farmer = Farmer.builder()
                 .user(savedUser)
