@@ -1,8 +1,6 @@
 package com.ufal.smartagro.application.service.user;
 
 import com.ufal.smartagro.adapters.in.web.dto.user.AdminUserUpdateDTO;
-
-
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
@@ -35,12 +33,13 @@ public class AdminUserUpdateUseCase {
         User existingUser = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
 
-        if (dto.role() != existingUser.getRole() &&
-                (dto.role() == Role.MANAGER || dto.role() == Role.FARMER || dto.role() == Role.TECHNICIAN)) {
-            throw new IllegalArgumentException("Para criar ou promover gestores, produtores e técnicos, utilize as rotas específicas de perfil.");
-        }
-
         if (dto.role() != existingUser.getRole()) {
+            if (dto.role() == Role.MANAGER || dto.role() == Role.FARMER || dto.role() == Role.TECHNICIAN) {
+                throw new IllegalArgumentException("Para criar ou promover gestores, produtores e técnicos, utilize as rotas específicas de perfil.");
+            }
+            if (existingUser.getRole() == Role.MANAGER || existingUser.getRole() == Role.FARMER || existingUser.getRole() == Role.TECHNICIAN) {
+                throw new IllegalArgumentException("Não é permitido alterar o papel de um usuário que já possui perfil de gestor, produtor ou técnico vinculado.");
+            }
             log.info("Papel de usuário alterado pelo administrador [actorId={}, actorEmail='{}'] no usuário alvo [targetUserId={}]: '{}' -> '{}'",
                     loggedUser.getId(), loggedUser.getEmail(), userId, existingUser.getRole(), dto.role());
         }

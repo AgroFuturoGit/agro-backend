@@ -1,7 +1,5 @@
 package com.ufal.smartagro.application.service.role;
 
-
-
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
@@ -34,12 +32,20 @@ public class AssignRoleUseCase {
         }
 
         User user = userRepository.findById(userId)
-            .orElseThrow(UserNotFoundException::new);
+                .orElseThrow(UserNotFoundException::new);
+
+        if (newRole != user.getRole()
+                && (user.getRole() == Role.MANAGER || user.getRole() == Role.FARMER || user.getRole() == Role.TECHNICIAN)) {
+            throw new IllegalArgumentException("Não é permitido alterar o papel de um usuário que já possui perfil de gestor, produtor ou técnico vinculado.");
+        }
 
         User updated = new User(
-            user.getId(), user.getFullName(), user.getEmail(),
-            user.getPassword(), user.getCpf(),
-            newRole
+                user.getId(),
+                user.getFullName(),
+                user.getEmail(),
+                user.getPassword(),
+                user.getCpf(),
+                newRole
         );
 
         return userRepository.save(updated);

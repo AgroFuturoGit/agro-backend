@@ -34,6 +34,9 @@ class AssignRoleUseCaseTest {
     private static final String PROFILE_ROUTE_MESSAGE =
             "Para criar ou promover gestores, produtores e técnicos, utilize as rotas específicas de perfil.";
 
+    private static final String LINKED_PROFILE_MESSAGE =
+            "Não é permitido alterar o papel de um usuário que já possui perfil de gestor, produtor ou técnico vinculado.";
+
     @Mock
     private UserRepository userRepository;
 
@@ -58,7 +61,7 @@ class AssignRoleUseCaseTest {
     }
 
     @Nested
-    @DisplayName("Papéis de perfil exigem rotas específicas")
+    @DisplayName("Papéis de perfil exigem rotas específicas e não podem ser convertidos em ADMIN (API-08)")
     class ProfileRoles {
 
         @ParameterizedTest(name = "Given ADMIN When newRole={0} Then IllegalArgumentException")
@@ -72,6 +75,20 @@ class AssignRoleUseCaseTest {
 
             verifyNoInteractions(userRepository);
         }
+
+        @ParameterizedTest(name = "Given ADMIN When usuário alvo é {0} e tenta atribuir ADMIN Then IllegalArgumentException (API-08)")
+        @EnumSource(value = Role.class, names = {"MANAGER", "FARMER", "TECHNICIAN"})
+        void givenAdmin_whenTargetHasProfileRoleAndAssignsAdmin_thenIllegalArgument(Role currentRole) {
+            User admin = UserTestFactory.user().admin().build();
+            User target = UserTestFactory.user().role(currentRole).build();
+            when(userRepository.findById(target.getId())).thenReturn(Optional.of(target));
+
+            assertThatThrownBy(() -> assignRoleUseCase.assignRole(target.getId(), Role.ADMIN, admin))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage(LINKED_PROFILE_MESSAGE);
+
+            verify(userRepository, never()).save(any());
+        }
     }
 
     @Nested
@@ -79,10 +96,10 @@ class AssignRoleUseCaseTest {
     class HappyPath {
 
         @Test
-        @DisplayName("Given ADMIN When atribui Role.ADMIN Then persiste o novo papel")
+        @DisplayName("Given ADMIN When atribui Role.ADMIN a outro ADMIN Then persiste o papel")
         void givenAdmin_whenAssignAdmin_thenPersistsRole() {
             User admin = UserTestFactory.user().admin().build();
-            User target = UserTestFactory.user().technician().build();
+            User target = UserTestFactory.user().admin().build();
             when(userRepository.findById(target.getId())).thenReturn(Optional.of(target));
             when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
