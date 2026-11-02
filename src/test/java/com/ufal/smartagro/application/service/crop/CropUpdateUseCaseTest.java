@@ -1,15 +1,30 @@
 package com.ufal.smartagro.application.service.crop;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionVersionGuard;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.ConcurrentUpdateException;
 import com.ufal.smartagro.domain.exception.CropAlreadyExistsException;
 import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.HarvestType;
 import com.ufal.smartagro.domain.model.enums.MeasurementUnit;
 import com.ufal.smartagro.domain.port.out.CropRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,16 +33,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 @DisplayName("CropUpdateUseCase — atualização com semântica de PATCH")
 class CropUpdateUseCaseTest {
@@ -35,13 +40,16 @@ class CropUpdateUseCaseTest {
     @Mock
     private CropRepository cropRepository;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     private CropUpdateUseCase useCase;
 
     private static final UUID CROP_ID = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
-        useCase = new CropUpdateUseCase(cropRepository, new ProductionVersionGuard());
+        useCase = new CropUpdateUseCase(cropRepository, new ProductionVersionGuard(), auditLogService);
     }
 
     private Crop existingCrop() {
@@ -59,7 +67,7 @@ class CropUpdateUseCaseTest {
     }
 
     @Test
-    @DisplayName("PATCH: enviar apenas nome preserva ciclo, produtividade, tipo, unidade e peso")
+    @DisplayName("PATCH: enviar apenas nome preserva ciclo, produtividade, tipo, unidade e peso e grava auditoria")
     void givenPartialUpdateWithOnlyName_whenExecute_thenPreservesOtherFields() {
         User admin = UserTestFactory.user().admin().build();
         Crop existing = existingCrop();
@@ -83,6 +91,7 @@ class CropUpdateUseCaseTest {
         ArgumentCaptor<Crop> captor = ArgumentCaptor.forClass(Crop.class);
         verify(cropRepository).save(captor.capture());
         assertThat(captor.getValue().getCycleDays()).isEqualTo(90);
+        verify(auditLogService).record(eq(admin), eq(AuditAction.UPDATE), eq("crops"), eq(CROP_ID), any());
     }
 
     @Test
@@ -101,6 +110,7 @@ class CropUpdateUseCaseTest {
         assertThat(updated.getVariety()).isEqualTo("Italiano");
         assertThat(updated.getCycleDays()).isEqualTo(120);
         assertThat(updated.getUnitWeightKg()).isEqualByComparingTo(new BigDecimal("15.00"));
+        verify(auditLogService).record(eq(admin), eq(AuditAction.UPDATE), eq("crops"), eq(CROP_ID), any());
     }
 
     @Test
@@ -114,6 +124,7 @@ class CropUpdateUseCaseTest {
                 .hasMessage("Usuário não tem permissão para atualizar culturas.");
 
         verify(cropRepository, never()).save(any());
+        verifyNoInteractions(auditLogService);
     }
 
     @Test
@@ -130,6 +141,7 @@ class CropUpdateUseCaseTest {
                 .isInstanceOf(CropAlreadyExistsException.class);
 
         verify(cropRepository, never()).save(any());
+        verifyNoInteractions(auditLogService);
     }
 
     @Test
@@ -162,5 +174,6 @@ class CropUpdateUseCaseTest {
                 .hasMessageContaining("A cultura foi alterada por outro usuário");
 
         verify(cropRepository, never()).save(any());
+        verifyNoInteractions(auditLogService);
     }
 }

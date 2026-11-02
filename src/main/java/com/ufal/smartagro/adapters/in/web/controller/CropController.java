@@ -4,11 +4,11 @@ import com.ufal.smartagro.adapters.in.web.dto.crop.CropRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.crop.CropResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.crop.CropUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
+import com.ufal.smartagro.application.service.crop.CropDeleteUseCase;
 import com.ufal.smartagro.application.service.crop.CropFindAllUseCase;
 import com.ufal.smartagro.application.service.crop.CropFindByIdUseCase;
 import com.ufal.smartagro.application.service.crop.CropRegisterUseCase;
 import com.ufal.smartagro.application.service.crop.CropUpdateUseCase;
-import com.ufal.smartagro.application.service.crop.CropDeleteUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.User;
@@ -18,15 +18,21 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.net.URI;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
-
-import java.net.URI;
-import java.util.List;
-import java.util.UUID;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Culturas (Crops)", description = "Gerenciamento do catálogo de culturas agrícolas")
 @RequiredArgsConstructor
@@ -51,7 +57,7 @@ public class CropController {
     public ResponseEntity<CropResponseDTO> register(@Valid @RequestBody CropRegisterDTO cropRegisterDTO,
                                                     @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         Crop crop = Mapper.toCrop(cropRegisterDTO);
 
@@ -63,7 +69,7 @@ public class CropController {
         return ResponseEntity.created(location).body(responseDTO);
     }
 
-    @Operation(summary = "Atualizar cultura", description = "Atualiza parcialmente os dados de uma cultura existente.", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Atualizar cultura", description = "Atualiza parcialmente ou integralmente os dados de uma cultura existente.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Cultura atualizada com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
@@ -71,11 +77,11 @@ public class CropController {
             @ApiResponse(responseCode = "404", description = "Cultura não encontrada")
     })
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
-    @PatchMapping("/{id}")
+    @RequestMapping(value = "/{id}", method = {RequestMethod.PATCH, RequestMethod.PUT})
     public ResponseEntity<CropResponseDTO> update(@PathVariable UUID id,
                                                   @Valid @RequestBody CropUpdateDTO cropUpdateDTO,
                                                   @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         Crop cropToUpdate = Mapper.toCrop(cropUpdateDTO);
 
@@ -95,7 +101,7 @@ public class CropController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping("/{id}")
     public ResponseEntity<CropResponseDTO> findById(@PathVariable UUID id, @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
         Crop crop = cropFindByIdUseCase.execute(id, loggedUser);
         CropResponseDTO responseDTO = Mapper.toCropResponseDTO(crop);
         return ResponseEntity.ok(responseDTO);
@@ -109,7 +115,7 @@ public class CropController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN', 'MANAGER', 'FARMER')")
     @GetMapping
     public ResponseEntity<List<CropResponseDTO>> findAll(@AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
         List<Crop> crops = cropFindAllUseCase.execute(loggedUser);
         List<CropResponseDTO> responseDTOs = crops.stream()
                 .map(Mapper::toCropResponseDTO)
@@ -126,8 +132,12 @@ public class CropController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
         cropDeleteUseCase.execute(id, loggedUser);
         return ResponseEntity.noContent().build();
+    }
+
+    private User resolveLoggedUser(UserDetailsImpl userDetails) {
+        return userDetails != null ? userDetails.toDomainUser() : null;
     }
 }
