@@ -1,15 +1,19 @@
 package com.ufal.smartagro.application.service.farmer;
 
 import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerUpdateDTO;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -18,6 +22,7 @@ public class UpdateFarmerUseCase {
 
     private final FarmerRepository farmerRepository;
     private final ProductionAccessValidator accessValidator;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public Farmer update(UUID id, FarmerUpdateDTO dto) {
@@ -122,6 +127,20 @@ public class UpdateFarmerUseCase {
                 .deletedAt(existingFarmer.getDeletedAt())
                 .build();
 
-        return farmerRepository.save(updatedFarmer);
+        Farmer saved = farmerRepository.save(updatedFarmer);
+
+        if (loggedUser != null) {
+            Map<String, Object> details = new HashMap<>();
+            details.put("fullName", saved.getFullName());
+            auditLogService.record(
+                    loggedUser,
+                    AuditAction.UPDATE,
+                    "farmers",
+                    saved.getId(),
+                    details
+            );
+        }
+
+        return saved;
     }
 }

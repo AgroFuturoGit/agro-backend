@@ -4,7 +4,11 @@ import com.ufal.smartagro.adapters.in.web.dto.farmer.family.FamilyCompositionReg
 import com.ufal.smartagro.adapters.in.web.dto.farmer.family.FamilyCompositionResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.farmer.family.FamilyCompositionUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
-import com.ufal.smartagro.application.service.farmer.family.*;
+import com.ufal.smartagro.application.service.farmer.family.DeleteFamilyCompositionUseCase;
+import com.ufal.smartagro.application.service.farmer.family.FindAllFamilyCompositionsByFarmerUseCase;
+import com.ufal.smartagro.application.service.farmer.family.FindFamilyCompositionByIdUseCase;
+import com.ufal.smartagro.application.service.farmer.family.RegisterFamilyCompositionUseCase;
+import com.ufal.smartagro.application.service.farmer.family.UpdateFamilyCompositionUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.model.FamilyComposition;
 import com.ufal.smartagro.domain.model.User;
@@ -14,15 +18,21 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.net.URI;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
-
-import java.net.URI;
-import java.util.List;
-import java.util.UUID;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Composição Familiar", description = "Gerenciamento da composição familiar do agricultor")
 @RequiredArgsConstructor
@@ -49,7 +59,7 @@ public class FamilyCompositionController {
             @Valid @RequestBody FamilyCompositionRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         FamilyComposition saved = registerFamilyCompositionUseCase.register(farmerId, dto, loggedUser);
         FamilyCompositionResponseDTO response = Mapper.toFamilyCompositionResponseDTO(saved);
@@ -68,7 +78,7 @@ public class FamilyCompositionController {
             @PathVariable UUID farmerId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         List<FamilyComposition> list = findAllFamilyCompositionsByFarmerUseCase.findAll(farmerId, loggedUser);
         return ResponseEntity.ok(list.stream().map(Mapper::toFamilyCompositionResponseDTO).toList());
@@ -86,7 +96,7 @@ public class FamilyCompositionController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         FamilyComposition item = findFamilyCompositionByIdUseCase.findById(id, loggedUser);
         return ResponseEntity.ok(Mapper.toFamilyCompositionResponseDTO(item));
@@ -106,7 +116,7 @@ public class FamilyCompositionController {
             @Valid @RequestBody FamilyCompositionUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         FamilyComposition updated = updateFamilyCompositionUseCase.update(id, dto, loggedUser);
         return ResponseEntity.ok(Mapper.toFamilyCompositionResponseDTO(updated));
@@ -124,9 +134,13 @@ public class FamilyCompositionController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         deleteFamilyCompositionUseCase.delete(id, loggedUser);
         return ResponseEntity.noContent().build();
+    }
+
+    private User resolveLoggedUser(UserDetailsImpl userDetails) {
+        return userDetails != null ? userDetails.toDomainUser() : null;
     }
 }

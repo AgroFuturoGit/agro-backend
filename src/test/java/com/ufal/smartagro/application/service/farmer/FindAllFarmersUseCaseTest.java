@@ -1,5 +1,13 @@
 package com.ufal.smartagro.application.service.farmer;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.Manager;
@@ -12,6 +20,9 @@ import com.ufal.smartagro.domain.port.out.ManagerRepository;
 import com.ufal.smartagro.domain.port.out.TechnicalAssistanceRepository;
 import com.ufal.smartagro.domain.port.out.TechnicianRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,15 +30,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class FindAllFarmersUseCaseTest {
@@ -59,6 +61,18 @@ class FindAllFarmersUseCaseTest {
         organization = UserTestFactory.organization().name("Cooperativa Alagoas").build();
         managerUser = UserTestFactory.user().manager().build();
         manager = UserTestFactory.managerProfile().user(managerUser).organization(organization).build();
+    }
+
+    @Test
+    @DisplayName("Given FARMER When findAll Then lança AccessDeniedException")
+    void givenFarmer_whenFindAll_thenThrowsAccessDeniedException() {
+        User farmerUser = UserTestFactory.user().farmer().build();
+
+        assertThatThrownBy(() -> useCase.findAll(null, farmerUser))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Agricultores não têm permissão para listar outros agricultores.");
+
+        verifyNoInteractions(farmerRepository, communityRepository, managerRepository, technicianRepository, technicalAssistanceRepository);
     }
 
     @Test

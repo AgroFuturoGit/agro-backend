@@ -4,7 +4,11 @@ import com.ufal.smartagro.adapters.in.web.dto.farmer.financing.FinancingRegister
 import com.ufal.smartagro.adapters.in.web.dto.farmer.financing.FinancingResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.farmer.financing.FinancingUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
-import com.ufal.smartagro.application.service.farmer.financing.*;
+import com.ufal.smartagro.application.service.farmer.financing.DeleteFinancingUseCase;
+import com.ufal.smartagro.application.service.farmer.financing.FindAllFinancingsByFarmerUseCase;
+import com.ufal.smartagro.application.service.farmer.financing.FindFinancingByIdUseCase;
+import com.ufal.smartagro.application.service.farmer.financing.RegisterFinancingUseCase;
+import com.ufal.smartagro.application.service.farmer.financing.UpdateFinancingUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.model.Financing;
 import com.ufal.smartagro.domain.model.User;
@@ -14,15 +18,21 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.net.URI;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
-
-import java.net.URI;
-import java.util.List;
-import java.util.UUID;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Financiamentos", description = "Gerenciamento de financiamentos e crédito rural do agricultor")
 @RequiredArgsConstructor
@@ -49,7 +59,7 @@ public class FinancingController {
             @Valid @RequestBody FinancingRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         Financing saved = registerFinancingUseCase.register(farmerId, dto, loggedUser);
         URI location = URI.create("/financings/" + saved.getId());
@@ -67,7 +77,7 @@ public class FinancingController {
             @PathVariable UUID farmerId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         List<Financing> list = findAllFinancingsByFarmerUseCase.findAll(farmerId, loggedUser);
         return ResponseEntity.ok(list.stream().map(Mapper::toFinancingResponseDTO).toList());
@@ -85,7 +95,7 @@ public class FinancingController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         Financing item = findFinancingByIdUseCase.findById(id, loggedUser);
         return ResponseEntity.ok(Mapper.toFinancingResponseDTO(item));
@@ -105,7 +115,7 @@ public class FinancingController {
             @Valid @RequestBody FinancingUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         Financing updated = updateFinancingUseCase.update(id, dto, loggedUser);
         return ResponseEntity.ok(Mapper.toFinancingResponseDTO(updated));
@@ -123,9 +133,13 @@ public class FinancingController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         deleteFinancingUseCase.delete(id, loggedUser);
         return ResponseEntity.noContent().build();
+    }
+
+    private User resolveLoggedUser(UserDetailsImpl userDetails) {
+        return userDetails != null ? userDetails.toDomainUser() : null;
     }
 }

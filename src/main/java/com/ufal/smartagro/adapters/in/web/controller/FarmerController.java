@@ -3,8 +3,13 @@ package com.ufal.smartagro.adapters.in.web.controller;
 import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
-import com.ufal.smartagro.application.service.farmer.*;
+import com.ufal.smartagro.application.service.farmer.DeleteFarmerUseCase;
+import com.ufal.smartagro.application.service.farmer.FindAllFarmersUseCase;
+import com.ufal.smartagro.application.service.farmer.FindFarmerByIdUseCase;
+import com.ufal.smartagro.application.service.farmer.FindFarmerByUserUseCase;
+import com.ufal.smartagro.application.service.farmer.UpdateFarmerUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,14 +18,20 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.UUID;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Agricultores", description = "Operações e gerenciamento de agricultores familiares")
 @RequiredArgsConstructor
@@ -45,6 +56,10 @@ public class FarmerController {
     @GetMapping("/me")
     public ResponseEntity<FarmerResponseDTO> findMyFarmerData(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        if (loggedUserDetails == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
 
         Farmer farmer = findFarmerByUserUseCase.findByUserId(loggedUserDetails.getId());
         FarmerResponseDTO response = Mapper.toFarmerResponseDTO(farmer);
@@ -131,5 +146,7 @@ public class FarmerController {
         return ResponseEntity.noContent().build();
     }
 
-    private User resolveLoggedUser(UserDetailsImpl loggedUserDetails) { return loggedUserDetails != null ? loggedUserDetails.toDomainUser() : null; }
+    private User resolveLoggedUser(UserDetailsImpl loggedUserDetails) {
+        return loggedUserDetails != null ? loggedUserDetails.toDomainUser() : null;
+    }
 }

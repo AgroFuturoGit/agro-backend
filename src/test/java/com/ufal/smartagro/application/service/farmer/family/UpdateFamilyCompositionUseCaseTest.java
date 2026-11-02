@@ -1,25 +1,31 @@
 package com.ufal.smartagro.application.service.farmer.family;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
 import com.ufal.smartagro.adapters.in.web.dto.farmer.family.FamilyCompositionUpdateDTO;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.FamilyComposition;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.port.out.FamilyCompositionRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UpdateFamilyCompositionUseCaseTest {
@@ -30,15 +36,18 @@ class UpdateFamilyCompositionUseCaseTest {
     @Mock
     private ProductionAccessValidator accessValidator;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     private UpdateFamilyCompositionUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new UpdateFamilyCompositionUseCase(familyCompositionRepository, accessValidator);
+        useCase = new UpdateFamilyCompositionUseCase(familyCompositionRepository, accessValidator, auditLogService);
     }
 
     @Test
-    @DisplayName("Atualiza membro familiar com sucesso")
+    @DisplayName("Atualiza membro familiar com sucesso e grava auditoria")
     void givenValidUpdate_whenUpdate_thenSucceeds() {
         User admin = UserTestFactory.user().admin().build();
         Farmer farmer = UserTestFactory.farmerProfile().build();
@@ -64,5 +73,20 @@ class UpdateFamilyCompositionUseCaseTest {
 
         verify(accessValidator).validateWriteAccess(farmer, admin);
         verify(familyCompositionRepository).save(any(FamilyComposition.class));
+        verify(auditLogService).record(eq(admin), eq(AuditAction.UPDATE), eq("family_compositions"), eq(id), any());
+    }
+
+    @Test
+    @DisplayName("Lança AccessDeniedException quando MANAGER tenta atualizar")
+    void givenManager_whenUpdate_thenThrowsAccessDeniedException() {
+        User manager = UserTestFactory.user().manager().build();
+        UUID id = UUID.randomUUID();
+        FamilyCompositionUpdateDTO updateDTO = new FamilyCompositionUpdateDTO("Maria", "Cônjuge", 43);
+
+        assertThatThrownBy(() -> useCase.update(id, updateDTO, manager))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Apenas administradores, técnicos assistentes ou o próprio agricultor podem atualizar membros familiares.");
+
+        verifyNoInteractions(familyCompositionRepository, accessValidator, auditLogService);
     }
 }
