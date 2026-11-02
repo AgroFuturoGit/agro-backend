@@ -1,5 +1,6 @@
 package com.ufal.smartagro.application.service.production;
 
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionExecutionRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionExecutionUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionPlanRegisterDTO;
@@ -64,6 +65,8 @@ class ProductionWriteUseCaseRbacTest {
     private CropRepository cropRepository;
     @Mock
     private ProductionVersionGuard versionGuard;
+    @Mock
+    private AuditLogService auditLogService;
 
     private CreateProductionPlanUseCase createPlan;
     private UpdateProductionPlanUseCase updatePlan;
@@ -83,7 +86,7 @@ class ProductionWriteUseCaseRbacTest {
         createExecution = new CreateProductionExecutionUseCase(
                 productionExecutionRepository, productionPlanRepository, validator);
         updateExecution = new UpdateProductionExecutionUseCase(productionExecutionRepository, validator, versionGuard);
-        deleteExecution = new DeleteProductionExecutionUseCase(productionExecutionRepository, validator);
+        deleteExecution = new DeleteProductionExecutionUseCase(productionExecutionRepository, validator, auditLogService);
     }
 
     @Nested

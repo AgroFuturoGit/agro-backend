@@ -74,4 +74,31 @@ class DeleteFieldOccurrenceUseCaseTest {
 
         verify(fieldOccurrenceRepository, never()).delete(any());
     }
+
+    @Test
+    @DisplayName("Quando apontamento já validado e usuário é FARMER, lança AccessDeniedException ao excluir ocorrência")
+    void givenValidatedExecutionAndFarmer_thenThrowsAccessDeniedException() {
+        UUID occurrenceId = UUID.randomUUID();
+        User farmerUser = UserTestFactory.user().farmer().build();
+        Farmer farmer = UserTestFactory.farmerProfile().user(farmerUser).build();
+        ProductionPlan plan = org.mockito.Mockito.mock(ProductionPlan.class);
+        org.mockito.Mockito.when(plan.getFarmer()).thenReturn(farmer);
+
+        ProductionExecution execution = ProductionExecution.builder()
+                .id(UUID.randomUUID())
+                .productionPlan(plan)
+                .status(com.ufal.smartagro.domain.model.enums.ExecutionStatus.VALIDATED)
+                .build();
+
+        FieldOccurrence occurrence = FieldOccurrence.builder()
+                .id(occurrenceId)
+                .execution(execution)
+                .build();
+
+        org.mockito.Mockito.when(fieldOccurrenceRepository.findById(occurrenceId)).thenReturn(java.util.Optional.of(occurrence));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> useCase.delete(occurrenceId, farmerUser))
+                .isInstanceOf(com.ufal.smartagro.domain.exception.AccessDeniedException.class)
+                .hasMessageContaining("já validado");
+    }
 }

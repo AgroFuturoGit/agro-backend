@@ -7,12 +7,13 @@ import com.ufal.smartagro.adapters.in.web.dto.user.UserUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.user.AdminUserUpdateUseCase;
 import com.ufal.smartagro.application.service.user.FindAllUsersUseCase;
-import com.ufal.smartagro.application.service.user.UserDeleteUseCase;
 import com.ufal.smartagro.application.service.user.FindUserByIdUseCase;
+import com.ufal.smartagro.application.service.user.UserDeleteUseCase;
 import com.ufal.smartagro.application.service.user.UserRegisterUseCase;
 import com.ufal.smartagro.application.service.user.UserUpdateUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.Role;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -55,8 +56,8 @@ public class UserController {
             @Valid @RequestBody UserRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        if (dto.role() == com.ufal.smartagro.domain.model.enums.Role.MANAGER || dto.role() == com.ufal.smartagro.domain.model.enums.Role.FARMER) {
-            throw new IllegalArgumentException("Para criar gestores ou agricultores, utilize as rotas específicas de Organização e Comunidade.");
+        if (dto.role() == Role.MANAGER || dto.role() == Role.FARMER || dto.role() == Role.TECHNICIAN) {
+            throw new IllegalArgumentException("Para criar ou promover gestores, produtores e técnicos, utilize as rotas específicas de perfil.");
         }
 
         User loggedUser = loggedUserDetails.toDomainUser();

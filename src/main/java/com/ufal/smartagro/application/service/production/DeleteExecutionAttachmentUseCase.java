@@ -1,8 +1,11 @@
 package com.ufal.smartagro.application.service.production;
 
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.ExecutionAttachment;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.ExecutionStatus;
+import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.ExecutionAttachmentRepository;
 import com.ufal.smartagro.domain.port.out.ProductionExecutionRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,11 @@ public class DeleteExecutionAttachmentUseCase {
         accessValidator.validateWriteAccess(
                 execution.getProductionPlan() != null ? execution.getProductionPlan().getFarmer() : null,
                 loggedUser);
+
+        if (execution.getStatus() == ExecutionStatus.VALIDATED
+                && loggedUser != null && loggedUser.getRole() == Role.FARMER) {
+            throw new AccessDeniedException("Não é permitido remover comprovações de um apontamento já validado.");
+        }
 
         ExecutionAttachment attachment = attachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new IllegalArgumentException("Anexo não encontrado."));

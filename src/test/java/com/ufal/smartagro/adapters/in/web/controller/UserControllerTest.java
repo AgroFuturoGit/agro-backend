@@ -12,7 +12,10 @@ import com.ufal.smartagro.domain.port.out.UserRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -106,6 +109,23 @@ class UserControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/users/" + newUserId))
                 .andExpect(jsonPath("$.id").value(newUserId.toString()));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = Role.class, names = {"MANAGER", "FARMER", "TECHNICIAN"})
+    @DisplayName("Quando tenta registrar usuário com perfil especializado via /users, retorna 400 Bad Request")
+    void registerUser_specializedRoles_returnsBadRequest(Role role) throws Exception {
+        User adminUser = UserTestFactory.user().admin().build();
+        when(userRepository.findById(any())).thenReturn(Optional.of(adminUser));
+
+        UserRegisterDTO dto = new UserRegisterDTO("Especializado", "esp@smartagro.test", "senhaForte123", UserTestFactory.VALID_CPF, role);
+
+        mockMvc.perform(post("/users")
+                        .with(user(userDetails(adminUser)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Para criar ou promover gestores, produtores e técnicos, utilize as rotas específicas de perfil."));
     }
 
     private UserDetailsImpl userDetails(User user) {

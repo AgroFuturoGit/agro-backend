@@ -2,9 +2,12 @@ package com.ufal.smartagro.application.service.production.occurrence;
 
 import com.ufal.smartagro.adapters.in.web.dto.production.occurrence.FieldOccurrenceRegisterDTO;
 import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.FieldOccurrence;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.ExecutionStatus;
+import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.FieldOccurrenceRepository;
 import com.ufal.smartagro.domain.port.out.ProductionExecutionRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,11 @@ public class RegisterFieldOccurrenceUseCase {
 
         if (execution.getProductionPlan() != null) {
             accessValidator.validateWriteAccess(execution.getProductionPlan().getFarmer(), loggedUser);
+        }
+
+        if (execution.getStatus() == ExecutionStatus.VALIDATED
+                && loggedUser != null && loggedUser.getRole() == Role.FARMER) {
+            throw new AccessDeniedException("Não é permitido registrar ocorrências em um apontamento já validado.");
         }
 
         if (dto.clientId() != null) {
