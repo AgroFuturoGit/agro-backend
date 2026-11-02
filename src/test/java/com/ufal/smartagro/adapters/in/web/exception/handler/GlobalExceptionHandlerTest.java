@@ -4,10 +4,12 @@ import com.ufal.smartagro.adapters.in.web.exception.dto.ApiError;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,5 +44,20 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().status()).isEqualTo(413);
         assertThat(response.getBody().message()).isEqualTo("A imagem excede o limite de 5 MB.");
+    }
+
+    @Test
+    @DisplayName("Given NoResourceFoundException When rota inexistente acessada Then retorna HTTP 404 (API-05/07)")
+    void givenNoResourceFoundException_whenHandled_thenReturns404() {
+        NoResourceFoundException ex = new NoResourceFoundException(HttpMethod.GET, "rota/inexistente", "rota/inexistente");
+        HttpServletRequest request = new MockHttpServletRequest("GET", "/rota/inexistente");
+
+        ResponseEntity<ApiError> response = handler.handleNoResourceFound(ex, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().status()).isEqualTo(404);
+        assertThat(response.getBody().message()).isEqualTo("Recurso ou rota não encontrada.");
+        assertThat(response.getBody().path()).isEqualTo("/rota/inexistente");
     }
 }

@@ -1,13 +1,17 @@
 package com.ufal.smartagro.application.service.technician;
 
 import com.ufal.smartagro.adapters.in.web.dto.technician.TechnicianRegisterDTO;
+import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
 import com.ufal.smartagro.application.service.user.UserRegisterUseCase;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.ProfessionalRegistrationType;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.TechnicianRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -16,11 +20,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
-
-import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
-import com.ufal.smartagro.domain.model.Technician;
-import com.ufal.smartagro.domain.model.enums.ProfessionalRegistrationType;
-import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -70,6 +69,22 @@ class RegisterTechnicianUseCaseTest {
                 org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.argThat(map -> "CFT".equals(map.get("registrationType")))
         );
+    }
+
+    @Test
+    @DisplayName("Given ADMIN When register sem registrationNumber Then IllegalArgumentException")
+    void givenAdmin_whenRegisterWithoutRegistrationNumber_thenThrowsIllegalArgumentException() {
+        User admin = UserTestFactory.user().admin().build();
+        TechnicianRegisterDTO dto = new TechnicianRegisterDTO(
+                "Técnico Sem Registro", "tech@smartagro.test", UserTestFactory.RAW_PASSWORD,
+                UserTestFactory.VALID_CPF, ProfessionalRegistrationType.CREA, "   ", "Solo"
+        );
+
+        assertThatThrownBy(() -> registerTechnicianUseCase.register(dto, admin))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("O número de registro profissional é obrigatório.");
+
+        verifyNoInteractions(userRegisterUseCase, technicianRepository, auditLogService);
     }
 
     @ParameterizedTest(name = "Given Role.{0} When register Then AccessDeniedException")

@@ -28,6 +28,7 @@ public record TechnicianRegisterDTO(
 
         ProfessionalRegistrationType registrationType,
 
+        @NotBlank(message = "O número de registro profissional é obrigatório")
         @Size(max = 50, message = "O número de registro deve ter no máximo 50 caracteres")
         String registrationNumber,
 
