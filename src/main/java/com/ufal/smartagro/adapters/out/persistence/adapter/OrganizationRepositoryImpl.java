@@ -24,6 +24,7 @@ public class OrganizationRepositoryImpl implements OrganizationRepository {
     public Organization save(Organization organization) {
         OrganizationEntity entity = mapper.toEntity(organization);
         OrganizationEntity savedEntity = jpaRepository.save(entity);
+        jpaRepository.flush();
         return mapper.toDomain(savedEntity);
     }
 

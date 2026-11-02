@@ -28,7 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("UpdateProductionPlanUseCase — limpeza de campos e coerência de datas")
+@DisplayName("UpdateProductionPlanUseCase — limpeza de campos, coerência de datas e updatedAt (API-19)")
 class UpdateProductionPlanUseCaseTest {
 
     @Mock
@@ -64,8 +64,8 @@ class UpdateProductionPlanUseCaseTest {
     }
 
     @Test
-    @DisplayName("clearPlannedPlantingDate = true limpa a data de plantio planejada")
-    void givenClearPlannedPlantingDate_whenUpdate_thenClearsPlantingDate() {
+    @DisplayName("clearPlannedPlantingDate = true limpa a data de plantio planejada e preenche updatedAt (API-19)")
+    void givenClearPlannedPlantingDate_whenUpdate_thenClearsPlantingDateAndPopulatesUpdatedAt() {
         User admin = UserTestFactory.user().admin().build();
         ProductionPlan existing = existingPlan();
         when(productionPlanRepository.findById(PLAN_ID)).thenReturn(Optional.of(existing));
@@ -81,9 +81,11 @@ class UpdateProductionPlanUseCaseTest {
         ProductionPlan updated = useCase.update(PLAN_ID, dto, admin);
 
         assertThat(updated.getPlannedPlantingDate()).isNull();
+        assertThat(updated.getUpdatedAt()).isNotNull();
         ArgumentCaptor<ProductionPlan> captor = ArgumentCaptor.forClass(ProductionPlan.class);
         verify(productionPlanRepository).save(captor.capture());
         assertThat(captor.getValue().getPlannedPlantingDate()).isNull();
+        assertThat(captor.getValue().getUpdatedAt()).isNotNull();
     }
 
     @Test

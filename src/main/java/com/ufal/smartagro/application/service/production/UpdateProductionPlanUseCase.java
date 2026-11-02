@@ -1,7 +1,6 @@
 package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionPlanUpdateDTO;
-
 import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.User;
@@ -11,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /** Atualiza um plano sem substituir o snapshot original de produtividade da cultura. */
@@ -88,7 +88,7 @@ public class UpdateProductionPlanUseCase {
                 plantingDate,
                 dto.plannedCalendar() != null ? dto.plannedCalendar() : existingPlan.getPlannedCalendar(),
                 existingPlan.getCreatedAt(),
-                null,
+                LocalDateTime.now(),
                 existingPlan.getDeletedAt()
         );
 

@@ -37,6 +37,7 @@ public class ProductionPlanRepositoryImpl implements ProductionPlanRepository {
     public ProductionPlan save(ProductionPlan productionPlan) {
         var entity = productionPlanMapper.toEntity(productionPlan);
         var savedEntity = jpaRepository.save(entity);
+        jpaRepository.flush();
         return productionPlanMapper.toDomain(savedEntity);
     }
 

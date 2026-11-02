@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class CorsConfigTest {
 
     @Test
-    @DisplayName("Deve configurar origens restritas e allowCredentials=false por padrão")
+    @DisplayName("Deve configurar origens restritas, allowCredentials=false e expor Content-Disposition e Retry-After")
     void shouldConfigureStrictOriginsWithoutCredentials() {
         CorsConfig corsConfig = new CorsConfig();
         ReflectionTestUtils.setField(corsConfig, "allowedOrigins", List.of("http://localhost:3000", "http://localhost:5173"));
@@ -27,6 +27,7 @@ class CorsConfigTest {
         assertNotNull(config);
         assertEquals(Boolean.FALSE, config.getAllowCredentials());
         assertEquals(List.of("http://localhost:3000", "http://localhost:5173"), config.getAllowedOrigins());
+        assertEquals(List.of("Content-Disposition", "Retry-After"), config.getExposedHeaders());
     }
 
     @Test
