@@ -1,9 +1,11 @@
 package com.ufal.smartagro.application.service.user;
 
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityInUseException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
@@ -14,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -25,10 +28,11 @@ public class UserDeleteUseCase {
     private final FarmerRepository farmerRepository;
     private final TechnicianRepository technicianRepository;
     private final ManagerRepository managerRepository;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public void delete(UUID userId, User loggedUser) {
-        if (loggedUser.getRole() != Role.ADMIN) {
+        if (loggedUser == null || loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException();
         }
 
@@ -36,7 +40,7 @@ public class UserDeleteUseCase {
             throw new IllegalArgumentException("O administrador não pode excluir a própria conta.");
         }
 
-        userRepository.findById(userId)
+        User targetUser = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
 
         if (farmerRepository.findByUserId(userId).filter(f -> f.getDeletedAt() == null).isPresent()) {
@@ -58,6 +62,13 @@ public class UserDeleteUseCase {
         }
 
         userRepository.softDelete(userId);
+        auditLogService.record(
+                loggedUser,
+                AuditAction.DELETE,
+                "user",
+                userId,
+                Map.of("targetEmail", targetUser.getEmail(), "targetRole", targetUser.getRole().name())
+        );
         log.info("Usuário excluído logicamente [targetUserId={}] pelo administrador [actorId={}]", userId, loggedUser.getId());
     }
 }

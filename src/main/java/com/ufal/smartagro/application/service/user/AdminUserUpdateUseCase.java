@@ -1,9 +1,11 @@
 package com.ufal.smartagro.application.service.user;
 
 import com.ufal.smartagro.adapters.in.web.dto.user.AdminUserUpdateDTO;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -19,10 +22,11 @@ import java.util.UUID;
 public class AdminUserUpdateUseCase {
 
     private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public User update(UUID userId, AdminUserUpdateDTO dto, User loggedUser) {
-        if (loggedUser.getRole() != Role.ADMIN) {
+        if (loggedUser == null || loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException();
         }
 
@@ -54,6 +58,13 @@ public class AdminUserUpdateUseCase {
         );
 
         User savedUser = userRepository.save(updatedUser);
+        auditLogService.record(
+                loggedUser,
+                AuditAction.UPDATE,
+                "user",
+                userId,
+                Map.of("targetEmail", existingUser.getEmail(), "previousRole", existingUser.getRole().name(), "newRole", dto.role().name())
+        );
         log.info("Usuário atualizado com sucesso pelo administrador [actorId={}] no usuário alvo [targetUserId={}]", loggedUser.getId(), userId);
         return savedUser;
     }

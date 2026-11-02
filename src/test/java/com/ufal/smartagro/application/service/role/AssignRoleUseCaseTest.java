@@ -1,8 +1,10 @@
 package com.ufal.smartagro.application.service.role;
 
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.UserRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
@@ -23,10 +25,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AssignRoleUseCaseTest {
@@ -39,6 +39,9 @@ class AssignRoleUseCaseTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private AuditLogService auditLogService;
 
     @InjectMocks
     private AssignRoleUseCase assignRoleUseCase;
@@ -56,7 +59,7 @@ class AssignRoleUseCaseTest {
                     .isInstanceOf(AccessDeniedException.class)
                     .hasMessage("Acesso negado. Somente administradores podem realizar esta ação.");
 
-            verifyNoInteractions(userRepository);
+            verifyNoInteractions(userRepository, auditLogService);
         }
     }
 
@@ -73,7 +76,7 @@ class AssignRoleUseCaseTest {
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage(PROFILE_ROUTE_MESSAGE);
 
-            verifyNoInteractions(userRepository);
+            verifyNoInteractions(userRepository, auditLogService);
         }
 
         @ParameterizedTest(name = "Given ADMIN When usuário alvo é {0} e tenta atribuir ADMIN Then IllegalArgumentException (API-08)")
@@ -88,6 +91,7 @@ class AssignRoleUseCaseTest {
                     .hasMessage(LINKED_PROFILE_MESSAGE);
 
             verify(userRepository, never()).save(any());
+            verifyNoInteractions(auditLogService);
         }
     }
 
@@ -96,7 +100,7 @@ class AssignRoleUseCaseTest {
     class HappyPath {
 
         @Test
-        @DisplayName("Given ADMIN When atribui Role.ADMIN a outro ADMIN Then persiste o papel")
+        @DisplayName("Given ADMIN When atribui Role.ADMIN a outro ADMIN Then persiste o papel e grava auditoria")
         void givenAdmin_whenAssignAdmin_thenPersistsRole() {
             User admin = UserTestFactory.user().admin().build();
             User target = UserTestFactory.user().admin().build();
@@ -111,6 +115,7 @@ class AssignRoleUseCaseTest {
             assertThat(captor.getValue().getEmail()).isEqualTo(target.getEmail());
             assertThat(captor.getValue().getCpf()).isEqualTo(target.getCpf());
             assertThat(response.getRole()).isEqualTo(Role.ADMIN);
+            verify(auditLogService).record(eq(admin), eq(AuditAction.UPDATE), eq("user"), eq(target.getId()), any());
         }
 
         @Test
@@ -125,6 +130,7 @@ class AssignRoleUseCaseTest {
                     .hasMessage("Usuário não encontrado!");
 
             verify(userRepository, never()).save(any());
+            verifyNoInteractions(auditLogService);
         }
     }
 }

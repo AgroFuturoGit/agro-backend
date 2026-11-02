@@ -1,14 +1,17 @@
 package com.ufal.smartagro.application.service.role;
 
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -16,10 +19,11 @@ import java.util.UUID;
 public class AssignRoleUseCase {
 
     private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public User assignRole(UUID userId, Role newRole, User loggedUser) {
-        if (loggedUser.getRole() != Role.ADMIN) {
+        if (loggedUser == null || loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException();
         }
 
@@ -48,6 +52,14 @@ public class AssignRoleUseCase {
                 newRole
         );
 
-        return userRepository.save(updated);
+        User savedUser = userRepository.save(updated);
+        auditLogService.record(
+                loggedUser,
+                AuditAction.UPDATE,
+                "user",
+                userId,
+                Map.of("targetEmail", user.getEmail(), "previousRole", user.getRole().name(), "newRole", newRole.name())
+        );
+        return savedUser;
     }
 }

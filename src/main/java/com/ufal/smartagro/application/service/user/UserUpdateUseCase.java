@@ -1,8 +1,7 @@
 package com.ufal.smartagro.application.service.user;
 
-
 import com.ufal.smartagro.adapters.in.web.dto.user.UserUpdateDTO;
-
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.UserRepository;
@@ -18,6 +17,10 @@ public class UserUpdateUseCase {
 
     @Transactional
     public User update(UserUpdateDTO dto, User loggedUser) {
+        if (loggedUser == null || loggedUser.getId() == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         User existingUser = userRepository.findById(loggedUser.getId())
                 .orElseThrow(UserNotFoundException::new);
 
@@ -31,6 +34,5 @@ public class UserUpdateUseCase {
         );
 
         return userRepository.save(updatedUser);
-
     }
 }

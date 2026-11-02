@@ -3,10 +3,12 @@ package com.ufal.smartagro.application.service.user;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.Manager;
+import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
+import com.ufal.smartagro.domain.port.out.TechnicianRepository;
 import com.ufal.smartagro.domain.port.out.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,9 +27,14 @@ public class FindAllUsersUseCase {
     private final UserRepository userRepository;
     private final ManagerRepository managerRepository;
     private final FarmerRepository farmerRepository;
+    private final TechnicianRepository technicianRepository;
 
     @Transactional(readOnly = true)
     public List<User> findAll(User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.MANAGER) {
             throw new AccessDeniedException();
         }
@@ -68,6 +75,12 @@ public class FindAllUsersUseCase {
         for (Farmer f : farmerRepository.findAllByOrganizationId(managerOrgId)) {
             if (f.getUser() != null && f.getUser().getId() != null) {
                 allowedUserIds.add(f.getUser().getId());
+            }
+        }
+
+        for (Technician t : technicianRepository.findAllByOrganizationId(managerOrgId)) {
+            if (t.getUser() != null && t.getUser().getId() != null) {
+                allowedUserIds.add(t.getUser().getId());
             }
         }
 
