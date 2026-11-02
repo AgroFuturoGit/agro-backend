@@ -1,19 +1,19 @@
 package com.ufal.smartagro.adapters.in.web.controller;
 
+import com.ufal.smartagro.adapters.in.web.dto.community.CommunityResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.technicalassistance.TechnicalAssistanceRegisterDTO;
+import com.ufal.smartagro.adapters.in.web.dto.technicalassistance.TechnicalAssistanceResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.technician.TechnicianRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.technician.TechnicianResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.technician.TechnicianUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.technician.*;
-import com.ufal.smartagro.adapters.in.web.dto.technicalassistance.TechnicalAssistanceRegisterDTO;
-import com.ufal.smartagro.adapters.in.web.dto.technicalassistance.TechnicalAssistanceResponseDTO;
-import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerResponseDTO;
-import com.ufal.smartagro.adapters.in.web.dto.community.CommunityResponseDTO;
+import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Farmer;
-import com.ufal.smartagro.config.security.details.UserDetailsImpl;
-import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.TechnicalAssistance;
+import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -60,7 +60,7 @@ public class TechnicianController {
             @Valid @RequestBody TechnicianRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         Technician technician = registerTechnicianUseCase.register(dto, loggedUser);
         TechnicianResponseDTO response = Mapper.toTechnicianResponseDTO(technician);
@@ -80,7 +80,7 @@ public class TechnicianController {
     public ResponseEntity<TechnicianResponseDTO> findMyTechnicianData(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
         Technician technician = findTechnicianByUserUseCase.findByUser(loggedUser);
         TechnicianResponseDTO response = Mapper.toTechnicianResponseDTO(technician);
         return ResponseEntity.ok(response);
@@ -96,8 +96,7 @@ public class TechnicianController {
     public ResponseEntity<List<TechnicianResponseDTO>> findAllTechnicians(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
-
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
         List<Technician> technicians = findAllTechniciansUseCase.findAll(loggedUser);
         List<TechnicianResponseDTO> response = technicians.stream()
                 .map(Mapper::toTechnicianResponseDTO)
@@ -117,8 +116,7 @@ public class TechnicianController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
-
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
         Technician technician = findTechnicianByIdUseCase.findById(id, loggedUser);
         TechnicianResponseDTO response = Mapper.toTechnicianResponseDTO(technician);
         return ResponseEntity.ok(response);
@@ -138,8 +136,7 @@ public class TechnicianController {
             @Valid @RequestBody TechnicianUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
-
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
         Technician technician = updateTechnicianUseCase.update(id, dto, loggedUser);
         TechnicianResponseDTO response = Mapper.toTechnicianResponseDTO(technician);
         return ResponseEntity.ok(response);
@@ -157,8 +154,7 @@ public class TechnicianController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
-
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
         deleteTechnicianUseCase.delete(id, loggedUser);
         return ResponseEntity.noContent().build();
     }
@@ -177,8 +173,7 @@ public class TechnicianController {
             @Valid @RequestBody TechnicalAssistanceRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
-
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
         TechnicalAssistance assistance = assignCommunityToTechnicianUseCase.assign(technicianId, dto, loggedUser);
         TechnicalAssistanceResponseDTO response = Mapper.toTechnicalAssistanceResponseDTO(assistance);
         URI location = URI.create("/technicians/" + technicianId + "/assistances/" + response.id());
@@ -198,7 +193,7 @@ public class TechnicianController {
             @PathVariable UUID assistanceId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
         TechnicalAssistance assistance = removeCommunityFromTechnicianUseCase.remove(technicianId, assistanceId, loggedUser);
         TechnicalAssistanceResponseDTO response = Mapper.toTechnicalAssistanceResponseDTO(assistance);
         return ResponseEntity.ok(response);
@@ -215,7 +210,7 @@ public class TechnicianController {
     public ResponseEntity<List<CommunityResponseDTO>> getMyCommunities(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
         List<Community> communities = getAssignedCommunitiesUseCase.getAssignedCommunities(loggedUser);
         List<CommunityResponseDTO> response = communities.stream()
                 .map(Mapper::toCommunityResponseDTO)
@@ -235,7 +230,7 @@ public class TechnicianController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
         List<Community> communities = getAssignedCommunitiesUseCase.getAssignedCommunities(id, loggedUser);
         List<CommunityResponseDTO> response = communities.stream()
                 .map(Mapper::toCommunityResponseDTO)
@@ -254,7 +249,7 @@ public class TechnicianController {
     public ResponseEntity<List<FarmerResponseDTO>> getMyFarmers(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
         List<Farmer> farmers = getAssignedFarmersUseCase.getAssignedFarmers(loggedUser);
         List<FarmerResponseDTO> response = farmers.stream()
                 .map(Mapper::toFarmerResponseDTO)
@@ -274,11 +269,15 @@ public class TechnicianController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
         List<Farmer> farmers = getAssignedFarmersUseCase.getAssignedFarmers(id, loggedUser);
         List<FarmerResponseDTO> response = farmers.stream()
                 .map(Mapper::toFarmerResponseDTO)
                 .toList();
         return ResponseEntity.ok(response);
+    }
+
+    private User resolveLoggedUser(UserDetailsImpl loggedUserDetails) {
+        return loggedUserDetails != null ? loggedUserDetails.toDomainUser() : null;
     }
 }

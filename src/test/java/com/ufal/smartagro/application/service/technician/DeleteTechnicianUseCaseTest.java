@@ -1,11 +1,13 @@
 package com.ufal.smartagro.application.service.technician;
 
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.TechnicalAssistance;
 import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.port.out.TechnicalAssistanceRepository;
 import com.ufal.smartagro.domain.port.out.TechnicianRepository;
 import com.ufal.smartagro.domain.port.out.UserRepository;
@@ -25,6 +27,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,15 +43,23 @@ class DeleteTechnicianUseCaseTest {
     @Mock
     private TechnicalAssistanceRepository technicalAssistanceRepository;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     private DeleteTechnicianUseCase deleteTechnicianUseCase;
 
     @BeforeEach
     void setUp() {
-        deleteTechnicianUseCase = new DeleteTechnicianUseCase(technicianRepository, userRepository, technicalAssistanceRepository);
+        deleteTechnicianUseCase = new DeleteTechnicianUseCase(
+                technicianRepository,
+                userRepository,
+                technicalAssistanceRepository,
+                auditLogService
+        );
     }
 
     @Test
-    @DisplayName("Given ADMIN When delete Then encerra assistências ativas, exclui técnico e faz softDelete do User")
+    @DisplayName("Given ADMIN When delete Then encerra assistências ativas, exclui técnico, faz softDelete do User e gera auditoria")
     void givenAdmin_whenDelete_thenEndsActiveAssistancesAndDeletesSuccessfully() {
         User technicianUser = UserTestFactory.user().technician().build();
         Technician technician = UserTestFactory.technicianProfile().user(technicianUser).build();
@@ -70,6 +82,7 @@ class DeleteTechnicianUseCaseTest {
 
         verify(technicianRepository).delete(technician.getId());
         verify(userRepository).softDelete(technicianUser.getId());
+        verify(auditLogService).record(eq(admin), eq(AuditAction.DELETE), eq("technicians"), eq(technician.getId()), any());
     }
 
     @Test
@@ -81,6 +94,8 @@ class DeleteTechnicianUseCaseTest {
         assertThatThrownBy(() -> deleteTechnicianUseCase.delete(id, farmer))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Apenas administradores podem excluir técnicos.");
+
+        verify(auditLogService, never()).record(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -91,6 +106,8 @@ class DeleteTechnicianUseCaseTest {
         assertThatThrownBy(() -> deleteTechnicianUseCase.delete(id, null))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Apenas administradores podem excluir técnicos.");
+
+        verify(auditLogService, never()).record(any(), any(), any(), any(), any());
     }
 
     @Test

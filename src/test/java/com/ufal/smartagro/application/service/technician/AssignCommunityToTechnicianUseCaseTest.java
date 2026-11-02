@@ -12,6 +12,7 @@ import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.CommunityRepository;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
 import com.ufal.smartagro.domain.port.out.TechnicalAssistanceRepository;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.port.out.TechnicianRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
 import org.junit.jupiter.api.DisplayName;
@@ -45,6 +46,8 @@ class AssignCommunityToTechnicianUseCaseTest {
     private TechnicalAssistanceRepository assistanceRepository;
     @Mock
     private ManagerRepository managerRepository;
+    @Mock
+    private AuditLogService auditLogService;
 
     @InjectMocks
     private AssignCommunityToTechnicianUseCase assignCommunityToTechnicianUseCase;

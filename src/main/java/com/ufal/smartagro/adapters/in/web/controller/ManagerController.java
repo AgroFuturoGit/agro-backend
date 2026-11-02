@@ -4,6 +4,7 @@ import com.ufal.smartagro.adapters.in.web.dto.manager.ManagerResponseDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.manager.FindManagerByUserUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.Manager;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -37,6 +38,10 @@ public class ManagerController {
     @GetMapping("/me")
     public ResponseEntity<ManagerResponseDTO> findMyManagerData(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        if (loggedUserDetails == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
 
         Manager manager = findManagerByUserUseCase.findByUserId(loggedUserDetails.getId());
         ManagerResponseDTO response = Mapper.toManagerResponseDTO(manager);

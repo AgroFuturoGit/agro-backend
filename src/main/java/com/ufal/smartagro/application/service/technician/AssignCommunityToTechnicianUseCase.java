@@ -1,12 +1,14 @@
 package com.ufal.smartagro.application.service.technician;
 
 import com.ufal.smartagro.adapters.in.web.dto.technicalassistance.TechnicalAssistanceRegisterDTO;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.TechnicalAssistance;
 import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CommunityRepository;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
@@ -16,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -26,6 +30,7 @@ public class AssignCommunityToTechnicianUseCase {
     private final CommunityRepository communityRepository;
     private final TechnicalAssistanceRepository assistanceRepository;
     private final ManagerRepository managerRepository;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public TechnicalAssistance assign(UUID technicianId, TechnicalAssistanceRegisterDTO dto, User loggedUser) {
@@ -87,7 +92,23 @@ public class AssignCommunityToTechnicianUseCase {
                 null,
                 null
         );
-        return assistanceRepository.save(assistance);
+
+        TechnicalAssistance saved = assistanceRepository.save(assistance);
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("technicianId", technician.getId().toString());
+        details.put("communityId", community.getId().toString());
+        details.put("startDate", dto.startDate().toString());
+
+        auditLogService.record(
+                loggedUser,
+                AuditAction.CREATE,
+                "technical_assistance",
+                saved.getId(),
+                details
+        );
+
+        return saved;
     }
 
     @Transactional

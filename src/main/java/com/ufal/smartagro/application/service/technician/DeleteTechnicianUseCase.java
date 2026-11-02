@@ -1,10 +1,12 @@
 package com.ufal.smartagro.application.service.technician;
 
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.TechnicalAssistance;
 import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.TechnicalAssistanceRepository;
 import com.ufal.smartagro.domain.port.out.TechnicianRepository;
@@ -15,7 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -26,6 +30,7 @@ public class DeleteTechnicianUseCase {
     private final TechnicianRepository technicianRepository;
     private final UserRepository userRepository;
     private final TechnicalAssistanceRepository technicalAssistanceRepository;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public void delete(UUID id, User loggedUser) {
@@ -59,6 +64,20 @@ public class DeleteTechnicianUseCase {
         if (existing.getUser() != null && existing.getUser().getId() != null) {
             userRepository.softDelete(existing.getUser().getId());
         }
+
+        Map<String, Object> details = new HashMap<>();
+        if (existing.getUser() != null && existing.getUser().getId() != null) {
+            details.put("linkedUserId", existing.getUser().getId().toString());
+        }
+        details.put("closedAssistancesCount", activeAssistances.size());
+
+        auditLogService.record(
+                loggedUser,
+                AuditAction.DELETE,
+                "technicians",
+                id,
+                details
+        );
 
         log.info("Técnico excluído logicamente [technicianId={}, linkedUserId={}] pelo usuário [actorId={}]",
                 id,
