@@ -6,14 +6,15 @@ import com.ufal.smartagro.adapters.in.web.dto.manager.ManagerRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.manager.ManagerResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationResponseDTO;
+import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationUpdateDTO;
 import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.community.RegisterCommunityUseCase;
 import com.ufal.smartagro.application.service.manager.RegisterManagerUseCase;
+import com.ufal.smartagro.application.service.organization.DeleteOrganizationUseCase;
 import com.ufal.smartagro.application.service.organization.FindAllOrganizationsUseCase;
 import com.ufal.smartagro.application.service.organization.FindOrganizationByIdUseCase;
 import com.ufal.smartagro.application.service.organization.RegisterOrganizationUseCase;
 import com.ufal.smartagro.application.service.organization.UpdateOrganizationUseCase;
-import com.ufal.smartagro.application.service.organization.DeleteOrganizationUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Manager;
@@ -61,7 +62,7 @@ public class OrganizationController {
             @Valid @RequestBody OrganizationRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         Organization organization = registerOrganizationUseCase.register(dto, loggedUser);
         OrganizationResponseDTO response = Mapper.toOrganizationResponseDTO(organization);
@@ -83,7 +84,7 @@ public class OrganizationController {
             @Valid @RequestBody ManagerRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         Manager manager = registerManagerUseCase.register(id, dto, loggedUser);
         ManagerResponseDTO response = Mapper.toManagerResponseDTO(manager);
@@ -105,7 +106,7 @@ public class OrganizationController {
             @Valid @RequestBody CommunityRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         Community community = registerCommunityUseCase.register(orgId, dto, loggedUser);
         CommunityResponseDTO response = Mapper.toCommunityResponseDTO(community);
@@ -118,14 +119,14 @@ public class OrganizationController {
             @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
             @ApiResponse(responseCode = "403", description = "Não autorizado")
     })
-        @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<OrganizationResponseDTO>> findAllOrganizations(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
-        java.util.List<Organization> organizations = findAllOrganizationsUseCase.findAll(loggedUser);
-        java.util.List<OrganizationResponseDTO> response = organizations.stream()
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
+        List<Organization> organizations = findAllOrganizationsUseCase.findAll(loggedUser);
+        List<OrganizationResponseDTO> response = organizations.stream()
                 .map(Mapper::toOrganizationResponseDTO)
                 .toList();
         return ResponseEntity.ok(response);
@@ -137,13 +138,13 @@ public class OrganizationController {
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
             @ApiResponse(responseCode = "404", description = "Organização não encontrada")
     })
-        @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @GetMapping("/{id}")
     public ResponseEntity<OrganizationResponseDTO> findOrganizationById(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
         Organization organization = findOrganizationByIdUseCase.findById(id, loggedUser);
         OrganizationResponseDTO response = Mapper.toOrganizationResponseDTO(organization);
         return ResponseEntity.ok(response);
@@ -160,10 +161,11 @@ public class OrganizationController {
     @PutMapping("/{id}")
     public ResponseEntity<OrganizationResponseDTO> updateOrganization(
             @PathVariable UUID id,
-            @Valid @RequestBody com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationUpdateDTO dto,
+            @Valid @RequestBody OrganizationUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        Organization organization = updateOrganizationUseCase.update(id, dto);
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
+        Organization organization = updateOrganizationUseCase.update(id, dto, loggedUser);
         OrganizationResponseDTO response = Mapper.toOrganizationResponseDTO(organization);
         return ResponseEntity.ok(response);
     }
@@ -180,7 +182,12 @@ public class OrganizationController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        deleteOrganizationUseCase.delete(id);
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
+        deleteOrganizationUseCase.delete(id, loggedUser);
         return ResponseEntity.noContent().build();
+    }
+
+    private User resolveLoggedUser(UserDetailsImpl loggedUserDetails) {
+        return loggedUserDetails != null ? loggedUserDetails.toDomainUser() : null;
     }
 }
