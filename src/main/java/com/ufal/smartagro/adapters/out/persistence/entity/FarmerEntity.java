@@ -37,6 +37,7 @@ public class FarmerEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "community_id")
+    @NotFound(action = NotFoundAction.IGNORE)
     private CommunityEntity community;
 
     @Column(name = "full_name", nullable = false)

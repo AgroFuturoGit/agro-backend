@@ -1,10 +1,13 @@
 package com.ufal.smartagro.application.service.farmer;
 
 import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
+import com.ufal.smartagro.domain.exception.EntityInUseException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
+import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
+import com.ufal.smartagro.domain.port.out.ProductionPlanRepository;
 import com.ufal.smartagro.domain.port.out.UserRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,23 +35,44 @@ class DeleteFarmerUseCaseTest {
     private UserRepository userRepository;
 
     @Mock
+    private ProductionPlanRepository productionPlanRepository;
+
+    @Mock
     private ProductionAccessValidator accessValidator;
 
     private DeleteFarmerUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new DeleteFarmerUseCase(farmerRepository, userRepository, accessValidator);
+        useCase = new DeleteFarmerUseCase(farmerRepository, userRepository, productionPlanRepository, accessValidator);
     }
 
     @Test
-    @DisplayName("Quando agricultor possui User vinculado, exclui agricultor e faz soft-delete do User (API-11)")
+    @DisplayName("Quando agricultor possui planos de produção vinculados, lança EntityInUseException (409)")
+    void givenFarmerWithPlans_whenDelete_thenThrowsEntityInUseException() {
+        Farmer farmer = UserTestFactory.farmerProfile().build();
+        User admin = UserTestFactory.user().admin().build();
+
+        when(farmerRepository.findById(farmer.getId())).thenReturn(Optional.of(farmer));
+        when(productionPlanRepository.findAllByFarmerId(farmer.getId())).thenReturn(List.of(mock(ProductionPlan.class)));
+
+        assertThatThrownBy(() -> useCase.delete(farmer.getId(), admin))
+                .isInstanceOf(EntityInUseException.class)
+                .hasMessageContaining("planos de produção vinculados");
+
+        verify(farmerRepository, never()).delete(any());
+        verifyNoInteractions(userRepository);
+    }
+
+    @Test
+    @DisplayName("Quando agricultor possui User vinculado e sem planos, exclui agricultor e faz soft-delete do User (API-11)")
     void givenFarmerWithUser_whenDelete_thenSoftDeletesFarmerAndUser() {
         User farmerUser = UserTestFactory.user().farmer().build();
         Farmer farmer = UserTestFactory.farmerProfile().user(farmerUser).build();
         User admin = UserTestFactory.user().admin().build();
 
         when(farmerRepository.findById(farmer.getId())).thenReturn(Optional.of(farmer));
+        when(productionPlanRepository.findAllByFarmerId(farmer.getId())).thenReturn(List.of());
 
         useCase.delete(farmer.getId(), admin);
 
@@ -57,10 +82,11 @@ class DeleteFarmerUseCaseTest {
     }
 
     @Test
-    @DisplayName("Quando agricultor não possui User vinculado, exclui apenas o agricultor")
+    @DisplayName("Quando agricultor não possui User vinculado e sem planos, exclui apenas o agricultor")
     void givenFarmerWithoutUser_whenDelete_thenDeletesOnlyFarmer() {
         Farmer farmer = UserTestFactory.farmerProfile().user(null).build();
         when(farmerRepository.findById(farmer.getId())).thenReturn(Optional.of(farmer));
+        when(productionPlanRepository.findAllByFarmerId(farmer.getId())).thenReturn(List.of());
 
         useCase.delete(farmer.getId());
 

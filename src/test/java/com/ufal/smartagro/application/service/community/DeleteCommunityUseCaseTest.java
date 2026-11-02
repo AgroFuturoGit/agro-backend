@@ -7,12 +7,14 @@ import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Organization;
+import com.ufal.smartagro.domain.model.TechnicalAssistance;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.OrganizationType;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CommunityRepository;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
+import com.ufal.smartagro.domain.port.out.TechnicalAssistanceRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,11 +42,14 @@ class DeleteCommunityUseCaseTest {
     @Mock
     private ManagerRepository managerRepository;
 
+    @Mock
+    private TechnicalAssistanceRepository technicalAssistanceRepository;
+
     private DeleteCommunityUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new DeleteCommunityUseCase(communityRepository, farmerRepository, managerRepository);
+        useCase = new DeleteCommunityUseCase(communityRepository, farmerRepository, managerRepository, technicalAssistanceRepository);
     }
 
     @Test
@@ -57,6 +62,24 @@ class DeleteCommunityUseCaseTest {
         assertThatThrownBy(() -> useCase.delete(communityId))
                 .isInstanceOf(EntityInUseException.class)
                 .hasMessageContaining("agricultores vinculados");
+
+        verify(communityRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("Quando existem assistências técnicas ativas vinculadas, lança EntityInUseException (409)")
+    void givenCommunityWithActiveAssistances_whenDelete_thenThrowsEntityInUseException() {
+        UUID communityId = UUID.randomUUID();
+        TechnicalAssistance activeAssistance = mock(TechnicalAssistance.class);
+        when(activeAssistance.isActive()).thenReturn(true);
+
+        when(communityRepository.findById(communityId)).thenReturn(Optional.of(mock(Community.class)));
+        when(farmerRepository.findAllByCommunityId(communityId)).thenReturn(List.of());
+        when(technicalAssistanceRepository.findByCommunityId(communityId)).thenReturn(List.of(activeAssistance));
+
+        assertThatThrownBy(() -> useCase.delete(communityId))
+                .isInstanceOf(EntityInUseException.class)
+                .hasMessageContaining("assistências técnicas ativas vinculadas");
 
         verify(communityRepository, never()).delete(any());
     }
@@ -93,11 +116,12 @@ class DeleteCommunityUseCaseTest {
     }
 
     @Test
-    @DisplayName("Quando não existem agricultores vinculados, deleta comunidade com sucesso")
-    void givenCommunityWithoutFarmers_whenDelete_thenDeletesSuccessfully() {
+    @DisplayName("Quando não existem agricultores nem assistências ativas vinculadas, deleta comunidade com sucesso")
+    void givenCommunityWithoutFarmersOrActiveAssistances_whenDelete_thenDeletesSuccessfully() {
         UUID communityId = UUID.randomUUID();
         when(communityRepository.findById(communityId)).thenReturn(Optional.of(mock(Community.class)));
         when(farmerRepository.findAllByCommunityId(communityId)).thenReturn(List.of());
+        when(technicalAssistanceRepository.findByCommunityId(communityId)).thenReturn(List.of());
 
         useCase.delete(communityId);
 

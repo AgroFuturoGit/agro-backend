@@ -5,6 +5,7 @@ import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Organization;
 import com.ufal.smartagro.domain.port.out.CommunityRepository;
+import com.ufal.smartagro.domain.port.out.ManagerRepository;
 import com.ufal.smartagro.domain.port.out.OrganizationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,11 +30,14 @@ class DeleteOrganizationUseCaseTest {
     @Mock
     private CommunityRepository communityRepository;
 
+    @Mock
+    private ManagerRepository managerRepository;
+
     private DeleteOrganizationUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new DeleteOrganizationUseCase(organizationRepository, communityRepository);
+        useCase = new DeleteOrganizationUseCase(organizationRepository, communityRepository, managerRepository);
     }
 
     @Test
@@ -51,6 +55,21 @@ class DeleteOrganizationUseCaseTest {
     }
 
     @Test
+    @DisplayName("Quando existem gestores vinculados à organização, lança EntityInUseException (409)")
+    void givenOrgWithManagers_whenDelete_thenThrowsEntityInUseException() {
+        UUID orgId = UUID.randomUUID();
+        when(organizationRepository.findById(orgId)).thenReturn(Optional.of(mock(Organization.class)));
+        when(communityRepository.findAllByOrganizationId(orgId)).thenReturn(List.of());
+        when(managerRepository.countByOrganizationId(orgId)).thenReturn(2L);
+
+        assertThatThrownBy(() -> useCase.delete(orgId))
+                .isInstanceOf(EntityInUseException.class)
+                .hasMessageContaining("gestores vinculados");
+
+        verify(organizationRepository, never()).delete(any());
+    }
+
+    @Test
     @DisplayName("Quando a organização não existe, lança EntityNotFoundException (404)")
     void givenNonExistentOrg_whenDelete_thenThrowsEntityNotFoundException() {
         UUID orgId = UUID.randomUUID();
@@ -63,11 +82,12 @@ class DeleteOrganizationUseCaseTest {
     }
 
     @Test
-    @DisplayName("Quando não existem comunidades vinculadas, deleta organização com sucesso")
-    void givenOrgWithoutCommunities_whenDelete_thenDeletesSuccessfully() {
+    @DisplayName("Quando não existem comunidades nem gestores vinculados, deleta organização com sucesso")
+    void givenOrgWithoutCommunitiesOrManagers_whenDelete_thenDeletesSuccessfully() {
         UUID orgId = UUID.randomUUID();
         when(organizationRepository.findById(orgId)).thenReturn(Optional.of(mock(Organization.class)));
         when(communityRepository.findAllByOrganizationId(orgId)).thenReturn(List.of());
+        when(managerRepository.countByOrganizationId(orgId)).thenReturn(0L);
 
         useCase.delete(orgId);
 

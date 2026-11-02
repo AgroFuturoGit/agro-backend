@@ -9,5 +9,6 @@ public interface ManagerRepository {
     Optional<Manager> findById(UUID id);
     Optional<Manager> findByUserId(UUID userId);
     java.util.List<Manager> findAll();
+    long countByOrganizationId(UUID organizationId);
     void delete(UUID id);
 }

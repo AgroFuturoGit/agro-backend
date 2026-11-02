@@ -34,6 +34,7 @@ public class ManagerEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organization_id", nullable = false)
+    @NotFound(action = NotFoundAction.IGNORE)
     private OrganizationEntity organization;
 
     @CreatedDate

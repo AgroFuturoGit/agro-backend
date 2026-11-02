@@ -5,11 +5,13 @@ import com.ufal.smartagro.domain.exception.EntityInUseException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Manager;
+import com.ufal.smartagro.domain.model.TechnicalAssistance;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CommunityRepository;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
+import com.ufal.smartagro.domain.port.out.TechnicalAssistanceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,7 @@ public class DeleteCommunityUseCase {
     private final CommunityRepository communityRepository;
     private final FarmerRepository farmerRepository;
     private final ManagerRepository managerRepository;
+    private final TechnicalAssistanceRepository technicalAssistanceRepository;
 
     @Transactional
     public void delete(UUID id) {
@@ -48,6 +51,15 @@ public class DeleteCommunityUseCase {
         if (farmerCount > 0) {
             throw new EntityInUseException(
                     "Não é possível excluir uma comunidade que possui " + farmerCount + " agricultores vinculados."
+            );
+        }
+
+        long activeAssistanceCount = technicalAssistanceRepository.findByCommunityId(id).stream()
+                .filter(TechnicalAssistance::isActive)
+                .count();
+        if (activeAssistanceCount > 0) {
+            throw new EntityInUseException(
+                    "Não é possível excluir uma comunidade que possui " + activeAssistanceCount + " assistências técnicas ativas vinculadas."
             );
         }
 

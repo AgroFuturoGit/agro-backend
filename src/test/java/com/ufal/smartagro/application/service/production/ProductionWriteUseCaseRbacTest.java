@@ -79,7 +79,7 @@ class ProductionWriteUseCaseRbacTest {
         createPlan = new CreateProductionPlanUseCase(
                 productionPlanRepository, farmerRepository, harvestRepository, cropRepository, validator);
         updatePlan = new UpdateProductionPlanUseCase(productionPlanRepository, validator, versionGuard);
-        deletePlan = new DeleteProductionPlanUseCase(productionPlanRepository, validator);
+        deletePlan = new DeleteProductionPlanUseCase(productionPlanRepository, productionExecutionRepository, validator);
         createExecution = new CreateProductionExecutionUseCase(
                 productionExecutionRepository, productionPlanRepository, validator);
         updateExecution = new UpdateProductionExecutionUseCase(productionExecutionRepository, validator, versionGuard);
