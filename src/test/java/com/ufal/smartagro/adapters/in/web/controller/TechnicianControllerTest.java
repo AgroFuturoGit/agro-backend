@@ -402,6 +402,42 @@ class TechnicianControllerTest {
                 .andExpect(status().isNoContent());
     }
 
+    @Test
+    void registerTechnician_asManager_returnsCreated() throws Exception {
+        User managerUser = UserTestFactory.user().manager().build();
+        Technician technician = UserTestFactory.technicianProfile().build();
+        TechnicianRegisterDTO dto = new TechnicianRegisterDTO(
+                "João Técnico", "joao.tech@smartagro.test", "12345678", UserTestFactory.VALID_CPF,
+                java.time.LocalDate.of(1990, 5, 15), "CRBio-12345", "Agronomia");
+
+        when(userRepository.findById(any())).thenReturn(Optional.of(managerUser));
+        when(registerTechnicianUseCase.register(any(), eq(managerUser))).thenReturn(technician);
+
+        mockMvc.perform(post("/technicians")
+                        .with(user(userDetails(managerUser)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(technician.getId().toString()));
+    }
+
+    @Test
+    void updateTechnician_asManager_returnsUpdatedTechnician() throws Exception {
+        User managerUser = UserTestFactory.user().manager().build();
+        Technician technician = UserTestFactory.technicianProfile().build();
+        TechnicianUpdateDTO dto = new TechnicianUpdateDTO("CRBio-99999", "Solo");
+
+        when(userRepository.findById(any())).thenReturn(Optional.of(managerUser));
+        when(updateTechnicianUseCase.update(eq(technician.getId()), any(), eq(managerUser))).thenReturn(technician);
+
+        mockMvc.perform(put("/technicians/{id}", technician.getId())
+                        .with(user(userDetails(managerUser)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(technician.getId().toString()));
+    }
+
     private UserDetailsImpl userDetails(User user) {
         com.ufal.smartagro.adapters.out.persistence.entity.UserEntity entity = new com.ufal.smartagro.adapters.out.persistence.entity.UserEntity();
         entity.setId(user.getId());

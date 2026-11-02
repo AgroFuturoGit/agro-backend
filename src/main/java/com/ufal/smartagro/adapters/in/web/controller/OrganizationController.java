@@ -118,7 +118,7 @@ public class OrganizationController {
             @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
             @ApiResponse(responseCode = "403", description = "Não autorizado")
     })
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN', 'FARMER')")
     @GetMapping
     public ResponseEntity<List<OrganizationResponseDTO>> findAllOrganizations(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
@@ -136,7 +136,7 @@ public class OrganizationController {
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
             @ApiResponse(responseCode = "404", description = "Organização não encontrada")
     })
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN', 'FARMER')")
     @GetMapping("/{id}")
     public ResponseEntity<OrganizationResponseDTO> findOrganizationById(
             @PathVariable UUID id,

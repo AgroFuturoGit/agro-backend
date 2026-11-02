@@ -7,6 +7,10 @@ import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.Manager;
+import com.ufal.smartagro.domain.model.Technician;
+import com.ufal.smartagro.domain.model.TechnicalAssistance;
+import com.ufal.smartagro.domain.port.out.TechnicalAssistanceRepository;
+import com.ufal.smartagro.domain.port.out.TechnicianRepository;
 import com.ufal.smartagro.domain.model.Organization;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.Role;
@@ -54,6 +58,12 @@ class RegisterFarmerUseCaseTest {
     private ManagerRepository managerRepository;
 
     @Mock
+    private TechnicianRepository technicianRepository;
+
+    @Mock
+    private TechnicalAssistanceRepository technicalAssistanceRepository;
+
+    @Mock
     private UserRegisterUseCase userRegisterUseCase;
 
     @InjectMocks
@@ -97,13 +107,13 @@ class RegisterFarmerUseCaseTest {
         }
     }
 
-    @Nested
-    @DisplayName("RBAC — TECHNICIAN e FARMER (PRODUCER) não cadastram")
+        @Nested
+    @DisplayName("RBAC — FARMER não cadastra")
     class RbacBlocking {
 
         @ParameterizedTest(name = "Given Role.{0} When register Then AccessDeniedException")
-        @EnumSource(value = Role.class, names = {"TECHNICIAN", "FARMER"})
-        void givenTechnicianOrFarmer_whenRegister_thenAccessDenied(Role actorRole) {
+        @EnumSource(value = Role.class, names = {"FARMER"})
+        void givenFarmer_whenRegister_thenAccessDenied(Role actorRole) {
             User loggedUser = UserTestFactory.user().role(actorRole).build();
             FarmerRegisterDTO dto = UserTestFactory.farmerRegisterDto().build();
             UUID communityId = UUID.randomUUID();
@@ -113,6 +123,65 @@ class RegisterFarmerUseCaseTest {
                     .hasMessage(ACCESS_DENIED_MESSAGE);
 
             verifyNoInteractions(communityRepository, managerRepository, userRegisterUseCase, farmerRepository);
+        }
+    }
+
+    @Nested
+    @DisplayName("Cadastro por TECHNICIAN")
+    class TechnicianRegistration {
+
+        @Test
+        @DisplayName("Given TECHNICIAN com assistência ativa na comunidade When register Then persiste Farmer com source TECHNICIAN")
+        void givenTechnician_whenAssistingCommunity_thenPersistsFarmerWithTechnicianSource() {
+            User techUser = UserTestFactory.user().technician().build();
+            Technician technician = UserTestFactory.technicianProfile().user(techUser).build();
+            Community community = UserTestFactory.community().build();
+            FarmerRegisterDTO dto = UserTestFactory.farmerRegisterDto().build();
+            TechnicalAssistance assistance = UserTestFactory.technicalAssistance().technician(technician).community(community).build();
+
+            when(communityRepository.findById(community.getId())).thenReturn(Optional.of(community));
+            when(technicianRepository.findByUserId(techUser.getId())).thenReturn(Optional.of(technician));
+            when(technicalAssistanceRepository.findActiveByTechnicianAndCommunity(technician.getId(), community.getId())).thenReturn(Optional.of(assistance));
+            stubSuccessfulPersist(community, dto);
+
+            Farmer result = registerFarmerUseCase.register(community.getId(), dto, techUser);
+
+            assertThat(result).isNotNull();
+            ArgumentCaptor<Farmer> farmerCaptor = ArgumentCaptor.forClass(Farmer.class);
+            verify(farmerRepository).save(farmerCaptor.capture());
+            assertThat(farmerCaptor.getValue().getRegistrationSource()).isEqualTo(com.ufal.smartagro.domain.model.enums.RegistrationSource.TECHNICIAN);
+        }
+
+        @Test
+        @DisplayName("Given TECHNICIAN sem assistência ativa na comunidade When register Then AccessDeniedException")
+        void givenTechnician_whenNotAssistingCommunity_thenAccessDenied() {
+            User techUser = UserTestFactory.user().technician().build();
+            Technician technician = UserTestFactory.technicianProfile().user(techUser).build();
+            Community community = UserTestFactory.community().build();
+            FarmerRegisterDTO dto = UserTestFactory.farmerRegisterDto().build();
+
+            when(communityRepository.findById(community.getId())).thenReturn(Optional.of(community));
+            when(technicianRepository.findByUserId(techUser.getId())).thenReturn(Optional.of(technician));
+            when(technicalAssistanceRepository.findActiveByTechnicianAndCommunity(technician.getId(), community.getId())).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> registerFarmerUseCase.register(community.getId(), dto, techUser))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessage("O técnico só pode cadastrar agricultores em comunidades sob sua assistência técnica.");
+
+            verify(farmerRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Given TECHNICIAN sem comunidade informada When register Then AccessDeniedException")
+        void givenTechnician_whenMissingCommunity_thenAccessDenied() {
+            User techUser = UserTestFactory.user().technician().build();
+            FarmerRegisterDTO dto = UserTestFactory.farmerRegisterDto().build();
+
+            assertThatThrownBy(() -> registerFarmerUseCase.register(null, dto, techUser))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessage("O técnico precisa vincular o agricultor a uma comunidade.");
+
+            verify(farmerRepository, never()).save(any());
         }
     }
 

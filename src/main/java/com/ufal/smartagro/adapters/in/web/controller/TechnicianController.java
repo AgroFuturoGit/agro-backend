@@ -54,7 +54,7 @@ public class TechnicianController {
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
             @ApiResponse(responseCode = "403", description = "Não autorizado")
     })
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @PostMapping
     public ResponseEntity<TechnicianResponseDTO> registerTechnician(
             @Valid @RequestBody TechnicianRegisterDTO dto,
@@ -131,7 +131,7 @@ public class TechnicianController {
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
             @ApiResponse(responseCode = "404", description = "Técnico não encontrado")
     })
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN')")
     @PutMapping("/{id}")
     public ResponseEntity<TechnicianResponseDTO> updateTechnician(
             @PathVariable UUID id,
