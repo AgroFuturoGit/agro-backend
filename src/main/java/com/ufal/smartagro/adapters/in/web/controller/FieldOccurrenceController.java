@@ -7,6 +7,7 @@ import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.production.occurrence.*;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.model.FieldOccurrence;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -50,7 +51,7 @@ public class FieldOccurrenceController {
             @Valid @RequestBody FieldOccurrenceRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         if (dto.clientId() == null && idempotencyKey != null) {
             dto = dto.withClientId(idempotencyKey);
@@ -73,7 +74,7 @@ public class FieldOccurrenceController {
             @PathVariable UUID executionId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         List<FieldOccurrence> list = findAllOccurrencesByExecutionUseCase.findAll(executionId, loggedUser);
         return ResponseEntity.ok(list.stream().map(Mapper::toFieldOccurrenceResponseDTO).toList());
@@ -91,7 +92,7 @@ public class FieldOccurrenceController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         FieldOccurrence item = findFieldOccurrenceByIdUseCase.findById(id, loggedUser);
         return ResponseEntity.ok(Mapper.toFieldOccurrenceResponseDTO(item));
@@ -111,7 +112,7 @@ public class FieldOccurrenceController {
             @Valid @RequestBody FieldOccurrenceUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         FieldOccurrence updated = updateFieldOccurrenceUseCase.update(id, dto, loggedUser);
         return ResponseEntity.ok(Mapper.toFieldOccurrenceResponseDTO(updated));
@@ -129,9 +130,16 @@ public class FieldOccurrenceController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         deleteFieldOccurrenceUseCase.delete(id, loggedUser);
         return ResponseEntity.noContent().build();
+    }
+
+    private User resolveLoggedUser(UserDetailsImpl loggedUserDetails) {
+        if (loggedUserDetails == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+        return loggedUserDetails.toDomainUser();
     }
 }

@@ -1,6 +1,8 @@
 package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionComparisonDTO;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.User;
@@ -27,8 +29,12 @@ public class CompareProductionUseCase {
     @Transactional(readOnly = true)
     /** Calcula desvio e percentual realizado usando área × produtividade e kg validados. */
     public ProductionComparisonDTO compare(UUID planId, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         ProductionPlan plan = productionPlanRepository.findById(planId)
-                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Plano de produção não encontrado."));
+                .orElseThrow(() -> new EntityNotFoundException("Plano de produção não encontrado."));
 
         accessValidator.validateAccess(plan.getFarmer(), loggedUser);
 

@@ -4,6 +4,7 @@ import com.ufal.smartagro.adapters.in.web.dto.production.ExecutionAttachmentResp
 import com.ufal.smartagro.application.service.production.*;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.model.ExecutionAttachment;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -131,6 +132,9 @@ public class ExecutionAttachmentController {
     }
 
     private User loadUser(UserDetailsImpl loggedUserDetails) {
+        if (loggedUserDetails == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
         return loggedUserDetails.toDomainUser();
     }
 }

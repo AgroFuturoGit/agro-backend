@@ -3,6 +3,7 @@ package com.ufal.smartagro.application.service.production;
 import com.ufal.smartagro.domain.exception.EntityInUseException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.User;
@@ -34,12 +35,14 @@ class DeleteProductionPlanUseCaseTest {
 
     @Mock
     private ProductionAccessValidator accessValidator;
+    @Mock
+    private AuditLogService auditLogService;
 
     private DeleteProductionPlanUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new DeleteProductionPlanUseCase(productionPlanRepository, productionExecutionRepository, accessValidator);
+        useCase = new DeleteProductionPlanUseCase(productionPlanRepository, productionExecutionRepository, accessValidator, auditLogService);
     }
 
     @Test

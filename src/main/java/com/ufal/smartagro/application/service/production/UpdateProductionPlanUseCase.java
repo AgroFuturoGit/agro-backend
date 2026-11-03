@@ -1,9 +1,13 @@
 package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionPlanUpdateDTO;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.port.out.ProductionPlanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -11,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /** Atualiza um plano sem substituir o snapshot original de produtividade da cultura. */
@@ -21,12 +27,17 @@ public class UpdateProductionPlanUseCase {
     private final ProductionPlanRepository productionPlanRepository;
     private final ProductionAccessValidator accessValidator;
     private final ProductionVersionGuard versionGuard;
+    private final AuditLogService auditLogService;
 
     @Transactional
     /** Confere acesso e versão concorrente, aplica os campos enviados e salva o plano. */
     public ProductionPlan update(UUID planId, ProductionPlanUpdateDTO dto, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         ProductionPlan existingPlan = productionPlanRepository.findById(planId)
-                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Plano de produção não encontrado."));
+                .orElseThrow(() -> new EntityNotFoundException("Plano de produção não encontrado."));
 
         accessValidator.validateWriteAccess(existingPlan.getFarmer(), loggedUser);
 
@@ -92,6 +103,14 @@ public class UpdateProductionPlanUseCase {
                 existingPlan.getDeletedAt()
         );
 
-        return productionPlanRepository.save(updatedPlan);
+        ProductionPlan saved = productionPlanRepository.save(updatedPlan);
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("plantedArea", saved.getPlantedArea());
+        details.put("status", saved.getStatus() != null ? saved.getStatus().name() : null);
+
+        auditLogService.record(loggedUser, AuditAction.UPDATE, "production_plans", saved.getId(), details);
+
+        return saved;
     }
 }

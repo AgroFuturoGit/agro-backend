@@ -1,5 +1,6 @@
 package com.ufal.smartagro.application.service.production.occurrence;
 
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.FieldOccurrence;
@@ -29,12 +30,14 @@ class DeleteFieldOccurrenceUseCaseTest {
 
     @Mock
     private ProductionAccessValidator accessValidator;
+    @Mock
+    private AuditLogService auditLogService;
 
     private DeleteFieldOccurrenceUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new DeleteFieldOccurrenceUseCase(fieldOccurrenceRepository, accessValidator);
+        useCase = new DeleteFieldOccurrenceUseCase(fieldOccurrenceRepository, accessValidator, auditLogService);
     }
 
     @Test

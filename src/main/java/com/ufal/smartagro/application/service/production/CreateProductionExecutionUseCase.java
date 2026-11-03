@@ -1,10 +1,14 @@
 package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionExecutionRegisterDTO;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.port.out.ProductionExecutionRepository;
 import com.ufal.smartagro.domain.port.out.ProductionPlanRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /** Registra cada ocorrência de colheita como apontamento independente. */
@@ -22,12 +28,17 @@ public class CreateProductionExecutionUseCase {
     private final ProductionExecutionRepository productionExecutionRepository;
     private final ProductionPlanRepository productionPlanRepository;
     private final ProductionAccessValidator accessValidator;
+    private final AuditLogService auditLogService;
 
     @Transactional
     /** Cria o apontamento em estado PENDING após validar plano e acesso do usuário. */
     public ProductionExecution create(UUID planId, ProductionExecutionRegisterDTO dto, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         ProductionPlan plan = productionPlanRepository.findById(planId)
-                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Plano de produção não encontrado."));
+                .orElseThrow(() -> new EntityNotFoundException("Plano de produção não encontrado."));
 
         accessValidator.validateWriteAccess(plan.getFarmer(), loggedUser);
 
@@ -81,6 +92,7 @@ public class CreateProductionExecutionUseCase {
         );
 
         ProductionExecution saved = productionExecutionRepository.save(execution);
+
         if (plan.getStatus() == com.ufal.smartagro.domain.model.enums.PlanStatus.PLANNED) {
             ProductionPlan activePlan = new ProductionPlan(
                     plan.getId(),
@@ -104,6 +116,14 @@ public class CreateProductionExecutionUseCase {
             );
             productionPlanRepository.save(activePlan);
         }
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("productionPlanId", plan.getId());
+        details.put("quantityKg", saved.getQuantityKg());
+        details.put("harvestedAt", saved.getHarvestedAt() != null ? saved.getHarvestedAt().toString() : null);
+        details.put("status", saved.getStatus() != null ? saved.getStatus().name() : null);
+
+        auditLogService.record(loggedUser, AuditAction.CREATE, "production_executions", saved.getId(), details);
 
         return saved;
     }

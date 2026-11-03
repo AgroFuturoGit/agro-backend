@@ -38,6 +38,10 @@ public class UpdateProductionExecutionUseCase {
     @Transactional
     /** Mantém campos omitidos, valida acesso/versão e persiste as alterações recebidas. */
     public ProductionExecution update(UUID executionId, ProductionExecutionUpdateDTO dto, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         ProductionExecution existingExecution = productionExecutionRepository.findById(executionId)
                 .orElseThrow(() -> new EntityNotFoundException("Execução de produção não encontrada."));
 
@@ -176,7 +180,18 @@ public class UpdateProductionExecutionUseCase {
                 details.put("previousStatus", existingExecution.getStatus() != null ? existingExecution.getStatus().name() : null);
                 details.put("reason", saved.getRejectionReason());
                 auditLogService.record(loggedUser, AuditAction.REJECT, "production_executions", saved.getId(), details);
+            } else {
+                Map<String, Object> details = new HashMap<>();
+                details.put("previousStatus", existingExecution.getStatus() != null ? existingExecution.getStatus().name() : null);
+                details.put("newStatus", newStatus != null ? newStatus.name() : null);
+                details.put("quantityKg", saved.getQuantityKg());
+                auditLogService.record(loggedUser, AuditAction.UPDATE, "production_executions", saved.getId(), details);
             }
+        } else {
+            Map<String, Object> details = new HashMap<>();
+            details.put("quantityKg", saved.getQuantityKg());
+            details.put("harvestedAt", saved.getHarvestedAt() != null ? saved.getHarvestedAt().toString() : null);
+            auditLogService.record(loggedUser, AuditAction.UPDATE, "production_executions", saved.getId(), details);
         }
 
         return saved;

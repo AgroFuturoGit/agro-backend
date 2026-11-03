@@ -1,9 +1,12 @@
 package com.ufal.smartagro.application.service.production;
 
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.ExecutionAttachment;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.ExecutionStatus;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.ExecutionAttachmentRepository;
@@ -12,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -37,18 +42,22 @@ public class UploadExecutionAttachmentUseCase {
     private final ExecutionAttachmentRepository attachmentRepository;
     private final ProductionExecutionRepository executionRepository;
     private final ProductionAccessValidator accessValidator;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public AttachmentUploadResult upload(UUID executionId, NewExecutionAttachment incoming, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         ProductionExecution execution = executionRepository.findById(executionId)
-                .orElseThrow(() -> new IllegalArgumentException("Apontamento de colheita não encontrado."));
+                .orElseThrow(() -> new EntityNotFoundException("Apontamento de colheita não encontrado."));
 
         accessValidator.validateWriteAccess(
                 execution.getProductionPlan() != null ? execution.getProductionPlan().getFarmer() : null,
                 loggedUser);
 
-        if (execution.getStatus() == ExecutionStatus.VALIDATED
-                && loggedUser != null && loggedUser.getRole() == Role.FARMER) {
+        if (execution.getStatus() == ExecutionStatus.VALIDATED && loggedUser.getRole() == Role.FARMER) {
             throw new AccessDeniedException("Não é permitido anexar comprovações a um apontamento já validado.");
         }
 
@@ -84,7 +93,17 @@ public class UploadExecutionAttachmentUseCase {
                 null
         );
 
-        return new AttachmentUploadResult(attachmentRepository.save(attachment), true);
+        ExecutionAttachment saved = attachmentRepository.save(attachment);
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("executionId", executionId);
+        details.put("filename", saved.getFilename());
+        details.put("contentType", saved.getContentType());
+        details.put("sizeBytes", saved.getSizeBytes());
+
+        auditLogService.record(loggedUser, AuditAction.CREATE, "execution_attachments", saved.getId(), details);
+
+        return new AttachmentUploadResult(saved, true);
     }
 
     private void validate(NewExecutionAttachment incoming) {
@@ -98,10 +117,6 @@ public class UploadExecutionAttachmentUseCase {
 
         if (incoming.contentType() == null || !ALLOWED_CONTENT_TYPES.contains(incoming.contentType())) {
             throw new IllegalArgumentException("Formato não aceito. Envie a imagem como JPEG, PNG ou WebP.");
-        }
-
-        if (incoming.filename() == null || incoming.filename().isBlank()) {
-            throw new IllegalArgumentException("O nome do arquivo é obrigatório.");
         }
     }
 }

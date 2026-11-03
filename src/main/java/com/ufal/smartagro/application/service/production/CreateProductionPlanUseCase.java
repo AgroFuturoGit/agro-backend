@@ -1,19 +1,25 @@
 package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionPlanRegisterDTO;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Crop;
-import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.Farmer;
+import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.port.out.CropRepository;
-import com.ufal.smartagro.domain.port.out.HarvestRepository;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
+import com.ufal.smartagro.domain.port.out.HarvestRepository;
 import com.ufal.smartagro.domain.port.out.ProductionPlanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /** Cria plano de produção com snapshot da produtividade da cultura e dados do talhão. */
@@ -26,12 +32,17 @@ public class CreateProductionPlanUseCase {
     private final HarvestRepository harvestRepository;
     private final CropRepository cropRepository;
     private final ProductionAccessValidator accessValidator;
+    private final AuditLogService auditLogService;
 
     @Transactional
     /** Valida vínculos e autorização antes de persistir o novo planejamento. */
     public ProductionPlan create(UUID farmerId, ProductionPlanRegisterDTO dto, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         Farmer farmer = farmerRepository.findById(farmerId)
-                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Agricultor não encontrado."));
+                .orElseThrow(() -> new EntityNotFoundException("Agricultor não encontrado."));
 
         accessValidator.validateWriteAccess(farmer, loggedUser);
 
@@ -43,10 +54,10 @@ public class CreateProductionPlanUseCase {
         }
 
         Harvest harvest = harvestRepository.findById(dto.harvestId())
-                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Safra não encontrada."));
+                .orElseThrow(() -> new EntityNotFoundException("Safra não encontrada."));
 
         Crop crop = cropRepository.findById(dto.cropId())
-                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Cultivo não encontrado."));
+                .orElseThrow(() -> new EntityNotFoundException("Cultivo não encontrado."));
 
         if (crop.getExpectedProductivity() == null || crop.getExpectedProductivity().signum() <= 0) {
             throw new IllegalArgumentException("O cultivo precisa ter produtividade esperada maior que zero para criar um plano.");
@@ -88,6 +99,16 @@ public class CreateProductionPlanUseCase {
                 null
         );
 
-        return productionPlanRepository.save(plan);
+        ProductionPlan saved = productionPlanRepository.save(plan);
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("farmerId", farmer.getId());
+        details.put("harvestId", harvest.getId());
+        details.put("cropId", crop.getId());
+        details.put("plantedArea", saved.getPlantedArea());
+
+        auditLogService.record(loggedUser, AuditAction.CREATE, "production_plans", saved.getId(), details);
+
+        return saved;
     }
 }

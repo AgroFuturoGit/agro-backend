@@ -29,6 +29,10 @@ public class DeleteProductionExecutionUseCase {
 
     @Transactional
     public void delete(UUID executionId, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         ProductionExecution execution = productionExecutionRepository.findById(executionId)
                 .orElseThrow(() -> new EntityNotFoundException("Execução de produção não encontrada."));
 
@@ -37,28 +41,26 @@ public class DeleteProductionExecutionUseCase {
         }
 
         if (execution.getStatus() == ExecutionStatus.VALIDATED) {
-            if (loggedUser != null && loggedUser.getRole() == Role.FARMER) {
+            if (loggedUser.getRole() == Role.FARMER) {
                 throw new AccessDeniedException("O agricultor não tem permissão para excluir um apontamento já validado.");
             }
 
-            if (loggedUser != null) {
-                Map<String, Object> details = new HashMap<>();
-                details.put("status", execution.getStatus().name());
-                details.put("quantityKg", execution.getQuantityKg());
-                details.put("harvestedAt", execution.getHarvestedAt() != null ? execution.getHarvestedAt().toString() : null);
+            Map<String, Object> details = new HashMap<>();
+            details.put("status", execution.getStatus().name());
+            details.put("quantityKg", execution.getQuantityKg());
+            details.put("harvestedAt", execution.getHarvestedAt() != null ? execution.getHarvestedAt().toString() : null);
 
-                auditLogService.record(
-                        loggedUser,
-                        AuditAction.DELETE,
-                        "production_executions",
-                        executionId,
-                        details
-                );
-            }
+            auditLogService.record(
+                    loggedUser,
+                    AuditAction.DELETE,
+                    "production_executions",
+                    executionId,
+                    details
+            );
         }
 
         productionExecutionRepository.delete(executionId);
         log.info("Apontamento de produção excluído logicamente [executionId={}] pelo usuário [actorId={}, actorRole={}]",
-                executionId, loggedUser != null ? loggedUser.getId() : "system", loggedUser != null ? loggedUser.getRole() : "UNKNOWN");
+                executionId, loggedUser.getId(), loggedUser.getRole());
     }
 }

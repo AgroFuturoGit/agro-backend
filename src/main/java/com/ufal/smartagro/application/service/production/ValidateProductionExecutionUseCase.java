@@ -2,6 +2,7 @@ package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.exception.InvalidStateTransitionException;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.User;
@@ -29,12 +30,15 @@ public class ValidateProductionExecutionUseCase {
 
     @Transactional
     public ProductionExecution validate(UUID executionId, User loggedUser) {
-        if (loggedUser == null || loggedUser.getRole() == Role.FARMER) {
+        if (loggedUser == null || loggedUser.getRole() == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+        if (loggedUser.getRole() == Role.FARMER) {
             throw new AccessDeniedException("O agricultor não tem permissão para validar apontamentos.");
         }
 
         ProductionExecution execution = productionExecutionRepository.findById(executionId)
-                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Execução de produção não encontrada."));
+                .orElseThrow(() -> new EntityNotFoundException("Execução de produção não encontrada."));
 
         if (execution.getStatus() != ExecutionStatus.PENDING) {
             throw new InvalidStateTransitionException("Apenas apontamentos com status PENDENTE podem ser validados. Status atual: " + execution.getStatus());

@@ -1,5 +1,7 @@
 package com.ufal.smartagro.application.service.production;
 
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.ProductionExecutionRepository;
@@ -18,8 +20,12 @@ public class FindProductionExecutionByIdUseCase {
 
     @Transactional(readOnly = true)
     public ProductionExecution findById(UUID id, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         ProductionExecution execution = productionExecutionRepository.findById(id)
-                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Execução de produção não encontrada."));
+                .orElseThrow(() -> new EntityNotFoundException("Execução de produção não encontrada."));
 
         if (execution.getProductionPlan() != null) {
             accessValidator.validateAccess(execution.getProductionPlan().getFarmer(), loggedUser);

@@ -80,11 +80,11 @@ class ProductionWriteUseCaseRbacTest {
         ProductionAccessValidator validator = new ProductionAccessValidator(
                 managerRepository, technicianRepository, technicalAssistanceRepository);
         createPlan = new CreateProductionPlanUseCase(
-                productionPlanRepository, farmerRepository, harvestRepository, cropRepository, validator);
-        updatePlan = new UpdateProductionPlanUseCase(productionPlanRepository, validator, versionGuard);
-        deletePlan = new DeleteProductionPlanUseCase(productionPlanRepository, productionExecutionRepository, validator);
+                productionPlanRepository, farmerRepository, harvestRepository, cropRepository, validator, auditLogService);
+        updatePlan = new UpdateProductionPlanUseCase(productionPlanRepository, validator, versionGuard, auditLogService);
+        deletePlan = new DeleteProductionPlanUseCase(productionPlanRepository, productionExecutionRepository, validator, auditLogService);
         createExecution = new CreateProductionExecutionUseCase(
-                productionExecutionRepository, productionPlanRepository, validator);
+                productionExecutionRepository, productionPlanRepository, validator, auditLogService);
         updateExecution = new UpdateProductionExecutionUseCase(productionExecutionRepository, validator, versionGuard, auditLogService);
         deleteExecution = new DeleteProductionExecutionUseCase(productionExecutionRepository, validator, auditLogService);
     }

@@ -1,6 +1,8 @@
 package com.ufal.smartagro.application.service.production.occurrence;
 
 import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.FieldOccurrence;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.User;
@@ -23,8 +25,12 @@ public class FindAllOccurrencesByExecutionUseCase {
 
     @Transactional(readOnly = true)
     public List<FieldOccurrence> findAll(UUID executionId, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         ProductionExecution execution = productionExecutionRepository.findById(executionId)
-                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Execução de produção não encontrada."));
+                .orElseThrow(() -> new EntityNotFoundException("Execução de produção não encontrada."));
 
         if (execution.getProductionPlan() != null) {
             accessValidator.validateAccess(execution.getProductionPlan().getFarmer(), loggedUser);
