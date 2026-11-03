@@ -132,7 +132,7 @@ public class UserController {
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado")
     })
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN', 'FARMER')")
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDTO> findById(
             @PathVariable UUID id,

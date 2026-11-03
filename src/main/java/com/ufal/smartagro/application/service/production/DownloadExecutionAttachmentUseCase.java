@@ -1,5 +1,7 @@
 package com.ufal.smartagro.application.service.production;
 
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.ExecutionAttachment;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.User;
@@ -21,20 +23,24 @@ public class DownloadExecutionAttachmentUseCase {
 
     @Transactional(readOnly = true)
     public ExecutionAttachment download(UUID executionId, UUID attachmentId, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         ProductionExecution execution = executionRepository.findById(executionId)
-                .orElseThrow(() -> new IllegalArgumentException("Apontamento de colheita não encontrado."));
+                .orElseThrow(() -> new EntityNotFoundException("Apontamento de colheita não encontrado."));
 
         accessValidator.validateAccess(
                 execution.getProductionPlan() != null ? execution.getProductionPlan().getFarmer() : null,
                 loggedUser);
 
         ExecutionAttachment attachment = attachmentRepository.findByIdWithContent(attachmentId)
-                .orElseThrow(() -> new IllegalArgumentException("Anexo não encontrado."));
+                .orElseThrow(() -> new EntityNotFoundException("Anexo não encontrado."));
 
         // Sem esta checagem, conhecer o id de um anexo bastaria para baixá-lo
         // por meio de um apontamento a que se tem acesso.
         if (!executionId.equals(attachment.getProductionExecutionId())) {
-            throw new IllegalArgumentException("Anexo não encontrado.");
+            throw new EntityNotFoundException("Anexo não encontrado.");
         }
 
         return attachment;

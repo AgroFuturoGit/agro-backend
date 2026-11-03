@@ -1,25 +1,32 @@
 package com.ufal.smartagro.application.service.crop;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.CropNotFoundException;
 import com.ufal.smartagro.domain.exception.EntityInUseException;
 import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.port.out.CropRepository;
 import com.ufal.smartagro.domain.port.out.ProductionPlanRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CropDeleteUseCaseTest {
@@ -30,11 +37,14 @@ class CropDeleteUseCaseTest {
     @Mock
     private ProductionPlanRepository productionPlanRepository;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     private CropDeleteUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new CropDeleteUseCase(cropRepository, productionPlanRepository);
+        useCase = new CropDeleteUseCase(cropRepository, productionPlanRepository, auditLogService);
     }
 
     @Test
@@ -50,6 +60,7 @@ class CropDeleteUseCaseTest {
                 .hasMessageContaining("3 planos de produção vinculados");
 
         verify(cropRepository, never()).deleteById(any());
+        verifyNoInteractions(auditLogService);
     }
 
     @Test
@@ -63,20 +74,23 @@ class CropDeleteUseCaseTest {
                 .isInstanceOf(CropNotFoundException.class);
 
         verify(cropRepository, never()).deleteById(any());
+        verifyNoInteractions(auditLogService);
     }
 
     @Test
-    @DisplayName("Quando não existem planos vinculados à cultura, deleta com sucesso")
+    @DisplayName("Quando não existem planos vinculados à cultura, deleta com sucesso e grava auditoria")
     void givenCropWithoutPlans_whenDelete_thenDeletesSuccessfully() {
         User admin = UserTestFactory.user().admin().build();
         UUID cropId = UUID.randomUUID();
-        when(cropRepository.findById(cropId)).thenReturn(Optional.of(mock(Crop.class)));
+        Crop existingCrop = new Crop(cropId, "Milho", "Híbrido", true, 90, null, null, null, null);
+        when(cropRepository.findById(cropId)).thenReturn(Optional.of(existingCrop));
         when(productionPlanRepository.countByCropId(cropId)).thenReturn(0L);
         when(productionPlanRepository.existsByCropId(cropId)).thenReturn(false);
 
         useCase.execute(cropId, admin);
 
         verify(cropRepository).deleteById(cropId);
+        verify(auditLogService).record(eq(admin), eq(AuditAction.DELETE), eq("crops"), eq(cropId), any());
     }
 
     @Test
@@ -89,5 +103,6 @@ class CropDeleteUseCaseTest {
                 .isInstanceOf(AccessDeniedException.class);
 
         verify(cropRepository, never()).deleteById(any());
+        verifyNoInteractions(auditLogService);
     }
 }

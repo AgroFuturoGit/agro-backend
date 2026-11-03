@@ -24,10 +24,12 @@ Este documento especifica a política de controle de acesso aos recursos do back
 | Auth | `POST` | `/auth/login` | Público | Não requer autenticação. Retorna JWT Bearer. |
 | Auth | `GET` | `/auth/me` | `ADMIN, MANAGER, TECHNICIAN, FARMER` | Retorna os dados do próprio usuário autenticado. |
 | IAM | `POST` | `/users/register` | `ADMIN` | Apenas administrador cria novas contas avulsas no sistema. |
-| IAM | `GET` | `/users` | `ADMIN` | Listagem geral de contas de usuário. |
-| IAM | `GET` | `/users/{id}` | `ADMIN` | Consulta detalhada de usuário por UUID. |
-| IAM | `PUT` | `/users/{id}` | `ADMIN` | Atualização cadastral/papel (proibido auto-rebaixamento). |
-| IAM | `DELETE`| `/users/{id}` | `ADMIN` | Soft delete de conta (proibida a autoexclusão da própria conta). |
+| IAM | `GET` | `/users` | `ADMIN, MANAGER` | Admin lista todos; Manager lista usuários (gestores, técnicos e agricultores) da sua organização. |
+| IAM | `GET` | `/users/{id}` | `ADMIN, MANAGER, TECHNICIAN, FARMER` | Admin consulta qualquer um; Manager consulta membros da sua org ou si mesmo; Technician e Farmer consultam apenas a si mesmos (prevenção de IDOR). |
+| IAM | `PUT` | `/users/{id}` | `ADMIN` | Atualização administrativa cadastral e de papel (com auditoria; proibido auto-rebaixamento). |
+| IAM | `PATCH` | `/users/me` | `ADMIN, MANAGER, TECHNICIAN, FARMER` | Atualização do próprio perfil básico (nome, telefone). Proibido alterar email, papel ou status. |
+| IAM | `PATCH` | `/users/{id}/role` | `ADMIN` | Atribuição de perfil (com auditoria; proibido auto-rebaixamento). |
+| IAM | `DELETE`| `/users/{id}` | `ADMIN` | Soft delete de conta (com auditoria; proibida a autoexclusão da própria conta). |
 | IAM | `GET` | `/roles` | `ADMIN, MANAGER, TECHNICIAN, FARMER` | Consulta do catálogo de papéis disponíveis no sistema. |
 
 ---

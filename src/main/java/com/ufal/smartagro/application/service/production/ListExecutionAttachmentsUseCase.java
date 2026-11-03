@@ -1,5 +1,7 @@
 package com.ufal.smartagro.application.service.production;
 
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.ExecutionAttachment;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.User;
@@ -22,8 +24,12 @@ public class ListExecutionAttachmentsUseCase {
 
     @Transactional(readOnly = true)
     public List<ExecutionAttachment> listByExecution(UUID executionId, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         ProductionExecution execution = executionRepository.findById(executionId)
-                .orElseThrow(() -> new IllegalArgumentException("Apontamento de colheita não encontrado."));
+                .orElseThrow(() -> new EntityNotFoundException("Apontamento de colheita não encontrado."));
 
         accessValidator.validateAccess(
                 execution.getProductionPlan() != null ? execution.getProductionPlan().getFarmer() : null,

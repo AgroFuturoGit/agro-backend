@@ -41,6 +41,10 @@ public class FindAllFarmersUseCase {
 
     @Transactional(readOnly = true)
     public List<Farmer> findAll(UUID communityId, User loggedUser) {
+        if (loggedUser != null && loggedUser.getRole() == Role.FARMER) {
+            throw new AccessDeniedException("Agricultores não têm permissão para listar outros agricultores.");
+        }
+
         if (loggedUser != null && loggedUser.getRole() == Role.MANAGER) {
             Manager manager = managerRepository.findByUserId(loggedUser.getId())
                     .orElseThrow(() -> new AccessDeniedException("Gestor não encontrado."));

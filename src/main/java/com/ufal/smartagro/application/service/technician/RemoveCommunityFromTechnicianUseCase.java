@@ -1,9 +1,11 @@
 package com.ufal.smartagro.application.service.technician;
 
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.TechnicalAssistance;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
 import com.ufal.smartagro.domain.port.out.TechnicalAssistanceRepository;
@@ -12,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -20,6 +24,7 @@ public class RemoveCommunityFromTechnicianUseCase {
 
     private final TechnicalAssistanceRepository assistanceRepository;
     private final ManagerRepository managerRepository;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public TechnicalAssistance remove(UUID assistanceId, User loggedUser) {
@@ -77,6 +82,25 @@ public class RemoveCommunityFromTechnicianUseCase {
                 assistance.getUpdatedAt(),
                 assistance.getDeletedAt()
         );
-        return assistanceRepository.save(assistance);
+
+        TechnicalAssistance saved = assistanceRepository.save(assistance);
+
+        Map<String, Object> details = new HashMap<>();
+        if (saved.getTechnician() != null && saved.getTechnician().getId() != null) {
+            details.put("technicianId", saved.getTechnician().getId().toString());
+        }
+        if (saved.getCommunity() != null && saved.getCommunity().getId() != null) {
+            details.put("communityId", saved.getCommunity().getId().toString());
+        }
+
+        auditLogService.record(
+                loggedUser,
+                AuditAction.UPDATE,
+                "technical_assistance",
+                saved.getId(),
+                details
+        );
+
+        return saved;
     }
 }

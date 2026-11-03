@@ -1,6 +1,7 @@
 package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.model.ExecutionAttachment;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.ProductionExecution;
@@ -35,12 +36,14 @@ class DeleteExecutionAttachmentUseCaseTest {
 
     @Mock
     private ProductionAccessValidator accessValidator;
+    @Mock
+    private AuditLogService auditLogService;
 
     private DeleteExecutionAttachmentUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new DeleteExecutionAttachmentUseCase(attachmentRepository, executionRepository, accessValidator);
+        useCase = new DeleteExecutionAttachmentUseCase(attachmentRepository, executionRepository, accessValidator, auditLogService);
     }
 
     @Test

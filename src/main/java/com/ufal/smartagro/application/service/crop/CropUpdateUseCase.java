@@ -1,19 +1,22 @@
 package com.ufal.smartagro.application.service.crop;
 
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionVersionGuard;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.CropAlreadyExistsException;
 import com.ufal.smartagro.domain.exception.CropNotFoundException;
 import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CropRepository;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 /** Atualiza a cultura após validar permissão e evitar duplicidade de nome/variedade. */
 @Service
@@ -22,6 +25,7 @@ public class CropUpdateUseCase {
 
     private final CropRepository cropRepository;
     private final ProductionVersionGuard versionGuard;
+    private final AuditLogService auditLogService;
 
     /** Retrocompatibilidade sem baseUpdatedAt. */
     @Transactional
@@ -32,7 +36,7 @@ public class CropUpdateUseCase {
     /** Preserva o identificador e grava também ciclo, produtividade, tipo e unidade atualizados, com controle de concorrência. */
     @Transactional
     public Crop execute(UUID id, Crop updatedCropData, User loggedUser, LocalDateTime baseUpdatedAt) {
-        if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN) {
+        if (loggedUser == null || (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN)) {
             throw new AccessDeniedException("Usuário não tem permissão para atualizar culturas.");
         }
 
@@ -77,6 +81,23 @@ public class CropUpdateUseCase {
                 existingCrop.getDeletedAt()
         );
 
-        return cropRepository.save(cropToSave);
+        Crop saved = cropRepository.save(cropToSave);
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("name", saved.getName());
+        details.put("variety", saved.getVariety());
+        if (saved.getHarvestType() != null) {
+            details.put("harvestType", saved.getHarvestType().name());
+        }
+
+        auditLogService.record(
+                loggedUser,
+                AuditAction.UPDATE,
+                "crops",
+                saved.getId(),
+                details
+        );
+
+        return saved;
     }
 }

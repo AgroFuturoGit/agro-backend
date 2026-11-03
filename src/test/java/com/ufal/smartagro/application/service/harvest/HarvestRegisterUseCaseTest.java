@@ -1,26 +1,31 @@
 package com.ufal.smartagro.application.service.harvest;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.HarvestAlreadyExistsException;
 import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.port.out.HarvestRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HarvestRegisterUseCase — cadastro e validações de coerência temporal")
@@ -29,17 +34,21 @@ class HarvestRegisterUseCaseTest {
     @Mock
     private HarvestRepository harvestRepository;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     private HarvestRegisterUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new HarvestRegisterUseCase(harvestRepository);
+        useCase = new HarvestRegisterUseCase(harvestRepository, auditLogService);
     }
 
     @Test
-    @DisplayName("Cadastro com dados válidos persiste nova safra")
+    @DisplayName("Cadastro com dados válidos persiste nova safra e grava auditoria")
     void givenValidData_whenRegister_thenSavesHarvest() {
         User admin = UserTestFactory.user().admin().build();
+        UUID harvestId = UUID.randomUUID();
         Harvest harvest = new Harvest(
                 null, "Safra 2026/1",
                 LocalDate.of(2026, 1, 1),
@@ -48,12 +57,16 @@ class HarvestRegisterUseCaseTest {
 
         when(harvestRepository.existsByLabel("Safra 2026/1")).thenReturn(false);
         when(harvestRepository.findAll()).thenReturn(List.of());
-        when(harvestRepository.save(any(Harvest.class))).thenAnswer(i -> i.getArgument(0));
+        when(harvestRepository.save(any(Harvest.class))).thenAnswer(i -> {
+            Harvest h = i.getArgument(0);
+            return new Harvest(harvestId, h.getLabel(), h.getStartDate(), h.getEndDate());
+        });
 
         Harvest saved = useCase.execute(harvest, admin);
 
         assertThat(saved.getLabel()).isEqualTo("Safra 2026/1");
         verify(harvestRepository).save(any(Harvest.class));
+        verify(auditLogService).record(eq(admin), eq(AuditAction.CREATE), eq("harvests"), eq(harvestId), any());
     }
 
     @Test
@@ -71,6 +84,7 @@ class HarvestRegisterUseCaseTest {
                 .hasMessage("A data de início não pode ser superior à data de término.");
 
         verify(harvestRepository, never()).save(any());
+        verifyNoInteractions(auditLogService);
     }
 
     @Test
@@ -96,6 +110,7 @@ class HarvestRegisterUseCaseTest {
                 .hasMessageContaining("Já existe uma safra cadastrada com período sobreposto");
 
         verify(harvestRepository, never()).save(any());
+        verifyNoInteractions(auditLogService);
     }
 
     @Test
@@ -114,6 +129,7 @@ class HarvestRegisterUseCaseTest {
                 .isInstanceOf(HarvestAlreadyExistsException.class);
 
         verify(harvestRepository, never()).save(any());
+        verifyNoInteractions(auditLogService);
     }
 
     @Test
@@ -130,5 +146,6 @@ class HarvestRegisterUseCaseTest {
                 .isInstanceOf(AccessDeniedException.class);
 
         verify(harvestRepository, never()).save(any());
+        verifyNoInteractions(auditLogService);
     }
 }

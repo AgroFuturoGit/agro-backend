@@ -1,5 +1,6 @@
 package com.ufal.smartagro.application.service.user;
 
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityInUseException;
 import com.ufal.smartagro.domain.exception.UserNotFoundException;
@@ -7,6 +8,7 @@ import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
 import com.ufal.smartagro.domain.port.out.TechnicianRepository;
@@ -37,12 +39,14 @@ class UserDeleteUseCaseTest {
     private TechnicianRepository technicianRepository;
     @Mock
     private ManagerRepository managerRepository;
+    @Mock
+    private AuditLogService auditLogService;
 
     private UserDeleteUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new UserDeleteUseCase(userRepository, farmerRepository, technicianRepository, managerRepository);
+        useCase = new UserDeleteUseCase(userRepository, farmerRepository, technicianRepository, managerRepository, auditLogService);
     }
 
     @Test
@@ -54,11 +58,11 @@ class UserDeleteUseCaseTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("O administrador não pode excluir a própria conta.");
 
-        verifyNoInteractions(userRepository, farmerRepository, technicianRepository, managerRepository);
+        verifyNoInteractions(userRepository, farmerRepository, technicianRepository, managerRepository, auditLogService);
     }
 
     @Test
-    @DisplayName("ADMIN exclui outro usuário sem perfil ativo com sucesso")
+    @DisplayName("ADMIN exclui outro usuário sem perfil ativo com sucesso e grava auditoria")
     void givenAdmin_whenDeleteOtherUserWithoutProfile_thenSoftDeletes() {
         User admin = UserTestFactory.user().admin().build();
         User target = UserTestFactory.user().admin().build();
@@ -70,6 +74,7 @@ class UserDeleteUseCaseTest {
         useCase.delete(target.getId(), admin);
 
         verify(userRepository).softDelete(target.getId());
+        verify(auditLogService).record(eq(admin), eq(AuditAction.DELETE), eq("user"), eq(target.getId()), any());
     }
 
     @Test
@@ -86,6 +91,7 @@ class UserDeleteUseCaseTest {
                 .hasMessage("Não é possível excluir diretamente um usuário vinculado a um perfil de agricultor. Utilize a rota de exclusão do perfil (/farmers).");
 
         verify(userRepository, never()).softDelete(any());
+        verifyNoInteractions(auditLogService);
     }
 
     @Test
@@ -103,6 +109,7 @@ class UserDeleteUseCaseTest {
                 .hasMessage("Não é possível excluir diretamente um usuário vinculado a um perfil de técnico. Utilize a rota de exclusão do perfil (/technicians).");
 
         verify(userRepository, never()).softDelete(any());
+        verifyNoInteractions(auditLogService);
     }
 
     @Test
@@ -121,6 +128,7 @@ class UserDeleteUseCaseTest {
                 .hasMessage("Não é possível excluir diretamente um usuário vinculado a um perfil de gestor.");
 
         verify(userRepository, never()).softDelete(any());
+        verifyNoInteractions(auditLogService);
     }
 
     @Test
@@ -131,7 +139,7 @@ class UserDeleteUseCaseTest {
         assertThatThrownBy(() -> useCase.delete(UUID.randomUUID(), manager))
                 .isInstanceOf(AccessDeniedException.class);
 
-        verifyNoInteractions(userRepository);
+        verifyNoInteractions(userRepository, auditLogService);
     }
 
     @Test
@@ -145,5 +153,6 @@ class UserDeleteUseCaseTest {
                 .isInstanceOf(UserNotFoundException.class);
 
         verify(userRepository, never()).softDelete(any());
+        verifyNoInteractions(auditLogService);
     }
 }

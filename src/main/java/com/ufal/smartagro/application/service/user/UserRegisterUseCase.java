@@ -1,8 +1,6 @@
 package com.ufal.smartagro.application.service.user;
 
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
-
-
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.CpfAlreadyExistsException;
 import com.ufal.smartagro.domain.exception.EmailAlreadyExistsException;
@@ -26,7 +24,7 @@ public class UserRegisterUseCase {
 
     @Transactional
     public User register(UserRegisterDTO dto, User loggedUser) {
-        if (loggedUser.getRole() != Role.ADMIN) {
+        if (loggedUser == null || loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException();
         }
 
@@ -35,7 +33,6 @@ public class UserRegisterUseCase {
         }
 
         return createBaseUser(dto);
-
     }
 
     @Transactional
@@ -53,7 +50,6 @@ public class UserRegisterUseCase {
         }
 
         String encodedPassword = passwordEncoder.encode(dto.password());
-
 
         User newUser = new User(
                 null,

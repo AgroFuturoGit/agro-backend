@@ -1,5 +1,6 @@
 package com.ufal.smartagro.application.service.community;
 
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityInUseException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
@@ -7,6 +8,7 @@ import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.TechnicalAssistance;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CommunityRepository;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
@@ -16,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -26,6 +30,7 @@ public class DeleteCommunityUseCase {
     private final FarmerRepository farmerRepository;
     private final ManagerRepository managerRepository;
     private final TechnicalAssistanceRepository technicalAssistanceRepository;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public void delete(UUID id) {
@@ -34,6 +39,10 @@ public class DeleteCommunityUseCase {
 
     @Transactional
     public void delete(UUID id, User loggedUser) {
+        if (loggedUser != null && loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.MANAGER) {
+            throw new AccessDeniedException("Papel não autorizado para excluir comunidade.");
+        }
+
         Community existingCommunity = communityRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Comunidade não encontrada."));
 
@@ -64,5 +73,20 @@ public class DeleteCommunityUseCase {
         }
 
         communityRepository.delete(id);
+
+        if (loggedUser != null) {
+            Map<String, Object> details = new HashMap<>();
+            details.put("name", existingCommunity.getName());
+            if (existingCommunity.getOrganization() != null && existingCommunity.getOrganization().getId() != null) {
+                details.put("organizationId", existingCommunity.getOrganization().getId().toString());
+            }
+            auditLogService.record(
+                    loggedUser,
+                    AuditAction.DELETE,
+                    "communities",
+                    id,
+                    details
+            );
+        }
     }
 }

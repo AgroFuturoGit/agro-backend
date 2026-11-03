@@ -1,5 +1,6 @@
 package com.ufal.smartagro.application.service.production;
 
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.model.ExecutionAttachment;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.User;
@@ -40,6 +41,8 @@ class UploadExecutionAttachmentTest {
 
     @Mock
     private ProductionAccessValidator accessValidator;
+    @Mock
+    private AuditLogService auditLogService;
 
     private UploadExecutionAttachmentUseCase useCase;
 
@@ -49,7 +52,7 @@ class UploadExecutionAttachmentTest {
     @BeforeEach
     void setUp() {
         useCase = new UploadExecutionAttachmentUseCase(
-                attachmentRepository, executionRepository, accessValidator);
+                attachmentRepository, executionRepository, accessValidator, auditLogService);
     }
 
     private User usuario() {

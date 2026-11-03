@@ -66,6 +66,14 @@ class FindOrganizationUseCaseTest {
                     .isInstanceOf(AccessDeniedException.class)
                     .hasMessage("Apenas administradores podem listar todas as organizações.");
         }
+
+        @Test
+        @DisplayName("Given null user When findAll Then lança AccessDeniedException")
+        void givenNullUser_whenFindAll_thenThrowsAccessDeniedException() {
+            assertThatThrownBy(() -> findAllOrganizationsUseCase.findAll(null))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessage("Apenas administradores podem listar todas as organizações.");
+        }
     }
 
     @Nested

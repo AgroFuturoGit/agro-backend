@@ -1,14 +1,20 @@
 package com.ufal.smartagro.application.service.farmer.financing;
 
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Financing;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
+import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.FinancingRepository;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -16,14 +22,31 @@ public class DeleteFinancingUseCase {
 
     private final FinancingRepository financingRepository;
     private final ProductionAccessValidator accessValidator;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public void delete(UUID id, User loggedUser) {
+        if (loggedUser == null || (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN && loggedUser.getRole() != Role.FARMER)) {
+            throw new AccessDeniedException("Apenas administradores, técnicos assistentes ou o próprio agricultor podem excluir financiamentos.");
+        }
+
         Financing existing = financingRepository.findById(id)
-                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Financiamento não encontrado."));
+                .orElseThrow(() -> new EntityNotFoundException("Financiamento não encontrado."));
 
         accessValidator.validateWriteAccess(existing.getFarmer(), loggedUser);
 
         financingRepository.delete(id);
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("farmerId", existing.getFarmer().getId().toString());
+        details.put("description", existing.getDescription());
+
+        auditLogService.record(
+                loggedUser,
+                AuditAction.DELETE,
+                "financings",
+                id,
+                details
+        );
     }
 }

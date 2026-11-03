@@ -101,6 +101,10 @@ public class GetManagementDashboardSummaryUseCase {
             throw new IllegalArgumentException("organizationId é obrigatório para o escopo de organização.");
         }
 
+        if (loggedUser == null || loggedUser.getRole() == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         // Validação RBAC
         if (loggedUser.getRole() == Role.MANAGER) {
             Manager manager = getActiveManagerOrThrow(loggedUser);
@@ -158,6 +162,10 @@ public class GetManagementDashboardSummaryUseCase {
             User loggedUser,
             LocalDate referenceDate
     ) {
+        if (loggedUser == null || loggedUser.getRole() == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         if (loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException("Apenas Administradores do sistema podem acessar o dashboard global.");
         }

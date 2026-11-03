@@ -28,7 +28,10 @@ public class ProductionAccessValidator {
     private final TechnicalAssistanceRepository technicalAssistanceRepository;
 
     public void validateAccess(Farmer farmer, User loggedUser) {
-        if (farmer == null || loggedUser == null) return;
+        if (loggedUser == null || loggedUser.getRole() == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+        if (farmer == null) return;
 
         if (loggedUser.getRole() == Role.FARMER) {
             if (farmer.getUser() == null || !farmer.getUser().getId().equals(loggedUser.getId())) {
@@ -58,7 +61,10 @@ public class ProductionAccessValidator {
     }
 
     public void validateWriteAccess(Farmer farmer, User loggedUser) {
-        if (loggedUser != null && loggedUser.getRole() == Role.TECHNICIAN && farmer == null) {
+        if (loggedUser == null || loggedUser.getRole() == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+        if (loggedUser.getRole() == Role.TECHNICIAN && farmer == null) {
             throw new AccessDeniedException(TECHNICIAN_WRITE_DENIED);
         }
         validateAccess(farmer, loggedUser);

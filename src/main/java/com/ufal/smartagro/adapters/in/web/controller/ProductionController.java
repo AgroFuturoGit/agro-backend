@@ -7,6 +7,7 @@ import com.ufal.smartagro.application.service.production.*;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.ProductionPlan;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -51,7 +52,7 @@ public class ProductionController {
     @GetMapping("/production/dashboard")
     public ResponseEntity<ProductionDashboardDTO> productionDashboard(
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
         return ResponseEntity.ok(productionDashboardUseCase.getDashboard(loggedUser));
     }
 
@@ -70,7 +71,7 @@ public class ProductionController {
             @Valid @RequestBody ProductionPlanRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         if (dto.clientId() == null && idempotencyKey != null) {
             dto = dto.withClientId(idempotencyKey);
@@ -97,7 +98,7 @@ public class ProductionController {
             @Valid @RequestBody ProductionExecutionRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         if (dto.clientId() == null && idempotencyKey != null) {
             dto = dto.withClientId(idempotencyKey);
@@ -123,7 +124,7 @@ public class ProductionController {
             @Valid @RequestBody ProductionPlanUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         ProductionPlan plan = updateProductionPlanUseCase.update(planId, dto, loggedUser);
         ProductionPlanResponseDTO response = Mapper.toProductionPlanResponseDTO(plan);
@@ -142,7 +143,7 @@ public class ProductionController {
             @PathVariable UUID farmerId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         List<ProductionPlan> plans = listProductionPlansUseCase.listByFarmer(farmerId, loggedUser);
         List<ProductionPlanResponseDTO> response = plans.stream()
@@ -163,7 +164,7 @@ public class ProductionController {
             @PathVariable UUID planId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         ProductionPlan plan = findProductionPlanByIdUseCase.findById(planId, loggedUser);
         ProductionPlanResponseDTO response = Mapper.toProductionPlanResponseDTO(plan);
@@ -182,7 +183,7 @@ public class ProductionController {
             @PathVariable UUID planId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         deleteProductionPlanUseCase.delete(planId, loggedUser);
         return ResponseEntity.noContent().build();
@@ -202,7 +203,7 @@ public class ProductionController {
             @Valid @RequestBody ProductionExecutionUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         ProductionExecution execution = updateProductionExecutionUseCase.update(executionId, dto, loggedUser);
         ProductionExecutionResponseDTO response = Mapper.toProductionExecutionResponseDTO(execution);
@@ -221,7 +222,7 @@ public class ProductionController {
             @PathVariable UUID planId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         List<ProductionExecution> executions = listProductionExecutionsUseCase.listByProductionPlan(planId, loggedUser);
         List<ProductionExecutionResponseDTO> response = executions.stream()
@@ -242,7 +243,7 @@ public class ProductionController {
             @PathVariable UUID planId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         ProductionComparisonDTO response = compareProductionUseCase.compare(planId, loggedUser);
         return ResponseEntity.ok(response);
@@ -260,7 +261,7 @@ public class ProductionController {
             @PathVariable UUID executionId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         ProductionExecution execution = findProductionExecutionByIdUseCase.findById(executionId, loggedUser);
         ProductionExecutionResponseDTO response = Mapper.toProductionExecutionResponseDTO(execution);
@@ -279,7 +280,7 @@ public class ProductionController {
             @PathVariable UUID executionId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         deleteProductionExecutionUseCase.delete(executionId, loggedUser);
         return ResponseEntity.noContent().build();
@@ -297,7 +298,7 @@ public class ProductionController {
             @PathVariable UUID executionId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         ProductionExecution execution = validateProductionExecutionUseCase.validate(executionId, loggedUser);
         ProductionExecutionResponseDTO response = Mapper.toProductionExecutionResponseDTO(execution);
@@ -317,11 +318,18 @@ public class ProductionController {
             @RequestBody(required = false) RejectExecutionDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         String reason = dto != null ? dto.reason() : null;
         ProductionExecution execution = rejectProductionExecutionUseCase.reject(executionId, reason, loggedUser);
         ProductionExecutionResponseDTO response = Mapper.toProductionExecutionResponseDTO(execution);
         return ResponseEntity.ok(response);
+    }
+
+    private User resolveLoggedUser(UserDetailsImpl loggedUserDetails) {
+        if (loggedUserDetails == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+        return loggedUserDetails.toDomainUser();
     }
 }

@@ -1,13 +1,28 @@
 package com.ufal.smartagro.application.service.harvest;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionVersionGuard;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.ConcurrentUpdateException;
 import com.ufal.smartagro.domain.exception.HarvestAlreadyExistsException;
 import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.port.out.HarvestRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,16 +31,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HarvestUpdateUseCase — atualização e controle de concorrência")
 class HarvestUpdateUseCaseTest {
@@ -33,13 +38,16 @@ class HarvestUpdateUseCaseTest {
     @Mock
     private HarvestRepository harvestRepository;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     private HarvestUpdateUseCase useCase;
 
     private static final UUID HARVEST_ID = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
-        useCase = new HarvestUpdateUseCase(harvestRepository, new ProductionVersionGuard());
+        useCase = new HarvestUpdateUseCase(harvestRepository, new ProductionVersionGuard(), auditLogService);
     }
 
     private Harvest existingHarvest() {
@@ -55,7 +63,7 @@ class HarvestUpdateUseCaseTest {
     }
 
     @Test
-    @DisplayName("Atualização bem-sucedida preserva createdAt e atualiza rótulo/datas")
+    @DisplayName("Atualização bem-sucedida preserva createdAt e atualiza rótulo/datas e grava auditoria")
     void givenValidData_whenExecute_thenUpdatesSuccessfully() {
         User admin = UserTestFactory.user().admin().build();
         Harvest existing = existingHarvest();
@@ -80,6 +88,7 @@ class HarvestUpdateUseCaseTest {
         ArgumentCaptor<Harvest> captor = ArgumentCaptor.forClass(Harvest.class);
         verify(harvestRepository).save(captor.capture());
         assertThat(captor.getValue().getLabel()).isEqualTo("Safra 2025/1 - Revisada");
+        verify(auditLogService).record(eq(admin), eq(AuditAction.UPDATE), eq("harvests"), eq(HARVEST_ID), any());
     }
 
     @Test
@@ -93,6 +102,7 @@ class HarvestUpdateUseCaseTest {
                 .hasMessage("Usuário não tem permissão para atualizar uma safra.");
 
         verify(harvestRepository, never()).save(any());
+        verifyNoInteractions(auditLogService);
     }
 
     @Test
@@ -114,6 +124,7 @@ class HarvestUpdateUseCaseTest {
                 .hasMessage("A data de início não pode ser superior à data de término.");
 
         verify(harvestRepository, never()).save(any());
+        verifyNoInteractions(auditLogService);
     }
 
     @Test
@@ -136,6 +147,7 @@ class HarvestUpdateUseCaseTest {
                 .hasMessageContaining("Já existe uma safra com o rótulo");
 
         verify(harvestRepository, never()).save(any());
+        verifyNoInteractions(auditLogService);
     }
 
     @Test
@@ -168,5 +180,6 @@ class HarvestUpdateUseCaseTest {
                 .hasMessageContaining("A safra foi alterada por outro usuário");
 
         verify(harvestRepository, never()).save(any());
+        verifyNoInteractions(auditLogService);
     }
 }

@@ -1,19 +1,22 @@
 package com.ufal.smartagro.application.service.harvest;
 
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionVersionGuard;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.HarvestAlreadyExistsException;
 import com.ufal.smartagro.domain.exception.HarvestNotFoundException;
 import com.ufal.smartagro.domain.model.Harvest;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.HarvestRepository;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +24,7 @@ public class HarvestUpdateUseCase {
 
     private final HarvestRepository harvestRepository;
     private final ProductionVersionGuard versionGuard;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public Harvest execute(UUID id, Harvest updatedHarvestData, User loggedUser) {
@@ -29,7 +33,7 @@ public class HarvestUpdateUseCase {
 
     @Transactional
     public Harvest execute(UUID id, Harvest updatedHarvestData, User loggedUser, LocalDateTime baseUpdatedAt) {
-        if (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN) {
+        if (loggedUser == null || (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN)) {
             throw new AccessDeniedException("Usuário não tem permissão para atualizar uma safra.");
         }
 
@@ -77,6 +81,25 @@ public class HarvestUpdateUseCase {
                 existingHarvest.getDeletedAt()
         );
 
-        return harvestRepository.save(harvestToSave);
+        Harvest saved = harvestRepository.save(harvestToSave);
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("label", saved.getLabel());
+        if (saved.getStartDate() != null) {
+            details.put("startDate", saved.getStartDate().toString());
+        }
+        if (saved.getEndDate() != null) {
+            details.put("endDate", saved.getEndDate().toString());
+        }
+
+        auditLogService.record(
+                loggedUser,
+                AuditAction.UPDATE,
+                "harvests",
+                saved.getId(),
+                details
+        );
+
+        return saved;
     }
 }

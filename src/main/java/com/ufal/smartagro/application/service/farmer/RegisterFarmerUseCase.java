@@ -2,6 +2,7 @@ package com.ufal.smartagro.application.service.farmer;
 
 import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.user.UserRegisterUseCase;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.CpfAlreadyExistsException;
@@ -11,6 +12,7 @@ import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.RegistrationSource;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CommunityRepository;
@@ -23,6 +25,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -35,6 +39,7 @@ public class RegisterFarmerUseCase {
     private final TechnicianRepository technicianRepository;
     private final TechnicalAssistanceRepository technicalAssistanceRepository;
     private final UserRegisterUseCase userRegisterUseCase;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public Farmer register(UUID communityId, FarmerRegisterDTO dto, User loggedUser) {
@@ -113,6 +118,25 @@ public class RegisterFarmerUseCase {
                 .isCompliant(true)
                 .build();
 
-        return farmerRepository.save(farmer);
+        Farmer saved = farmerRepository.save(farmer);
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("fullName", saved.getFullName());
+        if (saved.getUser() != null && saved.getUser().getId() != null) {
+            details.put("userId", saved.getUser().getId().toString());
+        }
+        if (community != null && community.getId() != null) {
+            details.put("communityId", community.getId().toString());
+        }
+
+        auditLogService.record(
+                loggedUser,
+                AuditAction.CREATE,
+                "farmers",
+                saved.getId(),
+                details
+        );
+
+        return saved;
     }
 }

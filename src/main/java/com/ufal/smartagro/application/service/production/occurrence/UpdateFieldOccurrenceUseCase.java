@@ -1,10 +1,13 @@
 package com.ufal.smartagro.application.service.production.occurrence;
 
 import com.ufal.smartagro.adapters.in.web.dto.production.occurrence.FieldOccurrenceUpdateDTO;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.FieldOccurrence;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.ExecutionStatus;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.FieldOccurrenceRepository;
@@ -12,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -20,18 +25,23 @@ public class UpdateFieldOccurrenceUseCase {
 
     private final FieldOccurrenceRepository fieldOccurrenceRepository;
     private final ProductionAccessValidator accessValidator;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public FieldOccurrence update(UUID id, FieldOccurrenceUpdateDTO dto, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         FieldOccurrence existing = fieldOccurrenceRepository.findById(id)
-                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Ocorrência de campo não encontrada."));
+                .orElseThrow(() -> new EntityNotFoundException("Ocorrência de campo não encontrada."));
 
         if (existing.getExecution() != null && existing.getExecution().getProductionPlan() != null) {
             accessValidator.validateWriteAccess(existing.getExecution().getProductionPlan().getFarmer(), loggedUser);
         }
 
         if (existing.getExecution() != null && existing.getExecution().getStatus() == ExecutionStatus.VALIDATED
-                && loggedUser != null && loggedUser.getRole() == Role.FARMER) {
+                && loggedUser.getRole() == Role.FARMER) {
             throw new AccessDeniedException("Não é permitido alterar ocorrências de um apontamento já validado.");
         }
 
@@ -67,6 +77,14 @@ public class UpdateFieldOccurrenceUseCase {
                 .deletedAt(existing.getDeletedAt())
                 .build();
 
-        return fieldOccurrenceRepository.save(updated);
+        FieldOccurrence saved = fieldOccurrenceRepository.save(updated);
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("executionId", saved.getExecution() != null ? saved.getExecution().getId() : null);
+        details.put("logType", saved.getLogType() != null ? saved.getLogType().name() : null);
+
+        auditLogService.record(loggedUser, AuditAction.UPDATE, "field_occurrences", saved.getId(), details);
+
+        return saved;
     }
 }

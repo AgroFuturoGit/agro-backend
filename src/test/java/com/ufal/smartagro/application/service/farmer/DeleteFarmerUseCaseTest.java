@@ -1,28 +1,35 @@
 package com.ufal.smartagro.application.service.farmer;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityInUseException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import com.ufal.smartagro.domain.port.out.ProductionPlanRepository;
 import com.ufal.smartagro.domain.port.out.UserRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("DeleteFarmerUseCase — exclusão lógica de agricultor e desativação do usuário (API-11)")
@@ -40,11 +47,27 @@ class DeleteFarmerUseCaseTest {
     @Mock
     private ProductionAccessValidator accessValidator;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     private DeleteFarmerUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new DeleteFarmerUseCase(farmerRepository, userRepository, productionPlanRepository, accessValidator);
+        useCase = new DeleteFarmerUseCase(farmerRepository, userRepository, productionPlanRepository, accessValidator, auditLogService);
+    }
+
+    @Test
+    @DisplayName("Quando usuário logado for TECHNICIAN ou FARMER, lança AccessDeniedException")
+    void givenTechnicianOrFarmer_whenDelete_thenThrowsAccessDeniedException() {
+        User technician = UserTestFactory.user().technician().build();
+        UUID farmerId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> useCase.delete(farmerId, technician))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Apenas administradores e gestores podem excluir agricultores.");
+
+        verifyNoInteractions(farmerRepository, userRepository, productionPlanRepository, auditLogService);
     }
 
     @Test
@@ -61,7 +84,7 @@ class DeleteFarmerUseCaseTest {
                 .hasMessageContaining("planos de produção vinculados");
 
         verify(farmerRepository, never()).delete(any());
-        verifyNoInteractions(userRepository);
+        verifyNoInteractions(userRepository, auditLogService);
     }
 
     @Test
@@ -79,6 +102,7 @@ class DeleteFarmerUseCaseTest {
         verify(accessValidator).validateAccess(farmer, admin);
         verify(farmerRepository).delete(farmer.getId());
         verify(userRepository).softDelete(farmerUser.getId());
+        verify(auditLogService).record(any(User.class), any(AuditAction.class), any(), any(), any());
     }
 
     @Test
@@ -91,7 +115,7 @@ class DeleteFarmerUseCaseTest {
         useCase.delete(farmer.getId());
 
         verify(farmerRepository).delete(farmer.getId());
-        verifyNoInteractions(userRepository);
+        verifyNoInteractions(userRepository, auditLogService);
     }
 
     @Test
@@ -104,6 +128,6 @@ class DeleteFarmerUseCaseTest {
                 .isInstanceOf(EntityNotFoundException.class);
 
         verify(farmerRepository, never()).delete(any());
-        verifyNoInteractions(userRepository);
+        verifyNoInteractions(userRepository, auditLogService);
     }
 }

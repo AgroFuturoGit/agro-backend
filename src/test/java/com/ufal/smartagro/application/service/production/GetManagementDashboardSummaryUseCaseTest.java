@@ -218,6 +218,22 @@ class GetManagementDashboardSummaryUseCaseTest {
                     .isInstanceOf(AccessDeniedException.class)
                     .hasMessageContaining("Apenas Administradores");
         }
+
+        @Test
+        @DisplayName("deve lançar AccessDeniedException quando loggedUser for nulo")
+        void operacoes_comLoggedUserNulo_deveLancarAccessDenied() {
+            assertThatThrownBy(() -> useCase.executeForCurrentManager(harvestId, null, null, refDate))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessageContaining("Usuário não autenticado");
+
+            assertThatThrownBy(() -> useCase.executeForOrganization(orgIdA, harvestId, null, null, refDate))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessageContaining("Usuário não autenticado");
+
+            assertThatThrownBy(() -> useCase.executeGlobal(harvestId, null, null, null, refDate))
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessageContaining("Usuário não autenticado");
+        }
     }
 
     @Nested

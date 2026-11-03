@@ -1,6 +1,7 @@
 package com.ufal.smartagro.application.service.production.occurrence;
 
 import com.ufal.smartagro.adapters.in.web.dto.production.occurrence.FieldOccurrenceUpdateDTO;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.FieldOccurrence;
@@ -32,12 +33,14 @@ class UpdateFieldOccurrenceUseCaseTest {
 
     @Mock
     private ProductionAccessValidator accessValidator;
+    @Mock
+    private AuditLogService auditLogService;
 
     private UpdateFieldOccurrenceUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new UpdateFieldOccurrenceUseCase(fieldOccurrenceRepository, accessValidator);
+        useCase = new UpdateFieldOccurrenceUseCase(fieldOccurrenceRepository, accessValidator, auditLogService);
     }
 
     @Test

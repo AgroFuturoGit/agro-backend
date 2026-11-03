@@ -1,23 +1,36 @@
 package com.ufal.smartagro.application.service.farmer;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
 import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerRegisterDTO;
 import com.ufal.smartagro.adapters.in.web.dto.user.UserRegisterDTO;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.user.UserRegisterUseCase;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.Manager;
-import com.ufal.smartagro.domain.model.Technician;
-import com.ufal.smartagro.domain.model.TechnicalAssistance;
-import com.ufal.smartagro.domain.port.out.TechnicalAssistanceRepository;
-import com.ufal.smartagro.domain.port.out.TechnicianRepository;
 import com.ufal.smartagro.domain.model.Organization;
+import com.ufal.smartagro.domain.model.TechnicalAssistance;
+import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CommunityRepository;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
+import com.ufal.smartagro.domain.port.out.TechnicalAssistanceRepository;
+import com.ufal.smartagro.domain.port.out.TechnicianRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,17 +41,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class RegisterFarmerUseCaseTest {
@@ -66,6 +68,9 @@ class RegisterFarmerUseCaseTest {
     @Mock
     private UserRegisterUseCase userRegisterUseCase;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     @InjectMocks
     private RegisterFarmerUseCase registerFarmerUseCase;
 
@@ -74,7 +79,7 @@ class RegisterFarmerUseCaseTest {
     class HappyPath {
 
         @Test
-        @DisplayName("Given ADMIN When register em qualquer community Then persiste Farmer")
+        @DisplayName("Given ADMIN When register em qualquer community Then persiste Farmer e grava auditoria")
         void givenAdmin_whenRegister_thenPersistsFarmer() {
             User admin = UserTestFactory.user().admin().build();
             Community community = UserTestFactory.community().build();
@@ -87,6 +92,7 @@ class RegisterFarmerUseCaseTest {
             assertThat(result.getIsCompliant()).isTrue();
             verifyCapturedFarmerRoleAndCommunity(dto, community);
             verifyNoInteractions(managerRepository);
+            verify(auditLogService).record(eq(admin), eq(AuditAction.CREATE), eq("farmers"), any(), any());
         }
 
         @Test
@@ -104,10 +110,11 @@ class RegisterFarmerUseCaseTest {
 
             assertThat(result.getCommunity().getOrganization().getId()).isEqualTo(organization.getId());
             verifyCapturedFarmerRoleAndCommunity(dto, community);
+            verify(auditLogService).record(eq(managerUser), eq(AuditAction.CREATE), eq("farmers"), any(), any());
         }
     }
 
-        @Nested
+    @Nested
     @DisplayName("RBAC — FARMER não cadastra")
     class RbacBlocking {
 
@@ -122,7 +129,7 @@ class RegisterFarmerUseCaseTest {
                     .isInstanceOf(AccessDeniedException.class)
                     .hasMessage(ACCESS_DENIED_MESSAGE);
 
-            verifyNoInteractions(communityRepository, managerRepository, userRegisterUseCase, farmerRepository);
+            verifyNoInteractions(communityRepository, managerRepository, userRegisterUseCase, farmerRepository, auditLogService);
         }
     }
 
@@ -150,6 +157,7 @@ class RegisterFarmerUseCaseTest {
             ArgumentCaptor<Farmer> farmerCaptor = ArgumentCaptor.forClass(Farmer.class);
             verify(farmerRepository).save(farmerCaptor.capture());
             assertThat(farmerCaptor.getValue().getRegistrationSource()).isEqualTo(com.ufal.smartagro.domain.model.enums.RegistrationSource.TECHNICIAN);
+            verify(auditLogService).record(eq(techUser), eq(AuditAction.CREATE), eq("farmers"), any(), any());
         }
 
         @Test
@@ -169,6 +177,7 @@ class RegisterFarmerUseCaseTest {
                     .hasMessage("O técnico só pode cadastrar agricultores em comunidades sob sua assistência técnica.");
 
             verify(farmerRepository, never()).save(any());
+            verifyNoInteractions(auditLogService);
         }
 
         @Test
@@ -182,6 +191,7 @@ class RegisterFarmerUseCaseTest {
                     .hasMessage("O técnico precisa vincular o agricultor a uma comunidade.");
 
             verify(farmerRepository, never()).save(any());
+            verifyNoInteractions(auditLogService);
         }
     }
 
@@ -208,6 +218,7 @@ class RegisterFarmerUseCaseTest {
 
             verifyNoInteractions(userRegisterUseCase);
             verify(farmerRepository, never()).save(any());
+            verifyNoInteractions(auditLogService);
         }
 
         @Test
@@ -224,6 +235,7 @@ class RegisterFarmerUseCaseTest {
                     .hasMessage("Gestor não encontrado.");
 
             verify(farmerRepository, never()).save(any());
+            verifyNoInteractions(auditLogService);
         }
     }
 
@@ -245,6 +257,7 @@ class RegisterFarmerUseCaseTest {
 
             verifyNoInteractions(userRegisterUseCase);
             verify(farmerRepository, never()).save(any());
+            verifyNoInteractions(auditLogService);
         }
 
         @Test
@@ -260,6 +273,7 @@ class RegisterFarmerUseCaseTest {
 
             verifyNoInteractions(communityRepository, managerRepository, userRegisterUseCase);
             verify(farmerRepository, never()).save(any());
+            verifyNoInteractions(auditLogService);
         }
     }
 

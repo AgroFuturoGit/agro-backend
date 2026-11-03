@@ -1,10 +1,12 @@
 package com.ufal.smartagro.application.service.technician;
 
 import com.ufal.smartagro.adapters.in.web.dto.technician.TechnicianUpdateDTO;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.port.out.ManagerRepository;
 import com.ufal.smartagro.domain.port.out.TechnicianRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
@@ -22,7 +24,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UpdateTechnicianUseCaseTest {
@@ -31,12 +34,14 @@ class UpdateTechnicianUseCaseTest {
     private TechnicianRepository technicianRepository;
     @Mock
     private ManagerRepository managerRepository;
+    @Mock
+    private AuditLogService auditLogService;
 
     @InjectMocks
     private UpdateTechnicianUseCase updateTechnicianUseCase;
 
     @Test
-    @DisplayName("Given ADMIN When update Then atualiza com sucesso")
+    @DisplayName("Given ADMIN When update Then atualiza com sucesso e gera auditoria")
     void givenAdmin_whenUpdate_thenUpdatesSuccessfully() {
         User admin = UserTestFactory.user().admin().build();
         Technician technician = UserTestFactory.technicianProfile().build();
@@ -49,6 +54,8 @@ class UpdateTechnicianUseCaseTest {
 
         assertThat(result.getProfessionalId()).isEqualTo("CRBio-Novo");
         assertThat(result.getSpecialty()).isEqualTo("Solo");
+
+        verify(auditLogService).record(eq(admin), eq(AuditAction.UPDATE), eq("technicians"), eq(technician.getId()), any());
     }
 
     @Test
@@ -65,6 +72,8 @@ class UpdateTechnicianUseCaseTest {
 
         assertThat(result.getProfessionalId()).isEqualTo("CRBio-Novo");
         assertThat(result.getSpecialty()).isEqualTo(technician.getSpecialty());
+
+        verify(auditLogService).record(eq(techUser), eq(AuditAction.UPDATE), eq("technicians"), eq(technician.getId()), any());
     }
 
     @Test
@@ -80,6 +89,8 @@ class UpdateTechnicianUseCaseTest {
         assertThatThrownBy(() -> updateTechnicianUseCase.update(otherTechnician.getId(), dto, techUser))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("O técnico só pode atualizar seu próprio perfil.");
+
+        verify(auditLogService, never()).record(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -94,6 +105,8 @@ class UpdateTechnicianUseCaseTest {
         assertThatThrownBy(() -> updateTechnicianUseCase.update(technician.getId(), dto, farmer))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Apenas administradores, gestores ou o próprio técnico podem atualizar este perfil.");
+
+        verify(auditLogService, never()).record(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -105,6 +118,8 @@ class UpdateTechnicianUseCaseTest {
         assertThatThrownBy(() -> updateTechnicianUseCase.update(id, dto, null))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Apenas administradores, gestores ou o próprio técnico podem atualizar este perfil.");
+
+        verify(auditLogService, never()).record(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -138,6 +153,7 @@ class UpdateTechnicianUseCaseTest {
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage("Técnico não encontrado.");
     }
+
     @Test
     @DisplayName("Given MANAGER When técnico pertence à organização Then atualiza com sucesso")
     void givenManager_whenTechnicianInOrg_thenUpdatesSuccessfully() {
@@ -155,6 +171,7 @@ class UpdateTechnicianUseCaseTest {
         Technician result = updateTechnicianUseCase.update(technician.getId(), dto, managerUser);
 
         assertThat(result.getProfessionalId()).isEqualTo("CRBio-Manager");
+        verify(auditLogService).record(eq(managerUser), eq(AuditAction.UPDATE), eq("technicians"), eq(technician.getId()), any());
     }
 
     @Test
@@ -173,5 +190,7 @@ class UpdateTechnicianUseCaseTest {
         assertThatThrownBy(() -> updateTechnicianUseCase.update(technician.getId(), dto, managerUser))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("O gestor só tem acesso aos técnicos da sua própria organização.");
+
+        verify(auditLogService, never()).record(any(), any(), any(), any(), any());
     }
 }

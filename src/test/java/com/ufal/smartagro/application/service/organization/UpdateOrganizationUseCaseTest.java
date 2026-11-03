@@ -1,10 +1,15 @@
 package com.ufal.smartagro.application.service.organization;
 
 import com.ufal.smartagro.adapters.in.web.dto.organization.OrganizationUpdateDTO;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Organization;
+import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.OrganizationType;
 import com.ufal.smartagro.domain.port.out.OrganizationRepository;
+import com.ufal.smartagro.testsupport.UserTestFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,14 +24,18 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("UpdateOrganizationUseCase — validações, normalização e updatedAt (API-19)")
+@DisplayName("UpdateOrganizationUseCase — validações, normalização, RBAC e auditoria")
 class UpdateOrganizationUseCaseTest {
 
     @Mock
     private OrganizationRepository organizationRepository;
+
+    @Mock
+    private AuditLogService auditLogService;
 
     private UpdateOrganizationUseCase useCase;
 
@@ -34,19 +43,20 @@ class UpdateOrganizationUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new UpdateOrganizationUseCase(organizationRepository);
+        useCase = new UpdateOrganizationUseCase(organizationRepository, auditLogService);
     }
 
     @Test
-    @DisplayName("Atualização bem-sucedida com trim no nome e updatedAt preenchido (API-19)")
-    void givenValidName_whenUpdate_thenTrimsAndSavesWithUpdatedAt() {
+    @DisplayName("Atualização bem-sucedida por ADMIN com trim no nome e auditoria preenchida")
+    void givenAdminAndValidName_whenUpdate_thenTrimsAndSavesWithAudit() {
+        User admin = UserTestFactory.user().admin().build();
         Organization existing = new Organization(ORG_ID, "Cooperativa Original", "12345678000199", OrganizationType.COOP, null, null, null);
         when(organizationRepository.findById(ORG_ID)).thenReturn(Optional.of(existing));
         when(organizationRepository.save(any(Organization.class))).thenAnswer(i -> i.getArgument(0));
 
         OrganizationUpdateDTO dto = new OrganizationUpdateDTO("  Cooperativa Nova  ", OrganizationType.ASSOC);
 
-        Organization updated = useCase.update(ORG_ID, dto);
+        Organization updated = useCase.update(ORG_ID, dto, admin);
 
         assertThat(updated.getName()).isEqualTo("Cooperativa Nova");
         assertThat(updated.getType()).isEqualTo(OrganizationType.ASSOC);
@@ -56,6 +66,22 @@ class UpdateOrganizationUseCaseTest {
         verify(organizationRepository).save(captor.capture());
         assertThat(captor.getValue().getName()).isEqualTo("Cooperativa Nova");
         assertThat(captor.getValue().getUpdatedAt()).isNotNull();
+
+        verify(auditLogService).record(eq(admin), eq(AuditAction.UPDATE), eq("organizations"), eq(ORG_ID), any());
+    }
+
+    @Test
+    @DisplayName("Tentativa de atualização por não-ADMIN lança AccessDeniedException")
+    void givenNonAdmin_whenUpdate_thenThrowsAccessDeniedException() {
+        User manager = UserTestFactory.user().manager().build();
+        OrganizationUpdateDTO dto = new OrganizationUpdateDTO("Nome", null);
+
+        assertThatThrownBy(() -> useCase.update(ORG_ID, dto, manager))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Apenas administradores podem atualizar organizações.");
+
+        verify(organizationRepository, never()).save(any());
+        verify(auditLogService, never()).record(any(), any(), any(), any(), any());
     }
 
     @Test

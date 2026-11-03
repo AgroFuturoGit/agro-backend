@@ -11,6 +11,7 @@ import com.ufal.smartagro.application.service.production.GetHarvestTimelineUseCa
 import com.ufal.smartagro.application.service.production.GetManagementDashboardSummaryUseCase;
 import com.ufal.smartagro.application.service.production.GetTechnicianDashboardSummaryUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.ReportExportFormat;
@@ -75,7 +76,7 @@ public class AnalyticsController {
     ) {
         TimelineGranularity parsedGranularity = TimelineGranularity.fromString(granularity);
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         HarvestTimelineDTO timeline = getHarvestTimelineUseCase.execute(planId, parsedGranularity, loggedUser);
         return ResponseEntity.ok(timeline);
@@ -99,7 +100,7 @@ public class AnalyticsController {
             @RequestParam(name = "harvestId", required = false) UUID harvestId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         FarmerDashboardSummaryDTO summary = getFarmerDashboardSummaryUseCase.execute(harvestId, loggedUser);
         return ResponseEntity.ok(summary);
@@ -128,7 +129,7 @@ public class AnalyticsController {
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
         ReportExportFormat exportFormat = ReportExportFormat.fromString(format);
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         FarmerDashboardSummaryDTO summary = getFarmerDashboardSummaryUseCase.execute(harvestId, loggedUser);
 
@@ -174,7 +175,7 @@ public class AnalyticsController {
             @RequestParam(name = "cropId", required = false) UUID cropId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         TechnicianDashboardSummaryDTO summary = getTechnicianDashboardSummaryUseCase
                 .execute(harvestId, communityId, cropId, loggedUser);
@@ -208,7 +209,7 @@ public class AnalyticsController {
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
         ReportExportFormat exportFormat = ReportExportFormat.fromString(format);
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         TechnicianDashboardSummaryDTO summary = getTechnicianDashboardSummaryUseCase
                 .execute(harvestId, communityId, cropId, loggedUser);
@@ -254,7 +255,7 @@ public class AnalyticsController {
             @RequestParam(name = "communityId", required = false) UUID communityId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         ManagementDashboardSummaryDTO summary = getManagementDashboardSummaryUseCase
                 .executeForCurrentManager(harvestId, communityId, loggedUser);
@@ -286,7 +287,7 @@ public class AnalyticsController {
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
         ReportExportFormat exportFormat = ReportExportFormat.fromString(format);
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         ManagementDashboardSummaryDTO summary = getManagementDashboardSummaryUseCase
                 .executeForCurrentManager(harvestId, communityId, loggedUser);
@@ -334,7 +335,7 @@ public class AnalyticsController {
             @RequestParam(name = "communityId", required = false) UUID communityId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         ManagementDashboardSummaryDTO summary = getManagementDashboardSummaryUseCase
                 .executeForOrganization(organizationId, harvestId, communityId, loggedUser);
@@ -368,7 +369,7 @@ public class AnalyticsController {
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
         ReportExportFormat exportFormat = ReportExportFormat.fromString(format);
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         ManagementDashboardSummaryDTO summary = getManagementDashboardSummaryUseCase
                 .executeForOrganization(organizationId, harvestId, communityId, loggedUser);
@@ -416,7 +417,7 @@ public class AnalyticsController {
             @RequestParam(name = "communityId", required = false) UUID communityId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         ManagementDashboardSummaryDTO summary = getManagementDashboardSummaryUseCase
                 .executeGlobal(harvestId, organizationId, communityId, loggedUser);
@@ -450,7 +451,7 @@ public class AnalyticsController {
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails
     ) {
         ReportExportFormat exportFormat = ReportExportFormat.fromString(format);
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         ManagementDashboardSummaryDTO summary = getManagementDashboardSummaryUseCase
                 .executeGlobal(harvestId, organizationId, communityId, loggedUser);
@@ -485,5 +486,12 @@ public class AnalyticsController {
                 .replaceAll("[^a-zA-Z0-9-_]", "_")
                 .replaceAll("_+", "_");
         return normalized.toLowerCase(Locale.ROOT);
+    }
+
+    private User resolveLoggedUser(UserDetailsImpl loggedUserDetails) {
+        if (loggedUserDetails == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+        return loggedUserDetails.toDomainUser();
     }
 }

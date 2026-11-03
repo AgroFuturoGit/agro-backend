@@ -1,6 +1,7 @@
 package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionPlanUpdateDTO;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.Harvest;
@@ -37,6 +38,8 @@ class UpdateProductionPlanUseCaseTest {
     private ProductionAccessValidator accessValidator;
     @Mock
     private ProductionVersionGuard versionGuard;
+    @Mock
+    private AuditLogService auditLogService;
 
     private UpdateProductionPlanUseCase useCase;
 
@@ -47,7 +50,8 @@ class UpdateProductionPlanUseCaseTest {
         useCase = new UpdateProductionPlanUseCase(
                 productionPlanRepository,
                 accessValidator,
-                versionGuard
+                versionGuard,
+                auditLogService
         );
     }
 

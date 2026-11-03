@@ -1,5 +1,7 @@
 package com.ufal.smartagro.application.service.production;
 
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
+import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.User;
@@ -22,8 +24,12 @@ public class ListProductionPlansUseCase {
 
     @Transactional(readOnly = true)
     public List<ProductionPlan> listByFarmer(UUID farmerId, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         Farmer farmer = farmerRepository.findById(farmerId)
-                .orElseThrow(() -> new com.ufal.smartagro.domain.exception.EntityNotFoundException("Agricultor não encontrado."));
+                .orElseThrow(() -> new EntityNotFoundException("Agricultor não encontrado."));
 
         accessValidator.validateAccess(farmer, loggedUser);
 

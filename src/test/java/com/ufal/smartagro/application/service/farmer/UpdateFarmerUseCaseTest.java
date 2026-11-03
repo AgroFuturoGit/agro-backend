@@ -1,10 +1,23 @@
 package com.ufal.smartagro.application.service.farmer;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerUpdateDTO;
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
+import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
+import com.ufal.smartagro.testsupport.UserTestFactory;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,14 +25,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UpdateFarmerUseCase — limpeza de campos opcionais e validações")
@@ -31,13 +36,16 @@ class UpdateFarmerUseCaseTest {
     @Mock
     private ProductionAccessValidator accessValidator;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     private UpdateFarmerUseCase useCase;
 
     private static final UUID FARMER_ID = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
-        useCase = new UpdateFarmerUseCase(farmerRepository, accessValidator);
+        useCase = new UpdateFarmerUseCase(farmerRepository, accessValidator, auditLogService);
     }
 
     private Farmer existingFarmer() {
@@ -54,6 +62,7 @@ class UpdateFarmerUseCaseTest {
     @DisplayName("Limpeza de campos opcionais: string vazia redefine localName e phone para null")
     void givenEmptyStringsForOptionalFields_whenUpdate_thenClearsToNull() {
         Farmer existing = existingFarmer();
+        User admin = UserTestFactory.user().admin().build();
         when(farmerRepository.findById(FARMER_ID)).thenReturn(Optional.of(existing));
         when(farmerRepository.save(any(Farmer.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -64,7 +73,7 @@ class UpdateFarmerUseCaseTest {
                 null, null, null, null, null, null, null
         );
 
-        Farmer updated = useCase.update(FARMER_ID, dto);
+        Farmer updated = useCase.update(FARMER_ID, dto, admin);
 
         assertThat(updated.getLocalName()).isNull();
         assertThat(updated.getPhone()).isNull();
@@ -74,6 +83,7 @@ class UpdateFarmerUseCaseTest {
         verify(farmerRepository).save(captor.capture());
         assertThat(captor.getValue().getLocalName()).isNull();
         assertThat(captor.getValue().getPhone()).isNull();
+        verify(auditLogService).record(any(User.class), any(AuditAction.class), any(), any(), any());
     }
 
     @Test

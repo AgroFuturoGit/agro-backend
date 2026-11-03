@@ -1,5 +1,6 @@
 package com.ufal.smartagro.application.service.community;
 
+import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityInUseException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
@@ -9,6 +10,7 @@ import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Organization;
 import com.ufal.smartagro.domain.model.TechnicalAssistance;
 import com.ufal.smartagro.domain.model.User;
+import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.OrganizationType;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.CommunityRepository;
@@ -20,6 +22,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -31,6 +35,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("DeleteCommunityUseCase — autorização RBAC, integridade e auditoria")
 class DeleteCommunityUseCaseTest {
 
     @Mock
@@ -45,11 +50,28 @@ class DeleteCommunityUseCaseTest {
     @Mock
     private TechnicalAssistanceRepository technicalAssistanceRepository;
 
+    @Mock
+    private AuditLogService auditLogService;
+
     private DeleteCommunityUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new DeleteCommunityUseCase(communityRepository, farmerRepository, managerRepository, technicalAssistanceRepository);
+        useCase = new DeleteCommunityUseCase(communityRepository, farmerRepository, managerRepository, technicalAssistanceRepository, auditLogService);
+    }
+
+    @ParameterizedTest(name = "Given Role.{0} When delete Then throws AccessDeniedException")
+    @EnumSource(value = Role.class, names = {"TECHNICIAN", "FARMER"})
+    void givenUnauthorizedRole_whenDelete_thenThrowsAccessDeniedException(Role role) {
+        UUID communityId = UUID.randomUUID();
+        User user = UserTestFactory.user().role(role).build();
+
+        assertThatThrownBy(() -> useCase.delete(communityId, user))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Papel não autorizado para excluir comunidade.");
+
+        verify(communityRepository, never()).delete(any());
+        verify(auditLogService, never()).record(any(), any(), any(), any(), any());
     }
 
     @Test
@@ -116,15 +138,19 @@ class DeleteCommunityUseCaseTest {
     }
 
     @Test
-    @DisplayName("Quando não existem agricultores nem assistências ativas vinculadas, deleta comunidade com sucesso")
-    void givenCommunityWithoutFarmersOrActiveAssistances_whenDelete_thenDeletesSuccessfully() {
+    @DisplayName("ADMIN deleta comunidade com sucesso e grava auditoria")
+    void givenAdmin_whenDelete_thenDeletesSuccessfullyAndAudits() {
         UUID communityId = UUID.randomUUID();
-        when(communityRepository.findById(communityId)).thenReturn(Optional.of(mock(Community.class)));
+        User admin = UserTestFactory.user().admin().build();
+        Community community = new Community(communityId, "Comunidade Centro", null, null, null, null);
+
+        when(communityRepository.findById(communityId)).thenReturn(Optional.of(community));
         when(farmerRepository.findAllByCommunityId(communityId)).thenReturn(List.of());
         when(technicalAssistanceRepository.findByCommunityId(communityId)).thenReturn(List.of());
 
-        useCase.delete(communityId);
+        useCase.delete(communityId, admin);
 
         verify(communityRepository).delete(communityId);
+        verify(auditLogService).record(eq(admin), eq(AuditAction.DELETE), eq("communities"), eq(communityId), any());
     }
 }
