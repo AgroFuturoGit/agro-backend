@@ -2,6 +2,7 @@ package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.adapters.in.web.dto.analytics.HarvestTimelineDTO;
 import com.ufal.smartagro.adapters.in.web.dto.analytics.TimelinePointDTO;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Crop;
 import com.ufal.smartagro.domain.model.ProductionExecution;
@@ -40,6 +41,10 @@ public class GetHarvestTimelineUseCase {
 
     @Transactional(readOnly = true)
     public HarvestTimelineDTO execute(UUID planId, TimelineGranularity granularity, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         if (granularity == null) {
             granularity = TimelineGranularity.WEEK;
         }

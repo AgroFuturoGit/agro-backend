@@ -417,6 +417,15 @@ class GetHarvestTimelineUseCaseTest {
     }
 
     @Test
+    @DisplayName("12b. Falha por falta de autenticação quando loggedUser for nulo")
+    void execute_usuarioNulo_deveLancarAccessDenied() {
+        UUID planId = UUID.randomUUID();
+        assertThatThrownBy(() -> useCase.execute(planId, TimelineGranularity.WEEK, null))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining("Usuário não autenticado.");
+    }
+
+    @Test
     @DisplayName("13. Plano inexistente lança EntityNotFoundException (HTTP 404)")
     void planoInexistenteLancaEntityNotFoundException() {
         UUID nonExistentId = UUID.randomUUID();
