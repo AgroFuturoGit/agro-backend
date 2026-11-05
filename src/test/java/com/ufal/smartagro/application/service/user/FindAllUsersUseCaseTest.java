@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -64,21 +65,21 @@ class FindAllUsersUseCaseTest {
         User techUser = UserTestFactory.user().technician().build();
         Technician technician = UserTestFactory.technicianProfile().user(techUser).build();
 
-        User externalUser = UserTestFactory.user().farmer().build();
-
         when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
-        when(managerRepository.findAll()).thenReturn(List.of(manager));
+        when(managerRepository.findAllByOrganizationId(organization.getId())).thenReturn(List.of(manager));
         when(farmerRepository.findAllByOrganizationId(organization.getId())).thenReturn(List.of(farmer));
         when(technicianRepository.findAllByOrganizationId(organization.getId())).thenReturn(List.of(technician));
-        when(technicianRepository.findAll()).thenReturn(List.of(technician));
-        when(userRepository.findAll()).thenReturn(List.of(managerUser, farmerUser, techUser, externalUser));
+        when(technicianRepository.findAllByCreatedById(managerUser.getId())).thenReturn(List.of());
+        when(userRepository.findAllByIdIn(anyCollection())).thenReturn(List.of(managerUser, farmerUser, techUser));
 
         List<User> result = useCase.findAll(managerUser);
 
         assertThat(result).hasSize(3).containsExactly(managerUser, farmerUser, techUser);
+        verify(userRepository, never()).findAll();
         verify(farmerRepository, never()).findAll();
-        verify(farmerRepository).findAllByOrganizationId(organization.getId());
-        verify(technicianRepository).findAllByOrganizationId(organization.getId());
+        verify(technicianRepository, never()).findAll();
+        verify(managerRepository, never()).findAll();
+        verify(userRepository).findAllByIdIn(anyCollection());
     }
 
     @Test
@@ -91,15 +92,16 @@ class FindAllUsersUseCaseTest {
                 .build();
 
         when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
-        when(managerRepository.findAll()).thenReturn(List.of(manager));
+        when(managerRepository.findAllByOrganizationId(organization.getId())).thenReturn(List.of(manager));
         when(farmerRepository.findAllByOrganizationId(organization.getId())).thenReturn(List.of());
         when(technicianRepository.findAllByOrganizationId(organization.getId())).thenReturn(List.of());
-        when(technicianRepository.findAll()).thenReturn(List.of(createdTechnician));
-        when(userRepository.findAll()).thenReturn(List.of(managerUser, createdTechUser));
+        when(technicianRepository.findAllByCreatedById(managerUser.getId())).thenReturn(List.of(createdTechnician));
+        when(userRepository.findAllByIdIn(anyCollection())).thenReturn(List.of(managerUser, createdTechUser));
 
         List<User> result = useCase.findAll(managerUser);
 
         assertThat(result).containsExactly(managerUser, createdTechUser);
+        verify(userRepository, never()).findAll();
     }
 
     @Test

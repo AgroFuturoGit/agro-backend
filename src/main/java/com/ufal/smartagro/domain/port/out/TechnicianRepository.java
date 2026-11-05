@@ -8,10 +8,18 @@ import java.util.UUID;
 
 public interface TechnicianRepository {
     Technician save(Technician technician);
+
     Optional<Technician> findById(UUID id);
+
     Optional<Technician> findByUserId(UUID userId);
+
     List<Technician> findAll();
+
     List<Technician> findAllByOrganizationId(UUID organizationId);
+
+    List<Technician> findAllByCreatedById(UUID createdById);
+
     boolean existsByIdAndOrganizationId(UUID technicianId, UUID organizationId);
+
     void delete(UUID id);
 }

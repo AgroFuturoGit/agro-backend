@@ -48,13 +48,11 @@ public class FindAllTechniciansUseCase {
                     result.put(t.getId(), t);
                 }
             }
-            for (Technician t : technicianRepository.findAll()) {
-                if (t.getDeletedAt() == null
-                        && t.getId() != null
-                        && t.getCreatedBy() != null
-                        && loggedUser.getId() != null
-                        && loggedUser.getId().equals(t.getCreatedBy().getId())) {
-                    result.putIfAbsent(t.getId(), t);
+            if (loggedUser.getId() != null) {
+                for (Technician t : technicianRepository.findAllByCreatedById(loggedUser.getId())) {
+                    if (t.getDeletedAt() == null && t.getId() != null) {
+                        result.putIfAbsent(t.getId(), t);
+                    }
                 }
             }
             return new ArrayList<>(result.values());

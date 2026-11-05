@@ -52,6 +52,13 @@ public class TechnicianRepositoryImpl implements TechnicianRepository {
     }
 
     @Override
+    public List<Technician> findAllByCreatedById(UUID createdById) {
+        return jpaRepository.findAllByCreatedById(createdById).stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public boolean existsByIdAndOrganizationId(UUID technicianId, UUID organizationId) {
         return jpaRepository.existsByIdAndOrganizationId(technicianId, organizationId);
     }

@@ -13,6 +13,8 @@ import java.util.UUID;
 public interface JpaTechnicianRepository extends JpaRepository<TechnicianEntity, UUID> {
     Optional<TechnicianEntity> findByUserId(UUID userId);
 
+    List<TechnicianEntity> findAllByCreatedById(UUID createdById);
+
     @Query("""
         SELECT DISTINCT t FROM TechnicianEntity t
         WHERE t.deletedAt IS NULL AND (

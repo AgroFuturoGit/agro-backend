@@ -63,7 +63,7 @@ class FindAllTechniciansUseCaseTest {
 
         when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
         when(technicianRepository.findAllByOrganizationId(org.getId())).thenReturn(List.of(tech));
-        when(technicianRepository.findAll()).thenReturn(List.of(tech));
+        when(technicianRepository.findAllByCreatedById(managerUser.getId())).thenReturn(List.of());
 
         List<Technician> result = findAllTechniciansUseCase.findAll(managerUser);
 
@@ -80,7 +80,7 @@ class FindAllTechniciansUseCaseTest {
 
         when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
         when(technicianRepository.findAllByOrganizationId(org.getId())).thenReturn(List.of());
-        when(technicianRepository.findAll()).thenReturn(List.of(createdTech));
+        when(technicianRepository.findAllByCreatedById(managerUser.getId())).thenReturn(List.of(createdTech));
 
         List<Technician> result = findAllTechniciansUseCase.findAll(managerUser);
 
