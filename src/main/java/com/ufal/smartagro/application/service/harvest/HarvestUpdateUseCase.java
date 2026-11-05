@@ -10,13 +10,14 @@ import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.HarvestRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -62,12 +63,8 @@ public class HarvestUpdateUseCase {
             throw new HarvestAlreadyExistsException("Já existe uma safra com o rótulo: " + targetLabel);
         }
 
-        boolean hasOverlap = harvestRepository.findAll().stream()
-                .filter(existing -> existing.getId() != null && !existing.getId().equals(existingHarvest.getId()))
-                .anyMatch(existing -> existing.getStartDate() != null && existing.getEndDate() != null
-                        && !updatedHarvestData.getEndDate().isBefore(existing.getStartDate())
-                        && !updatedHarvestData.getStartDate().isAfter(existing.getEndDate()));
-        if (hasOverlap) {
+        if (harvestRepository.existsOverlappingExcludingId(
+                updatedHarvestData.getStartDate(), updatedHarvestData.getEndDate(), existingHarvest.getId())) {
             throw new IllegalArgumentException("Já existe uma safra cadastrada com período sobreposto.");
         }
 
@@ -91,14 +88,7 @@ public class HarvestUpdateUseCase {
         if (saved.getEndDate() != null) {
             details.put("endDate", saved.getEndDate().toString());
         }
-
-        auditLogService.record(
-                loggedUser,
-                AuditAction.UPDATE,
-                "harvests",
-                saved.getId(),
-                details
-        );
+        auditLogService.record(loggedUser, AuditAction.UPDATE, "harvests", saved.getId(), details);
 
         return saved;
     }

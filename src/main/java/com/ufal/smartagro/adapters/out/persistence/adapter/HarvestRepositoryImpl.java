@@ -34,6 +34,16 @@ public class HarvestRepositoryImpl implements HarvestRepository {
     }
 
     @Override
+    public boolean existsOverlapping(LocalDate startDate, LocalDate endDate) {
+        return jpaHarvestRepository.existsOverlapping(startDate, endDate);
+    }
+
+    @Override
+    public boolean existsOverlappingExcludingId(LocalDate startDate, LocalDate endDate, UUID excludeId) {
+        return jpaHarvestRepository.existsOverlappingExcludingId(startDate, endDate, excludeId);
+    }
+
+    @Override
     public Optional<Harvest> findById(UUID id) {
         return jpaHarvestRepository.findById(id).map(harvestMapper::toDomain);
     }
