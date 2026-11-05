@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,7 +32,7 @@ class FindAllManagersUseCaseTest {
     private FindAllManagersUseCase findAllManagersUseCase;
 
     @Test
-    @DisplayName("Given ADMIN When findAll sem filtro Then retorna gestores ativos")
+    @DisplayName("Given ADMIN When findAll sem filtro Then consulta findAll e retorna gestores ativos")
     void givenAdmin_whenFindAllWithoutFilter_thenReturnsActiveManagers() {
         User admin = UserTestFactory.user().admin().build();
         Organization org1 = UserTestFactory.organization().build();
@@ -46,22 +47,22 @@ class FindAllManagersUseCaseTest {
         List<Manager> result = findAllManagersUseCase.findAll(null, admin);
 
         assertThat(result).containsExactly(activeManager);
+        verify(managerRepository).findAll();
     }
 
     @Test
-    @DisplayName("Given ADMIN When findAll com organizationId Then retorna gestores apenas da organização")
-    void givenAdmin_whenFindAllWithOrgFilter_thenReturnsFilteredManagers() {
+    @DisplayName("Given ADMIN When findAll com organizationId Then consulta findAllByOrganizationId no banco")
+    void givenAdmin_whenFindAllWithOrgFilter_thenDelegatesToDatabaseQuery() {
         User admin = UserTestFactory.user().admin().build();
         Organization org1 = UserTestFactory.organization().build();
-        Organization org2 = UserTestFactory.organization().build();
         Manager manager1 = UserTestFactory.managerProfile().organization(org1).build();
-        Manager manager2 = UserTestFactory.managerProfile().organization(org2).build();
 
-        when(managerRepository.findAll()).thenReturn(List.of(manager1, manager2));
+        when(managerRepository.findAllByOrganizationId(org1.getId())).thenReturn(List.of(manager1));
 
         List<Manager> result = findAllManagersUseCase.findAll(org1.getId(), admin);
 
         assertThat(result).containsExactly(manager1);
+        verify(managerRepository).findAllByOrganizationId(org1.getId());
     }
 
     @Test

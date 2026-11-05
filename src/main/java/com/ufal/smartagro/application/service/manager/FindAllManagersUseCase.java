@@ -24,10 +24,12 @@ public class FindAllManagersUseCase {
             throw new AccessDeniedException("Apenas administradores podem listar gestores.");
         }
 
-        return managerRepository.findAll().stream()
+        List<Manager> managers = (organizationId != null)
+                ? managerRepository.findAllByOrganizationId(organizationId)
+                : managerRepository.findAll();
+
+        return managers.stream()
                 .filter(m -> m.getDeletedAt() == null)
-                .filter(m -> organizationId == null
-                        || (m.getOrganization() != null && organizationId.equals(m.getOrganization().getId())))
                 .toList();
     }
 }
