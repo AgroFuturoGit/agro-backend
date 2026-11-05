@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -99,7 +100,7 @@ public class UpdateProductionPlanUseCase {
                 plantingDate,
                 dto.plannedCalendar() != null ? dto.plannedCalendar() : existingPlan.getPlannedCalendar(),
                 existingPlan.getCreatedAt(),
-                LocalDateTime.now(),
+                LocalDateTime.now().truncatedTo(ChronoUnit.MICROS),
                 existingPlan.getDeletedAt()
         );
 

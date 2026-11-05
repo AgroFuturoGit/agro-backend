@@ -56,6 +56,11 @@ public class ProductionExecutionRepositoryImpl implements ProductionExecutionRep
     }
 
     @Override
+    public long countByProductionPlanId(UUID planId) {
+        return jpaRepository.countByProductionPlanId(planId);
+    }
+
+    @Override
     public void delete(UUID id) {
         jpaRepository.softDeleteById(id);
     }

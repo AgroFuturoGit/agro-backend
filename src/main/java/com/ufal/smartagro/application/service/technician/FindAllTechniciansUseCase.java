@@ -11,7 +11,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +41,21 @@ public class FindAllTechniciansUseCase {
             if (manager.getOrganization() == null) {
                 return List.of();
             }
-            return technicianRepository.findAllByOrganizationId(manager.getOrganization().getId());
+
+            Map<UUID, Technician> result = new LinkedHashMap<>();
+            for (Technician t : technicianRepository.findAllByOrganizationId(manager.getOrganization().getId())) {
+                if (t.getDeletedAt() == null && t.getId() != null) {
+                    result.put(t.getId(), t);
+                }
+            }
+            if (loggedUser.getId() != null) {
+                for (Technician t : technicianRepository.findAllByCreatedById(loggedUser.getId())) {
+                    if (t.getDeletedAt() == null && t.getId() != null) {
+                        result.putIfAbsent(t.getId(), t);
+                    }
+                }
+            }
+            return new ArrayList<>(result.values());
         }
 
         throw new AccessDeniedException("Apenas administradores e gestores podem listar técnicos.");

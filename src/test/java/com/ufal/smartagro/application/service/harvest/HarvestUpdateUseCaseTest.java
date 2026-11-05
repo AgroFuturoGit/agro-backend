@@ -1,14 +1,5 @@
 package com.ufal.smartagro.application.service.harvest;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-
 import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionVersionGuard;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
@@ -19,10 +10,6 @@ import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.port.out.HarvestRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +17,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("HarvestUpdateUseCase — atualização e controle de concorrência")
@@ -87,6 +85,7 @@ class HarvestUpdateUseCaseTest {
 
         ArgumentCaptor<Harvest> captor = ArgumentCaptor.forClass(Harvest.class);
         verify(harvestRepository).save(captor.capture());
+        verify(harvestRepository, never()).findAll();
         assertThat(captor.getValue().getLabel()).isEqualTo("Safra 2025/1 - Revisada");
         verify(auditLogService).record(eq(admin), eq(AuditAction.UPDATE), eq("harvests"), eq(HARVEST_ID), any());
     }
@@ -147,6 +146,31 @@ class HarvestUpdateUseCaseTest {
                 .hasMessageContaining("Já existe uma safra com o rótulo");
 
         verify(harvestRepository, never()).save(any());
+        verifyNoInteractions(auditLogService);
+    }
+
+    @Test
+    @DisplayName("Período sobreposto a outra safra existente lança IllegalArgumentException")
+    void givenOverlappingDates_whenExecute_thenThrowsIllegalArgumentException() {
+        User admin = UserTestFactory.user().admin().build();
+        Harvest existing = existingHarvest();
+        when(harvestRepository.findById(HARVEST_ID)).thenReturn(Optional.of(existing));
+        when(harvestRepository.existsOverlappingExcludingId(
+                LocalDate.of(2025, 2, 1), LocalDate.of(2025, 8, 1), HARVEST_ID)).thenReturn(true);
+
+        Harvest patchData = new Harvest(
+                null,
+                "Safra Nova",
+                LocalDate.of(2025, 2, 1),
+                LocalDate.of(2025, 8, 1)
+        );
+
+        assertThatThrownBy(() -> useCase.execute(HARVEST_ID, patchData, admin))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Já existe uma safra cadastrada com período sobreposto");
+
+        verify(harvestRepository, never()).save(any());
+        verify(harvestRepository, never()).findAll();
         verifyNoInteractions(auditLogService);
     }
 

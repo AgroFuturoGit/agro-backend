@@ -166,6 +166,22 @@ class FindUserByIdUseCaseTest {
     }
 
     @Test
+    @DisplayName("MANAGER pode consultar técnico recém-criado por ele mesmo sem assistência ativa")
+    void managerCanFindTechnicianCreatedByHimWithoutAssistance() {
+        Technician createdTech = UserTestFactory.technicianProfile().user(techUser).createdBy(managerUser).build();
+
+        when(userRepository.findById(techUser.getId())).thenReturn(Optional.of(techUser));
+        when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
+        when(managerRepository.findByUserId(techUser.getId())).thenReturn(Optional.empty());
+        when(farmerRepository.findByUserId(techUser.getId())).thenReturn(Optional.empty());
+        when(technicianRepository.findByUserId(techUser.getId())).thenReturn(Optional.of(createdTech));
+
+        User result = useCase.findById(techUser.getId(), managerUser);
+
+        assertThat(result).isEqualTo(techUser);
+    }
+
+    @Test
     @DisplayName("MANAGER tentando consultar usuário de outra organização recebe AccessDeniedException")
     void managerCannotFindUserFromAnotherOrg() {
         User otherFarmerUser = UserTestFactory.user().farmer().build();

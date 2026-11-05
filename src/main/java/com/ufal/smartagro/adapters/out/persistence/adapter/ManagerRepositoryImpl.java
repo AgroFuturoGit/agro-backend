@@ -8,8 +8,10 @@ import com.ufal.smartagro.domain.port.out.ManagerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -36,10 +38,17 @@ public class ManagerRepositoryImpl implements ManagerRepository {
     }
 
     @Override
-    public java.util.List<Manager> findAll() {
+    public List<Manager> findAll() {
         return jpaRepository.findAll().stream()
                 .map(mapper::toDomain)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Manager> findAllByOrganizationId(UUID organizationId) {
+        return jpaRepository.findAllByOrganizationId(organizationId).stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
     }
 
     @Override

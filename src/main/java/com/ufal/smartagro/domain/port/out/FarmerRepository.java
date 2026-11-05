@@ -21,6 +21,8 @@ public interface FarmerRepository {
 
     List<Farmer> findAllByCommunityId(UUID communityId);
 
+    long countByCommunityId(UUID communityId);
+
     List<Farmer> findAllByOrganizationId(UUID organizationId);
 
     List<Farmer> findAllByCommunityIdIn(Collection<UUID> communityIds);

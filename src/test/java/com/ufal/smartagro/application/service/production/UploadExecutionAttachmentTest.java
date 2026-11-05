@@ -18,7 +18,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -87,7 +86,7 @@ class UploadExecutionAttachmentTest {
     @DisplayName("grava a foto e devolve o anexo criado")
     void gravaFoto() {
         apontamentoExiste();
-        when(attachmentRepository.findAllByExecutionId(EXECUTION_ID)).thenReturn(List.of());
+        when(attachmentRepository.countByExecutionId(EXECUTION_ID)).thenReturn(0L);
         when(attachmentRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         AttachmentUploadResult resultado = useCase.upload(EXECUTION_ID, foto(CLIENT_ID, "image/jpeg", 1024), usuario());
@@ -120,7 +119,7 @@ class UploadExecutionAttachmentTest {
     @DisplayName("sem clientId não há como deduplicar, e cada envio grava")
     void semClientIdGravaSempre() {
         apontamentoExiste();
-        when(attachmentRepository.findAllByExecutionId(EXECUTION_ID)).thenReturn(List.of());
+        when(attachmentRepository.countByExecutionId(EXECUTION_ID)).thenReturn(0L);
         when(attachmentRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         AttachmentUploadResult resultado = useCase.upload(EXECUTION_ID, foto(null, "image/jpeg", 1024), usuario());
@@ -166,8 +165,8 @@ class UploadExecutionAttachmentTest {
     @DisplayName("recusa o sexto anexo do mesmo apontamento")
     void recusaAcimaDoTeto() {
         apontamentoExiste();
-        when(attachmentRepository.findAllByExecutionId(EXECUTION_ID))
-                .thenReturn(List.of(gravado(null), gravado(null), gravado(null), gravado(null), gravado(null)));
+        when(attachmentRepository.countByExecutionId(EXECUTION_ID))
+                .thenReturn(5L);
 
         assertThatThrownBy(() -> useCase.upload(EXECUTION_ID, foto(CLIENT_ID, "image/jpeg", 1024), usuario()))
                 .isInstanceOf(IllegalArgumentException.class)

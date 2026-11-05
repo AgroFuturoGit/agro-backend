@@ -8,14 +8,15 @@ import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.HarvestRepository;
-import java.util.HashMap;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@RequiredArgsConstructor
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
+@RequiredArgsConstructor
 public class HarvestRegisterUseCase {
 
     private final HarvestRepository harvestRepository;
@@ -40,11 +41,7 @@ public class HarvestRegisterUseCase {
             throw new HarvestAlreadyExistsException("Já existe uma safra com o rótulo: " + trimmedLabel);
         }
 
-        boolean hasOverlap = harvestRepository.findAll().stream()
-                .anyMatch(existing -> existing.getStartDate() != null && existing.getEndDate() != null
-                        && !harvest.getEndDate().isBefore(existing.getStartDate())
-                        && !harvest.getStartDate().isAfter(existing.getEndDate()));
-        if (hasOverlap) {
+        if (harvestRepository.existsOverlapping(harvest.getStartDate(), harvest.getEndDate())) {
             throw new IllegalArgumentException("Já existe uma safra cadastrada com período sobreposto.");
         }
 
@@ -65,14 +62,7 @@ public class HarvestRegisterUseCase {
         if (saved.getEndDate() != null) {
             details.put("endDate", saved.getEndDate().toString());
         }
-
-        auditLogService.record(
-                loggedUser,
-                AuditAction.CREATE,
-                "harvests",
-                saved.getId(),
-                details
-        );
+        auditLogService.record(loggedUser, AuditAction.CREATE, "harvests", saved.getId(), details);
 
         return saved;
     }

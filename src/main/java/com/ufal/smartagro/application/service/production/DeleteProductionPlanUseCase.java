@@ -39,7 +39,7 @@ public class DeleteProductionPlanUseCase {
 
         accessValidator.validateWriteAccess(plan.getFarmer(), loggedUser);
 
-        int executionCount = productionExecutionRepository.findAllByProductionPlanId(planId).size();
+        long executionCount = productionExecutionRepository.countByProductionPlanId(planId);
         if (executionCount > 0) {
             throw new EntityInUseException(
                     "Não é possível excluir um plano de produção que possui " + executionCount + " apontamentos de colheita vinculados."

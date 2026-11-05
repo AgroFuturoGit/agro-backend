@@ -8,9 +8,16 @@ import java.util.UUID;
 
 public interface TechnicalAssistanceRepository {
     TechnicalAssistance save(TechnicalAssistance assistance);
+
     Optional<TechnicalAssistance> findById(UUID id);
+
     List<TechnicalAssistance> findByTechnicianId(UUID technicianId);
+
     List<TechnicalAssistance> findByCommunityId(UUID communityId);
+
     Optional<TechnicalAssistance> findActiveByTechnicianAndCommunity(UUID technicianId, UUID communityId);
+
+    long countActiveByCommunityId(UUID communityId);
+
     void delete(UUID id);
 }

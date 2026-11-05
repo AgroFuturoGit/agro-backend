@@ -18,5 +18,7 @@ public interface ProductionExecutionRepository {
 
     Optional<ProductionExecution> findByPlanIdAndClientId(UUID planId, UUID clientId);
 
+    long countByProductionPlanId(UUID planId);
+
     void delete(UUID id);
 }

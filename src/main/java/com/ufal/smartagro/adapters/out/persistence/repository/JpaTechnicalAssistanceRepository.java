@@ -12,8 +12,12 @@ import java.util.UUID;
 
 public interface JpaTechnicalAssistanceRepository extends JpaRepository<TechnicalAssistanceEntity, UUID> {
     List<TechnicalAssistanceEntity> findByTechnicianId(UUID technicianId);
+
     List<TechnicalAssistanceEntity> findByCommunityId(UUID communityId);
+
     Optional<TechnicalAssistanceEntity> findByTechnicianIdAndCommunityIdAndEndDateIsNull(UUID technicianId, UUID communityId);
+
+    long countByCommunityIdAndEndDateIsNull(UUID communityId);
 
     @Modifying
     @Query("UPDATE TechnicalAssistanceEntity ta SET ta.deletedAt = CURRENT_TIMESTAMP WHERE ta.id = :id")

@@ -41,10 +41,10 @@ public class FindAllUsersUseCase {
 
         if (loggedUser.getRole() == Role.MANAGER) {
             Set<UUID> allowedUserIds = resolveAllowedUserIdsForManager(loggedUser);
-            return userRepository.findAll()
-                    .stream()
-                    .filter(u -> allowedUserIds.contains(u.getId()))
-                    .collect(Collectors.toList());
+            if (allowedUserIds.isEmpty()) {
+                return List.of();
+            }
+            return userRepository.findAllByIdIn(allowedUserIds);
         }
 
         return userRepository.findAll()
@@ -63,11 +63,8 @@ public class FindAllUsersUseCase {
         Set<UUID> allowedUserIds = new HashSet<>();
         allowedUserIds.add(loggedUser.getId());
 
-        for (Manager m : managerRepository.findAll()) {
-            if (m.getOrganization() != null
-                    && managerOrgId.equals(m.getOrganization().getId())
-                    && m.getUser() != null
-                    && m.getUser().getId() != null) {
+        for (Manager m : managerRepository.findAllByOrganizationId(managerOrgId)) {
+            if (m.getUser() != null && m.getUser().getId() != null) {
                 allowedUserIds.add(m.getUser().getId());
             }
         }
@@ -81,6 +78,14 @@ public class FindAllUsersUseCase {
         for (Technician t : technicianRepository.findAllByOrganizationId(managerOrgId)) {
             if (t.getUser() != null && t.getUser().getId() != null) {
                 allowedUserIds.add(t.getUser().getId());
+            }
+        }
+
+        if (loggedUser.getId() != null) {
+            for (Technician t : technicianRepository.findAllByCreatedById(loggedUser.getId())) {
+                if (t.getUser() != null && t.getUser().getId() != null) {
+                    allowedUserIds.add(t.getUser().getId());
+                }
             }
         }
 

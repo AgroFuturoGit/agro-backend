@@ -17,6 +17,10 @@ public interface HarvestRepository {
 
     boolean existsByLabel(String label);
 
+    boolean existsOverlapping(LocalDate startDate, LocalDate endDate);
+
+    boolean existsOverlappingExcludingId(LocalDate startDate, LocalDate endDate, UUID excludeId);
+
     void deleteById(UUID id);
 
     Optional<Harvest> findActiveHarvest(LocalDate date);

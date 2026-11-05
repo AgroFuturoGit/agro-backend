@@ -50,7 +50,7 @@ public class DeleteFarmerUseCase {
             accessValidator.validateAccess(existingFarmer, loggedUser);
         }
 
-        int planCount = productionPlanRepository.findAllByFarmerId(id).size();
+        long planCount = productionPlanRepository.countByFarmerId(id);
         if (planCount > 0) {
             throw new EntityInUseException(
                     "Não é possível excluir um agricultor que possui " + planCount + " planos de produção vinculados."

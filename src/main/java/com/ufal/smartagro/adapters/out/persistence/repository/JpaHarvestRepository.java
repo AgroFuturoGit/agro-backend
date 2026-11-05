@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-public interface JpaHarvestRepository extends JpaRepository <HarvestEntity, UUID> {
+public interface JpaHarvestRepository extends JpaRepository<HarvestEntity, UUID> {
 
     boolean existsByLabel(String label);
 
@@ -20,4 +20,26 @@ public interface JpaHarvestRepository extends JpaRepository <HarvestEntity, UUID
 
     @Query("SELECT h FROM HarvestEntity h WHERE h.startDate <= :date AND h.endDate >= :date ORDER BY h.startDate DESC")
     List<HarvestEntity> findActiveHarvests(@Param("date") LocalDate date);
+
+    @Query("""
+        SELECT CASE WHEN COUNT(h) > 0 THEN true ELSE false END
+        FROM HarvestEntity h
+        WHERE h.startDate <= :endDate
+          AND h.endDate >= :startDate
+    """)
+    boolean existsOverlapping(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    @Query("""
+        SELECT CASE WHEN COUNT(h) > 0 THEN true ELSE false END
+        FROM HarvestEntity h
+        WHERE h.id != :excludeId
+          AND h.startDate <= :endDate
+          AND h.endDate >= :startDate
+    """)
+    boolean existsOverlappingExcludingId(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("excludeId") UUID excludeId);
 }

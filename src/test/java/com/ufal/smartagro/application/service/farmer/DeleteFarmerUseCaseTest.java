@@ -2,7 +2,6 @@ package com.ufal.smartagro.application.service.farmer;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -14,14 +13,12 @@ import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityInUseException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
-import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import com.ufal.smartagro.domain.port.out.ProductionPlanRepository;
 import com.ufal.smartagro.domain.port.out.UserRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -77,7 +74,7 @@ class DeleteFarmerUseCaseTest {
         User admin = UserTestFactory.user().admin().build();
 
         when(farmerRepository.findById(farmer.getId())).thenReturn(Optional.of(farmer));
-        when(productionPlanRepository.findAllByFarmerId(farmer.getId())).thenReturn(List.of(mock(ProductionPlan.class)));
+        when(productionPlanRepository.countByFarmerId(farmer.getId())).thenReturn(1L);
 
         assertThatThrownBy(() -> useCase.delete(farmer.getId(), admin))
                 .isInstanceOf(EntityInUseException.class)
@@ -95,7 +92,7 @@ class DeleteFarmerUseCaseTest {
         User admin = UserTestFactory.user().admin().build();
 
         when(farmerRepository.findById(farmer.getId())).thenReturn(Optional.of(farmer));
-        when(productionPlanRepository.findAllByFarmerId(farmer.getId())).thenReturn(List.of());
+        when(productionPlanRepository.countByFarmerId(farmer.getId())).thenReturn(0L);
 
         useCase.delete(farmer.getId(), admin);
 
@@ -110,7 +107,7 @@ class DeleteFarmerUseCaseTest {
     void givenFarmerWithoutUser_whenDelete_thenDeletesOnlyFarmer() {
         Farmer farmer = UserTestFactory.farmerProfile().user(null).build();
         when(farmerRepository.findById(farmer.getId())).thenReturn(Optional.of(farmer));
-        when(productionPlanRepository.findAllByFarmerId(farmer.getId())).thenReturn(List.of());
+        when(productionPlanRepository.countByFarmerId(farmer.getId())).thenReturn(0L);
 
         useCase.delete(farmer.getId());
 

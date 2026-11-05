@@ -67,6 +67,23 @@ class FindTechnicianByIdUseCaseTest {
     }
 
     @Test
+    @DisplayName("Given MANAGER When técnico criado por ele ainda sem assistência ativa Then retorna técnico")
+    void givenManager_whenTechnicianCreatedByManagerWithoutAssistance_thenReturnsTechnician() {
+        Organization org = UserTestFactory.organization().build();
+        User managerUser = UserTestFactory.user().manager().build();
+        Manager manager = UserTestFactory.managerProfile().user(managerUser).organization(org).build();
+        Technician technician = UserTestFactory.technicianProfile().createdBy(managerUser).build();
+
+        when(technicianRepository.findById(technician.getId())).thenReturn(Optional.of(technician));
+        when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
+        when(technicianRepository.existsByIdAndOrganizationId(technician.getId(), org.getId())).thenReturn(false);
+
+        Technician result = findTechnicianByIdUseCase.findById(technician.getId(), managerUser);
+
+        assertThat(result).isEqualTo(technician);
+    }
+
+    @Test
     @DisplayName("Given MANAGER When técnico de outra organização Then AccessDeniedException")
     void givenManager_whenTechnicianNotInSameOrg_thenThrowsAccessDeniedException() {
         Organization org = UserTestFactory.organization().build();

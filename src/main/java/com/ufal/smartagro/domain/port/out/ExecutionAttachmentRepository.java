@@ -22,5 +22,7 @@ public interface ExecutionAttachmentRepository {
     /** O anexo já gravado para este `clientId`, se a fila já tiver enviado. */
     Optional<ExecutionAttachment> findByExecutionIdAndClientId(UUID executionId, UUID clientId);
 
+    long countByExecutionId(UUID executionId);
+
     void delete(UUID id);
 }

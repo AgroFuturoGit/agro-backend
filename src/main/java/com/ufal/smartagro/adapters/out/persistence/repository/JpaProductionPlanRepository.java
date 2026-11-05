@@ -39,6 +39,8 @@ public interface JpaProductionPlanRepository extends JpaRepository<ProductionPla
 
     long countByCropId(UUID cropId);
 
+    long countByFarmerId(UUID farmerId);
+
     @Modifying
     @Query("UPDATE ProductionPlanEntity p SET p.deletedAt = CURRENT_TIMESTAMP WHERE p.id = :id")
     void softDeleteById(@Param("id") UUID id);

@@ -9,6 +9,8 @@ import com.ufal.smartagro.domain.util.CpfNormalizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -73,6 +75,17 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public List<User> findAll() {
         return jpaUserRepository.findAll()
+                .stream()
+                .map(userMapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<User> findAllByIdIn(Collection<UUID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return jpaUserRepository.findAllById(ids)
                 .stream()
                 .map(userMapper::toDomain)
                 .collect(Collectors.toList());
