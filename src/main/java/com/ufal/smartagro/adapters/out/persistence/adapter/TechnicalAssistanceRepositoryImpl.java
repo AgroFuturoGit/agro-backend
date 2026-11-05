@@ -52,6 +52,11 @@ public class TechnicalAssistanceRepositoryImpl implements TechnicalAssistanceRep
                 .map(mapper::toDomain);
     }
 
+    @Override
+    public long countActiveByCommunityId(UUID communityId) {
+        return jpaRepository.countByCommunityIdAndEndDateIsNull(communityId);
+    }
+
     @org.springframework.transaction.annotation.Transactional
     @Override
     public void delete(UUID id) {

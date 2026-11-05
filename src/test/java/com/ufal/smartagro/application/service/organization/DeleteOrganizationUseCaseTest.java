@@ -4,7 +4,6 @@ import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityInUseException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
-import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Organization;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.AuditAction;
@@ -19,7 +18,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -68,7 +66,7 @@ class DeleteOrganizationUseCaseTest {
     void givenOrgWithCommunities_whenDelete_thenThrowsEntityInUseException() {
         UUID orgId = UUID.randomUUID();
         when(organizationRepository.findById(orgId)).thenReturn(Optional.of(mock(Organization.class)));
-        when(communityRepository.findAllByOrganizationId(orgId)).thenReturn(List.of(mock(Community.class)));
+        when(communityRepository.countByOrganizationId(orgId)).thenReturn(1L);
 
         assertThatThrownBy(() -> useCase.delete(orgId))
                 .isInstanceOf(EntityInUseException.class)
@@ -82,7 +80,7 @@ class DeleteOrganizationUseCaseTest {
     void givenOrgWithManagers_whenDelete_thenThrowsEntityInUseException() {
         UUID orgId = UUID.randomUUID();
         when(organizationRepository.findById(orgId)).thenReturn(Optional.of(mock(Organization.class)));
-        when(communityRepository.findAllByOrganizationId(orgId)).thenReturn(List.of());
+        when(communityRepository.countByOrganizationId(orgId)).thenReturn(0L);
         when(managerRepository.countByOrganizationId(orgId)).thenReturn(2L);
 
         assertThatThrownBy(() -> useCase.delete(orgId))
@@ -112,7 +110,7 @@ class DeleteOrganizationUseCaseTest {
         Organization org = UserTestFactory.organization().id(orgId).name("Cooperativa Alagoana").build();
 
         when(organizationRepository.findById(orgId)).thenReturn(Optional.of(org));
-        when(communityRepository.findAllByOrganizationId(orgId)).thenReturn(List.of());
+        when(communityRepository.countByOrganizationId(orgId)).thenReturn(0L);
         when(managerRepository.countByOrganizationId(orgId)).thenReturn(0L);
 
         useCase.delete(orgId, admin);

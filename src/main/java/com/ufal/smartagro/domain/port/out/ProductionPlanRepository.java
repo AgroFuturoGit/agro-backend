@@ -33,6 +33,8 @@ public interface ProductionPlanRepository {
 
     long countByCropId(UUID cropId);
 
+    long countByFarmerId(UUID farmerId);
+
     List<FarmerPlanSummary> findPlanSummariesByFarmer(UUID farmerId, UUID harvestId, boolean includeActiveContinuous);
 
     default List<FarmerPlanSummary> findPlanSummariesByFarmer(UUID farmerId, UUID harvestId) {

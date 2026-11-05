@@ -77,7 +77,7 @@ public class UploadExecutionAttachmentUseCase {
 
         validate(incoming);
 
-        if (attachmentRepository.findAllByExecutionId(executionId).size() >= MAX_ATTACHMENTS_PER_EXECUTION) {
+        if (attachmentRepository.countByExecutionId(executionId) >= MAX_ATTACHMENTS_PER_EXECUTION) {
             throw new IllegalArgumentException(
                     "Este apontamento já tem " + MAX_ATTACHMENTS_PER_EXECUTION + " anexos, que é o máximo permitido.");
         }

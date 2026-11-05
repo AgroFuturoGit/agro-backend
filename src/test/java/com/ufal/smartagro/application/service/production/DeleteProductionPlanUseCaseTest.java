@@ -4,7 +4,6 @@ import com.ufal.smartagro.domain.exception.EntityInUseException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.application.service.audit.AuditLogService;
-import com.ufal.smartagro.domain.model.ProductionExecution;
 import com.ufal.smartagro.domain.model.ProductionPlan;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.port.out.ProductionExecutionRepository;
@@ -17,7 +16,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -55,7 +53,7 @@ class DeleteProductionPlanUseCaseTest {
         when(plan.getFarmer()).thenReturn(farmer);
 
         when(productionPlanRepository.findById(planId)).thenReturn(Optional.of(plan));
-        when(productionExecutionRepository.findAllByProductionPlanId(planId)).thenReturn(List.of(mock(ProductionExecution.class)));
+        when(productionExecutionRepository.countByProductionPlanId(planId)).thenReturn(1L);
 
         assertThatThrownBy(() -> useCase.delete(planId, admin))
                 .isInstanceOf(EntityInUseException.class)
@@ -75,7 +73,7 @@ class DeleteProductionPlanUseCaseTest {
         when(plan.getFarmer()).thenReturn(farmer);
 
         when(productionPlanRepository.findById(planId)).thenReturn(Optional.of(plan));
-        when(productionExecutionRepository.findAllByProductionPlanId(planId)).thenReturn(List.of());
+        when(productionExecutionRepository.countByProductionPlanId(planId)).thenReturn(0L);
 
         useCase.delete(planId, admin);
 

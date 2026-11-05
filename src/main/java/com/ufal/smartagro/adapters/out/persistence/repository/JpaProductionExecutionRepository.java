@@ -26,6 +26,8 @@ public interface JpaProductionExecutionRepository extends JpaRepository<Producti
     @EntityGraph(attributePaths = {"productionPlan", "productionPlan.farmer", "productionPlan.crop", "productionPlan.harvest", "validatedBy"})
     Optional<ProductionExecutionEntity> findByProductionPlanIdAndClientId(UUID planId, UUID clientId);
 
+    long countByProductionPlanId(UUID planId);
+
     @Modifying
     @Query("UPDATE ProductionExecutionEntity p SET p.deletedAt = CURRENT_TIMESTAMP WHERE p.id = :id")
     void softDeleteById(@Param("id") UUID id);

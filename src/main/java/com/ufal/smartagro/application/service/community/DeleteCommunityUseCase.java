@@ -6,7 +6,6 @@ import com.ufal.smartagro.domain.exception.EntityInUseException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Manager;
-import com.ufal.smartagro.domain.model.TechnicalAssistance;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.Role;
@@ -56,16 +55,14 @@ public class DeleteCommunityUseCase {
             }
         }
 
-        int farmerCount = farmerRepository.findAllByCommunityId(id).size();
+        long farmerCount = farmerRepository.countByCommunityId(id);
         if (farmerCount > 0) {
             throw new EntityInUseException(
                     "Não é possível excluir uma comunidade que possui " + farmerCount + " agricultores vinculados."
             );
         }
 
-        long activeAssistanceCount = technicalAssistanceRepository.findByCommunityId(id).stream()
-                .filter(TechnicalAssistance::isActive)
-                .count();
+        long activeAssistanceCount = technicalAssistanceRepository.countActiveByCommunityId(id);
         if (activeAssistanceCount > 0) {
             throw new EntityInUseException(
                     "Não é possível excluir uma comunidade que possui " + activeAssistanceCount + " assistências técnicas ativas vinculadas."

@@ -53,6 +53,8 @@ public interface JpaExecutionAttachmentRepository extends JpaRepository<Executio
     Optional<ExecutionAttachmentView> findMetadataByExecutionIdAndClientId(
             @Param("executionId") UUID executionId, @Param("clientId") UUID clientId);
 
+    long countByProductionExecutionId(UUID executionId);
+
     @Modifying
     @Query("UPDATE ExecutionAttachmentEntity a SET a.deletedAt = CURRENT_TIMESTAMP WHERE a.id = :id")
     void softDeleteById(@Param("id") UUID id);

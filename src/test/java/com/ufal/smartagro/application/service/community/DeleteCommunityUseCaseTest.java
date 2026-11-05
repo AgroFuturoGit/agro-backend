@@ -5,10 +5,8 @@ import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityInUseException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Community;
-import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Organization;
-import com.ufal.smartagro.domain.model.TechnicalAssistance;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.OrganizationType;
@@ -27,11 +25,12 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -79,7 +78,7 @@ class DeleteCommunityUseCaseTest {
     void givenCommunityWithFarmers_whenDelete_thenThrowsEntityInUseException() {
         UUID communityId = UUID.randomUUID();
         when(communityRepository.findById(communityId)).thenReturn(Optional.of(mock(Community.class)));
-        when(farmerRepository.findAllByCommunityId(communityId)).thenReturn(List.of(mock(Farmer.class)));
+        when(farmerRepository.countByCommunityId(communityId)).thenReturn(1L);
 
         assertThatThrownBy(() -> useCase.delete(communityId))
                 .isInstanceOf(EntityInUseException.class)
@@ -92,12 +91,10 @@ class DeleteCommunityUseCaseTest {
     @DisplayName("Quando existem assistências técnicas ativas vinculadas, lança EntityInUseException (409)")
     void givenCommunityWithActiveAssistances_whenDelete_thenThrowsEntityInUseException() {
         UUID communityId = UUID.randomUUID();
-        TechnicalAssistance activeAssistance = mock(TechnicalAssistance.class);
-        when(activeAssistance.isActive()).thenReturn(true);
 
         when(communityRepository.findById(communityId)).thenReturn(Optional.of(mock(Community.class)));
-        when(farmerRepository.findAllByCommunityId(communityId)).thenReturn(List.of());
-        when(technicalAssistanceRepository.findByCommunityId(communityId)).thenReturn(List.of(activeAssistance));
+        when(farmerRepository.countByCommunityId(communityId)).thenReturn(0L);
+        when(technicalAssistanceRepository.countActiveByCommunityId(communityId)).thenReturn(1L);
 
         assertThatThrownBy(() -> useCase.delete(communityId))
                 .isInstanceOf(EntityInUseException.class)
@@ -145,8 +142,8 @@ class DeleteCommunityUseCaseTest {
         Community community = new Community(communityId, "Comunidade Centro", null, null, null, null);
 
         when(communityRepository.findById(communityId)).thenReturn(Optional.of(community));
-        when(farmerRepository.findAllByCommunityId(communityId)).thenReturn(List.of());
-        when(technicalAssistanceRepository.findByCommunityId(communityId)).thenReturn(List.of());
+        when(farmerRepository.countByCommunityId(communityId)).thenReturn(0L);
+        when(technicalAssistanceRepository.countActiveByCommunityId(communityId)).thenReturn(0L);
 
         useCase.delete(communityId, admin);
 

@@ -64,6 +64,11 @@ public class FarmerRepositoryImpl implements FarmerRepository {
     }
 
     @Override
+    public long countByCommunityId(UUID communityId) {
+        return jpaRepository.countByCommunityId(communityId);
+    }
+
+    @Override
     public List<Farmer> findAllByOrganizationId(UUID organizationId) {
         return jpaRepository.findAllByOrganizationId(organizationId).stream()
                 .map(mapper::toDomain)

@@ -20,6 +20,8 @@ public interface JpaFarmerRepository extends JpaRepository<FarmerEntity, UUID> {
 
     List<FarmerEntity> findAllByCommunityId(UUID communityId);
 
+    long countByCommunityId(UUID communityId);
+
     @Query("SELECT f FROM FarmerEntity f WHERE f.community.organization.id = :organizationId")
     List<FarmerEntity> findAllByOrganizationId(@Param("organizationId") UUID organizationId);
 

@@ -42,7 +42,7 @@ public class DeleteOrganizationUseCase {
         Organization organization = organizationRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Organização não encontrada."));
 
-        int communityCount = communityRepository.findAllByOrganizationId(id).size();
+        long communityCount = communityRepository.countByOrganizationId(id);
         if (communityCount > 0) {
             throw new EntityInUseException(
                     "Não é possível excluir uma organização que possui " + communityCount + " comunidades vinculadas."

@@ -62,6 +62,11 @@ public class ExecutionAttachmentRepositoryImpl implements ExecutionAttachmentRep
     }
 
     @Override
+    public long countByExecutionId(UUID executionId) {
+        return jpaRepository.countByProductionExecutionId(executionId);
+    }
+
+    @Override
     public void delete(UUID id) {
         jpaRepository.softDeleteById(id);
     }
