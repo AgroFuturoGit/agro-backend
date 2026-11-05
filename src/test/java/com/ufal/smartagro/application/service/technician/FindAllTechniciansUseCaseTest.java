@@ -63,10 +63,28 @@ class FindAllTechniciansUseCaseTest {
 
         when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
         when(technicianRepository.findAllByOrganizationId(org.getId())).thenReturn(List.of(tech));
+        when(technicianRepository.findAll()).thenReturn(List.of(tech));
 
         List<Technician> result = findAllTechniciansUseCase.findAll(managerUser);
 
         assertThat(result).containsExactly(tech);
+    }
+
+    @Test
+    @DisplayName("Given MANAGER When findAll Then inclui técnico recém-criado pelo gestor ainda sem assistência ativa")
+    void givenManager_whenFindAll_thenIncludesCreatedTechnicianWithoutAssistance() {
+        Organization org = UserTestFactory.organization().build();
+        User managerUser = UserTestFactory.user().manager().build();
+        Manager manager = UserTestFactory.managerProfile().user(managerUser).organization(org).build();
+        Technician createdTech = UserTestFactory.technicianProfile().createdBy(managerUser).build();
+
+        when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
+        when(technicianRepository.findAllByOrganizationId(org.getId())).thenReturn(List.of());
+        when(technicianRepository.findAll()).thenReturn(List.of(createdTech));
+
+        List<Technician> result = findAllTechniciansUseCase.findAll(managerUser);
+
+        assertThat(result).containsExactly(createdTech);
     }
 
     @Test

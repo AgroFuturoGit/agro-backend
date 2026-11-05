@@ -37,12 +37,14 @@ public class FindTechnicianByIdUseCase {
             Manager manager = managerRepository.findByUserId(loggedUser.getId())
                     .orElseThrow(() -> new AccessDeniedException("Gestor não encontrado."));
 
-            if (manager.getOrganization() != null) {
-                UUID orgId = manager.getOrganization().getId();
-                boolean exists = technicianRepository.existsByIdAndOrganizationId(id, orgId);
-                if (exists) {
-                    return technician;
-                }
+            boolean isCreator = technician.getCreatedBy() != null
+                    && loggedUser.getId() != null
+                    && loggedUser.getId().equals(technician.getCreatedBy().getId());
+            boolean inOrg = manager.getOrganization() != null
+                    && technicianRepository.existsByIdAndOrganizationId(id, manager.getOrganization().getId());
+
+            if (isCreator || inOrg) {
+                return technician;
             }
             throw new AccessDeniedException("O gestor só tem acesso aos técnicos da sua própria organização.");
         }

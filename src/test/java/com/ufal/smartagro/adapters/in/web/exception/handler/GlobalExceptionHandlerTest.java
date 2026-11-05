@@ -1,6 +1,7 @@
 package com.ufal.smartagro.adapters.in.web.exception.handler;
 
 import com.ufal.smartagro.adapters.in.web.exception.dto.ApiError;
+import com.ufal.smartagro.domain.exception.InvalidStateTransitionException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -59,5 +60,22 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().status()).isEqualTo(404);
         assertThat(response.getBody().message()).isEqualTo("Recurso ou rota não encontrada.");
         assertThat(response.getBody().path()).isEqualTo("/rota/inexistente");
+    }
+
+    @Test
+    @DisplayName("Given InvalidStateTransitionException When transição de estado inválida Then retorna HTTP 409 Conflict")
+    void givenInvalidStateTransitionException_whenHandled_thenReturns409() {
+        InvalidStateTransitionException ex = new InvalidStateTransitionException(
+                "Apenas apontamentos com status PENDENTE podem ser rejeitados. Status atual: VALIDATED"
+        );
+        HttpServletRequest request = new MockHttpServletRequest("PUT", "/production-executions/123");
+
+        ResponseEntity<ApiError> response = handler.handleInvalidStateTransition(ex, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().status()).isEqualTo(409);
+        assertThat(response.getBody().message()).contains("Apenas apontamentos com status PENDENTE podem ser rejeitados");
+        assertThat(response.getBody().path()).isEqualTo("/production-executions/123");
     }
 }

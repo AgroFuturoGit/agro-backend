@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -54,7 +55,7 @@ public class UpdateOrganizationUseCase {
                 existingOrganization.getTaxId(),
                 dto.type() != null ? dto.type() : existingOrganization.getType(),
                 existingOrganization.getCreatedAt(),
-                LocalDateTime.now(),
+                LocalDateTime.now().truncatedTo(ChronoUnit.MICROS),
                 existingOrganization.getDeletedAt()
         );
 

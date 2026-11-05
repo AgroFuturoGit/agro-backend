@@ -83,7 +83,8 @@ public class FindUserByIdUseCase {
         }
 
         return technicianRepository.findByUserId(targetUserId)
-                .map(t -> technicianRepository.existsByIdAndOrganizationId(t.getId(), managerOrgId))
+                .map(t -> (t.getCreatedBy() != null && loggedUser.getId() != null && loggedUser.getId().equals(t.getCreatedBy().getId()))
+                        || technicianRepository.existsByIdAndOrganizationId(t.getId(), managerOrgId))
                 .orElse(false);
     }
 }

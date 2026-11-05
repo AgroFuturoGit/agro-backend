@@ -70,6 +70,7 @@ class FindAllUsersUseCaseTest {
         when(managerRepository.findAll()).thenReturn(List.of(manager));
         when(farmerRepository.findAllByOrganizationId(organization.getId())).thenReturn(List.of(farmer));
         when(technicianRepository.findAllByOrganizationId(organization.getId())).thenReturn(List.of(technician));
+        when(technicianRepository.findAll()).thenReturn(List.of(technician));
         when(userRepository.findAll()).thenReturn(List.of(managerUser, farmerUser, techUser, externalUser));
 
         List<User> result = useCase.findAll(managerUser);
@@ -78,6 +79,27 @@ class FindAllUsersUseCaseTest {
         verify(farmerRepository, never()).findAll();
         verify(farmerRepository).findAllByOrganizationId(organization.getId());
         verify(technicianRepository).findAllByOrganizationId(organization.getId());
+    }
+
+    @Test
+    @DisplayName("Given MANAGER When findAll Then inclui usuário de técnico recém-criado pelo gestor ainda sem assistência")
+    void givenManager_whenFindAll_thenIncludesCreatedTechnicianUser() {
+        User createdTechUser = UserTestFactory.user().technician().build();
+        Technician createdTechnician = UserTestFactory.technicianProfile()
+                .user(createdTechUser)
+                .createdBy(managerUser)
+                .build();
+
+        when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
+        when(managerRepository.findAll()).thenReturn(List.of(manager));
+        when(farmerRepository.findAllByOrganizationId(organization.getId())).thenReturn(List.of());
+        when(technicianRepository.findAllByOrganizationId(organization.getId())).thenReturn(List.of());
+        when(technicianRepository.findAll()).thenReturn(List.of(createdTechnician));
+        when(userRepository.findAll()).thenReturn(List.of(managerUser, createdTechUser));
+
+        List<User> result = useCase.findAll(managerUser);
+
+        assertThat(result).containsExactly(managerUser, createdTechUser);
     }
 
     @Test

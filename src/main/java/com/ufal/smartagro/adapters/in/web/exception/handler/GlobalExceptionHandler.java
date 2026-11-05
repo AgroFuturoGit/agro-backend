@@ -149,8 +149,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidStateTransitionException.class)
     public ResponseEntity<ApiError> handleInvalidStateTransition(
             InvalidStateTransitionException ex, HttpServletRequest httpServletRequest){
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiError(
-                HttpStatus.BAD_REQUEST.value(),
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiError(
+                HttpStatus.CONFLICT.value(),
                 ex.getMessage(),
                 httpServletRequest.getRequestURI(),
                 LocalDateTime.now()

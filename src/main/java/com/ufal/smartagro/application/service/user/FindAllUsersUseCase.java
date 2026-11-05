@@ -84,6 +84,17 @@ public class FindAllUsersUseCase {
             }
         }
 
+        for (Technician t : technicianRepository.findAll()) {
+            if (t.getDeletedAt() == null
+                    && t.getUser() != null
+                    && t.getUser().getId() != null
+                    && t.getCreatedBy() != null
+                    && loggedUser.getId() != null
+                    && loggedUser.getId().equals(t.getCreatedBy().getId())) {
+                allowedUserIds.add(t.getUser().getId());
+            }
+        }
+
         return allowedUserIds;
     }
 }
