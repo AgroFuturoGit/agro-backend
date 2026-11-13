@@ -126,23 +126,34 @@ class HarvestControllerTest {
     }
 
     @Test
-    @DisplayName("PATCH /harvests/{id} — TECHNICIAN pode atualizar safra (200 OK)")
-    void updateHarvest_asTechnician_returnsOk() throws Exception {
+    @DisplayName("POST /harvests — TECHNICIAN não pode registrar safra (403 Forbidden)")
+    void registerHarvest_asTechnician_returnsForbidden() throws Exception {
+        User techUser = UserTestFactory.user().technician().build();
+        LocalDate start = LocalDate.of(2026, 1, 1);
+        LocalDate end = LocalDate.of(2026, 6, 30);
+        HarvestRegisterDTO dto = new HarvestRegisterDTO("Safra 2026.1", start, end);
+
+        mockMvc.perform(post("/harvests")
+                        .with(user(userDetails(techUser)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("PATCH /harvests/{id} — TECHNICIAN não pode atualizar safra (403 Forbidden)")
+    void updateHarvest_asTechnician_returnsForbidden() throws Exception {
         User techUser = UserTestFactory.user().technician().build();
         UUID harvestId = UUID.randomUUID();
         LocalDate start = LocalDate.of(2026, 1, 1);
         LocalDate end = LocalDate.of(2026, 7, 31);
-        Harvest updatedHarvest = new Harvest(harvestId, "Safra 2026.1 - Atualizada", start, end);
-        when(harvestUpdateUseCase.execute(eq(harvestId), any(), any(), any())).thenReturn(updatedHarvest);
-
         HarvestUpdateDTO dto = new HarvestUpdateDTO("Safra 2026.1 - Atualizada", start, end);
 
         mockMvc.perform(patch("/harvests/{id}", harvestId)
                         .with(user(userDetails(techUser)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.label").value("Safra 2026.1 - Atualizada"));
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -202,6 +213,17 @@ class HarvestControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(harvestDeleteUseCase).execute(eq(harvestId), any());
+    }
+
+    @Test
+    @DisplayName("DELETE /harvests/{id} — TECHNICIAN não pode excluir safra (403 Forbidden)")
+    void deleteHarvest_asTechnician_returnsForbidden() throws Exception {
+        User techUser = UserTestFactory.user().technician().build();
+        UUID harvestId = UUID.randomUUID();
+
+        mockMvc.perform(delete("/harvests/{id}", harvestId)
+                        .with(user(userDetails(techUser))))
+                .andExpect(status().isForbidden());
     }
 
     @Test

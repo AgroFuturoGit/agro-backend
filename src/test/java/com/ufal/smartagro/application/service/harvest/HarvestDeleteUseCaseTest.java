@@ -94,7 +94,20 @@ class HarvestDeleteUseCaseTest {
     }
 
     @Test
-    @DisplayName("Quando usuário não é ADMIN nem TECHNICIAN, lança AccessDeniedException")
+    @DisplayName("Quando usuário é TECHNICIAN, lança AccessDeniedException")
+    void givenTechnician_whenDelete_thenThrowsAccessDeniedException() {
+        User tech = UserTestFactory.user().technician().build();
+        UUID harvestId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> useCase.execute(harvestId, tech))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(harvestRepository, never()).deleteById(any());
+        verifyNoInteractions(auditLogService);
+    }
+
+    @Test
+    @DisplayName("Quando usuário não é ADMIN, lança AccessDeniedException")
     void givenFarmer_whenDelete_thenThrowsAccessDeniedException() {
         User farmer = UserTestFactory.user().farmer().build();
         UUID harvestId = UUID.randomUUID();

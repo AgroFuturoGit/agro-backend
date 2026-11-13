@@ -208,4 +208,23 @@ class HarvestUpdateUseCaseTest {
         verify(harvestRepository, never()).save(any());
         verifyNoInteractions(auditLogService);
     }
+
+    @Test
+    @DisplayName("TECHNICIAN não tem permissão para alterar safras")
+    void givenTechnician_whenExecute_thenThrowsAccessDeniedException() {
+        User tech = UserTestFactory.user().technician().build();
+        Harvest patchData = new Harvest(
+                null,
+                "Safra Alterada",
+                LocalDate.of(2025, 1, 1),
+                LocalDate.of(2025, 6, 30)
+        );
+
+        assertThatThrownBy(() -> useCase.execute(HARVEST_ID, patchData, tech))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Usuário não tem permissão para atualizar uma safra.");
+
+        verify(harvestRepository, never()).save(any());
+        verifyNoInteractions(auditLogService);
+    }
 }

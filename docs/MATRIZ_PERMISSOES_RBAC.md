@@ -74,14 +74,14 @@ Este documento especifica a política de controle de acesso aos recursos do back
 | :--- | :--- | :--- | :--- | :--- |
 | Culturas | `GET` | `/crops` | `ADMIN, MANAGER, TECHNICIAN, FARMER` | Consulta do catálogo de culturas agrícolas cadastradas. |
 | Culturas | `GET` | `/crops/{id}` | `ADMIN, MANAGER, TECHNICIAN, FARMER` | Detalhes da cultura, tipo de colheita e produtividade esperada. |
-| Culturas | `POST` | `/crops` | `ADMIN, TECHNICIAN` | Cadastro de nova cultura (unicidade por nome + variedade ativa). |
-| Culturas | `PUT`, `PATCH` | `/crops/{id}` | `ADMIN, TECHNICIAN` | Atualização com controle de concorrência (`baseUpdatedAt`). |
-| Culturas | `DELETE`| `/crops/{id}` | `ADMIN, TECHNICIAN` | Bloqueado com `409 Conflict` se houver planos vinculados ativos. |
+| Culturas | `POST` | `/crops` | `ADMIN` | Cadastro de nova cultura (unicidade por nome + variedade ativa). |
+| Culturas | `PUT`, `PATCH` | `/crops/{id}` | `ADMIN` | Atualização com controle de concorrência (`baseUpdatedAt`). |
+| Culturas | `DELETE`| `/crops/{id}` | `ADMIN` | Bloqueado com `409 Conflict` se houver planos vinculados ativos. |
 | Safras | `GET` | `/harvests` | `ADMIN, MANAGER, TECHNICIAN, FARMER` | Consulta do calendário de safras vigentes e históricas. |
 | Safras | `GET` | `/harvests/{id}` | `ADMIN, MANAGER, TECHNICIAN, FARMER` | Detalhes do período e label da safra. |
-| Safras | `POST` | `/harvests` | `ADMIN, TECHNICIAN` | Criação de safra (`start_date <= end_date`). |
-| Safras | `PUT`, `PATCH` | `/harvests/{id}` | `ADMIN, TECHNICIAN` | Atualização do ciclo de safra. |
-| Safras | `DELETE`| `/harvests/{id}` | `ADMIN, TECHNICIAN` | Bloqueado com `409 Conflict` se houver planos vinculados ativos. |
+| Safras | `POST` | `/harvests` | `ADMIN` | Criação de safra (`start_date <= end_date`). |
+| Safras | `PUT`, `PATCH` | `/harvests/{id}` | `ADMIN` | Atualização do ciclo de safra. |
+| Safras | `DELETE`| `/harvests/{id}` | `ADMIN` | Bloqueado com `409 Conflict` se houver planos vinculados ativos. |
 
 ---
 

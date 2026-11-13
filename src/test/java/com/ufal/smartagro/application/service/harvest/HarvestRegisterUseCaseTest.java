@@ -127,6 +127,23 @@ class HarvestRegisterUseCaseTest {
     }
 
     @Test
+    @DisplayName("TECHNICIAN não tem permissão para cadastrar safra")
+    void givenTechnician_whenRegister_thenThrowsAccessDeniedException() {
+        User tech = UserTestFactory.user().technician().build();
+        Harvest harvest = new Harvest(
+                null, "Safra",
+                LocalDate.of(2026, 1, 1),
+                LocalDate.of(2026, 6, 30)
+        );
+
+        assertThatThrownBy(() -> useCase.execute(harvest, tech))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(harvestRepository, never()).save(any());
+        verifyNoInteractions(auditLogService);
+    }
+
+    @Test
     @DisplayName("FARMER não tem permissão para cadastrar safra")
     void givenFarmer_whenRegister_thenThrowsAccessDeniedException() {
         User farmer = UserTestFactory.user().farmer().build();

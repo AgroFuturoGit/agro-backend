@@ -52,7 +52,7 @@ public class CropController {
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
             @ApiResponse(responseCode = "403", description = "Não autorizado")
     })
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping({"", "/register"})
     public ResponseEntity<CropResponseDTO> register(@Valid @RequestBody CropRegisterDTO cropRegisterDTO,
                                                     @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
@@ -76,7 +76,7 @@ public class CropController {
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
             @ApiResponse(responseCode = "404", description = "Cultura não encontrada")
     })
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(value = "/{id}", method = {RequestMethod.PATCH, RequestMethod.PUT})
     public ResponseEntity<CropResponseDTO> update(@PathVariable UUID id,
                                                   @Valid @RequestBody CropUpdateDTO cropUpdateDTO,
@@ -129,7 +129,7 @@ public class CropController {
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
             @ApiResponse(responseCode = "404", description = "Cultura não encontrada")
     })
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
         User loggedUser = resolveLoggedUser(loggedUserDetails);

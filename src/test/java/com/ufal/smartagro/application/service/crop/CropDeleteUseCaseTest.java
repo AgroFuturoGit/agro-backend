@@ -94,7 +94,20 @@ class CropDeleteUseCaseTest {
     }
 
     @Test
-    @DisplayName("Quando usuário não é ADMIN nem TECHNICIAN, lança AccessDeniedException")
+    @DisplayName("Quando usuário é TECHNICIAN, lança AccessDeniedException")
+    void givenTechnician_whenDelete_thenThrowsAccessDeniedException() {
+        User tech = UserTestFactory.user().technician().build();
+        UUID cropId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> useCase.execute(cropId, tech))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(cropRepository, never()).deleteById(any());
+        verifyNoInteractions(auditLogService);
+    }
+
+    @Test
+    @DisplayName("Quando usuário não é ADMIN, lança AccessDeniedException")
     void givenFarmer_whenDelete_thenThrowsAccessDeniedException() {
         User farmer = UserTestFactory.user().farmer().build();
         UUID cropId = UUID.randomUUID();
