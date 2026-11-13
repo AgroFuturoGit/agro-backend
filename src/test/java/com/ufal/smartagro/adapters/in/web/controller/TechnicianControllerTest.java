@@ -10,6 +10,7 @@ import com.ufal.smartagro.application.service.technician.DeleteTechnicianUseCase
 import com.ufal.smartagro.application.service.technician.FindAllTechniciansUseCase;
 import com.ufal.smartagro.application.service.technician.FindTechnicianByIdUseCase;
 import com.ufal.smartagro.application.service.technician.FindTechnicianByUserUseCase;
+import com.ufal.smartagro.application.service.technician.GetAssignedAssistancesUseCase;
 import com.ufal.smartagro.application.service.technician.GetAssignedCommunitiesUseCase;
 import com.ufal.smartagro.application.service.technician.GetAssignedFarmersUseCase;
 import com.ufal.smartagro.application.service.technician.RegisterTechnicianUseCase;
@@ -80,6 +81,8 @@ class TechnicianControllerTest {
     private GetAssignedCommunitiesUseCase getAssignedCommunitiesUseCase;
     @MockitoBean
     private GetAssignedFarmersUseCase getAssignedFarmersUseCase;
+    @MockitoBean
+    private GetAssignedAssistancesUseCase getAssignedAssistancesUseCase;
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -436,6 +439,70 @@ class TechnicianControllerTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(technician.getId().toString()));
+    }
+
+    @Test
+    void getMyAssistances_asTechnician_returnsEnrichedAssistances() throws Exception {
+        User techUser = UserTestFactory.user().technician().build();
+        Technician technician = UserTestFactory.technicianProfile().user(techUser).build();
+        var organization = UserTestFactory.organization().name("Cooperativa Vale Verde").build();
+        Community community = UserTestFactory.community().organization(organization).name("Comunidade São José").build();
+        TechnicalAssistance assistance = UserTestFactory.technicalAssistance()
+                .technician(technician)
+                .community(community)
+                .build();
+
+        when(userRepository.findById(any())).thenReturn(Optional.of(techUser));
+        when(getAssignedAssistancesUseCase.getAssignedAssistances(techUser))
+                .thenReturn(List.of(new GetAssignedAssistancesUseCase.AssignedAssistanceItem(assistance, 14L)));
+
+        mockMvc.perform(get("/technicians/me/assistances")
+                        .with(user(userDetails(techUser))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(assistance.getId().toString()))
+                .andExpect(jsonPath("$[0].community.id").value(community.getId().toString()))
+                .andExpect(jsonPath("$[0].community.name").value("Comunidade São José"))
+                .andExpect(jsonPath("$[0].community.organization.name").value("Cooperativa Vale Verde"))
+                .andExpect(jsonPath("$[0].activeFarmersCount").value(14));
+    }
+
+    @Test
+    void getMyAssistances_asManager_forbidden() throws Exception {
+        User managerUser = UserTestFactory.user().manager().build();
+
+        mockMvc.perform(get("/technicians/me/assistances")
+                        .with(user(userDetails(managerUser))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void getTechnicianAssistances_asManager_returnsOk() throws Exception {
+        User managerUser = UserTestFactory.user().manager().build();
+        Technician technician = UserTestFactory.technicianProfile().build();
+        Community community = UserTestFactory.community().name("Comunidade Norte").build();
+        TechnicalAssistance assistance = UserTestFactory.technicalAssistance()
+                .technician(technician)
+                .community(community)
+                .build();
+
+        when(userRepository.findById(any())).thenReturn(Optional.of(managerUser));
+        when(getAssignedAssistancesUseCase.getAssignedAssistances(technician.getId(), managerUser))
+                .thenReturn(List.of(new GetAssignedAssistancesUseCase.AssignedAssistanceItem(assistance, 7L)));
+
+        mockMvc.perform(get("/technicians/{id}/assistances", technician.getId())
+                        .with(user(userDetails(managerUser))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].communityId").value(community.getId().toString()))
+                .andExpect(jsonPath("$[0].activeFarmersCount").value(7));
+    }
+
+    @Test
+    void getTechnicianAssistances_asTechnician_forbidden() throws Exception {
+        User techUser = UserTestFactory.user().technician().build();
+
+        mockMvc.perform(get("/technicians/{id}/assistances", UUID.randomUUID())
+                        .with(user(userDetails(techUser))))
+                .andExpect(status().isForbidden());
     }
 
     private UserDetailsImpl userDetails(User user) {

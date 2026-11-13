@@ -294,13 +294,21 @@ public class Mapper {
     }
 
     public static TechnicalAssistanceResponseDTO toTechnicalAssistanceResponseDTO(TechnicalAssistance assistance) {
+        return toTechnicalAssistanceResponseDTO(assistance, null);
+    }
+
+    public static TechnicalAssistanceResponseDTO toTechnicalAssistanceResponseDTO(
+            TechnicalAssistance assistance,
+            Long activeFarmersCount) {
         if (assistance == null) return null;
         return new TechnicalAssistanceResponseDTO(
                 assistance.getId(),
                 assistance.getTechnician() != null ? assistance.getTechnician().getId() : null,
                 assistance.getCommunity() != null ? assistance.getCommunity().getId() : null,
                 assistance.getStartDate(),
-                assistance.getEndDate()
+                assistance.getEndDate(),
+                toCommunityResponseDTO(assistance.getCommunity()),
+                activeFarmersCount
         );
     }
 }

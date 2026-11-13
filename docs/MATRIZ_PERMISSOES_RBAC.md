@@ -58,6 +58,8 @@ Este documento especifica a política de controle de acesso aos recursos do back
 | Técnico | `POST` | `/technicians` | `ADMIN, MANAGER` | Cadastro de técnicos com CREA/CFT/CFTA. |
 | Técnico | `PUT` | `/technicians/{id}` | `ADMIN, MANAGER, TECHNICIAN` | Atualização cadastral da equipe técnica (Técnico edita apenas o próprio perfil). |
 | Técnico | `DELETE`| `/technicians/{id}` | `ADMIN` | Soft delete de perfil técnico e usuário vinculado. |
+| Assistência| `GET` | `/technicians/me/assistances` | `TECHNICIAN` | Lista assistências ativas do técnico autenticado com comunidade, organização e total de agricultores. |
+| Assistência| `GET` | `/technicians/{id}/assistances` | `ADMIN, MANAGER` | Lista assistências ativas de um técnico (Gestor filtrado para comunidades da sua organização). |
 | Assistência| `POST` | `/technicians/{id}/assistances` | `ADMIN, MANAGER` | Vinculação do técnico às comunidades atendidas. |
 | Assistência| `DELETE`| `/technicians/{id}/assistances/{cId}` | `ADMIN, MANAGER` | Encerramento de vínculo de assistência técnica. |
 | Gestor | `GET` | `/managers/me` | `MANAGER` | Consulta dos dados cadastrais e organização do gestor autenticado. |
