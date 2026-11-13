@@ -1,5 +1,6 @@
 package com.ufal.smartagro.application.service.harvest;
 
+import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionVersionGuard;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
@@ -45,7 +46,7 @@ public class HarvestUpdateUseCase {
                 baseUpdatedAt,
                 existingHarvest.getUpdatedAt(),
                 existingHarvest.getCreatedAt(),
-                existingHarvest,
+                Mapper.toHarvestResponseDTO(existingHarvest),
                 "A safra foi alterada por outro usuário depois que esta edição começou."
         );
 

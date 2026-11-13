@@ -3,6 +3,7 @@ package com.ufal.smartagro.adapters.in.web.exception.handler;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.ufal.smartagro.adapters.in.web.exception.dto.ApiError;
 import com.ufal.smartagro.adapters.in.web.exception.dto.ConflictApiError;
+import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.ConcurrentUpdateException;
 import com.ufal.smartagro.domain.exception.CpfAlreadyExistsException;
@@ -220,8 +221,22 @@ public class GlobalExceptionHandler {
                 ex.getMessage(),
                 httpServletRequest.getRequestURI(),
                 LocalDateTime.now(),
-                ex.getCurrent()
+                sanitizeConflictCurrent(ex.getCurrent())
         ));
+    }
+
+    private Object sanitizeConflictCurrent(Object current) {
+        return switch (current) {
+            case com.ufal.smartagro.domain.model.ProductionPlan plan -> Mapper.toProductionPlanResponseDTO(plan);
+            case com.ufal.smartagro.domain.model.ProductionExecution exec -> Mapper.toProductionExecutionResponseDTO(exec);
+            case com.ufal.smartagro.domain.model.Crop crop -> Mapper.toCropResponseDTO(crop);
+            case com.ufal.smartagro.domain.model.Harvest harvest -> Mapper.toHarvestResponseDTO(harvest);
+            case com.ufal.smartagro.domain.model.Farmer farmer -> Mapper.toFarmerResponseDTO(farmer);
+            case com.ufal.smartagro.domain.model.Technician technician -> Mapper.toTechnicianResponseDTO(technician);
+            case com.ufal.smartagro.domain.model.Manager manager -> Mapper.toManagerResponseDTO(manager);
+            case com.ufal.smartagro.domain.model.User user -> Mapper.toUserResponseDTO(user);
+            case null, default -> current;
+        };
     }
 
     @ExceptionHandler(RateLimitExceededException.class)

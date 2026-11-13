@@ -1,5 +1,6 @@
 package com.ufal.smartagro.application.service.production;
 
+import com.ufal.smartagro.adapters.in.web.dto.production.ProductionExecutionResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionExecutionUpdateDTO;
 import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.InvalidStateTransitionException;
@@ -280,5 +281,30 @@ class UpdateProductionExecutionUseCaseTest {
         assertThat(updated.getValidatedBy()).isEqualTo(tech);
         assertThat(updated.getRejectionReason()).isEqualTo("Qualidade inadequada");
         verify(auditLogService).record(eq(tech), eq(AuditAction.REJECT), eq("production_executions"), eq(ID), any());
+    }
+
+    @Test
+    @DisplayName("Controle de concorrência recebe ProductionExecutionResponseDTO (sem vazar modelo de domínio)")
+    void givenUpdate_whenCheckingVersion_thenPassesResponseDtoToVersionGuard() {
+        User tech = UserTestFactory.user().technician().build();
+        Farmer farmer = UserTestFactory.farmerProfile().build();
+        ProductionExecution execution = createExecution(farmer, ExecutionStatus.PENDING, null);
+        when(repository.findById(ID)).thenReturn(Optional.of(execution));
+        when(repository.save(any(ProductionExecution.class))).thenAnswer(i -> i.getArgument(0));
+
+        ProductionExecutionUpdateDTO dto = new ProductionExecutionUpdateDTO(
+                null, null, null, null, null, null, "ok",
+                null, null, null, null, null, null
+        );
+
+        useCase.update(ID, dto, tech);
+
+        verify(versionGuard).ensureUpToDate(
+                isNull(),
+                eq(execution.getUpdatedAt()),
+                eq(execution.getCreatedAt()),
+                any(ProductionExecutionResponseDTO.class),
+                anyString()
+        );
     }
 }

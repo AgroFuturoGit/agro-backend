@@ -1,6 +1,7 @@
 package com.ufal.smartagro.application.service.production;
 
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionExecutionUpdateDTO;
+import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
@@ -80,7 +81,7 @@ public class UpdateProductionExecutionUseCase {
                 dto.baseUpdatedAt(),
                 existingExecution.getUpdatedAt(),
                 existingExecution.getCreatedAt(),
-                existingExecution,
+                Mapper.toProductionExecutionResponseDTO(existingExecution),
                 "O apontamento foi alterado por outro usuário depois que esta edição começou."
         );
 

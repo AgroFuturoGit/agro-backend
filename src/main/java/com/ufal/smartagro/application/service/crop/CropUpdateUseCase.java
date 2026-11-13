@@ -1,5 +1,6 @@
 package com.ufal.smartagro.application.service.crop;
 
+import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionVersionGuard;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
@@ -47,7 +48,7 @@ public class CropUpdateUseCase {
                 baseUpdatedAt,
                 existingCrop.getUpdatedAt(),
                 existingCrop.getCreatedAt(),
-                existingCrop,
+                Mapper.toCropResponseDTO(existingCrop),
                 "A cultura foi alterada por outro usuário depois que esta edição começou."
         );
 

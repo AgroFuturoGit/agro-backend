@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.ufal.smartagro.adapters.in.web.dto.crop.CropResponseDTO;
 import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionVersionGuard;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
@@ -171,7 +172,8 @@ class CropUpdateUseCaseTest {
 
         assertThatThrownBy(() -> useCase.execute(CROP_ID, patchData, admin, originalTime))
                 .isInstanceOf(ConcurrentUpdateException.class)
-                .hasMessageContaining("A cultura foi alterada por outro usuário");
+                .hasMessageContaining("A cultura foi alterada por outro usuário")
+                .satisfies(ex -> assertThat(((ConcurrentUpdateException) ex).getCurrent()).isInstanceOf(CropResponseDTO.class));
 
         verify(cropRepository, never()).save(any());
         verifyNoInteractions(auditLogService);
