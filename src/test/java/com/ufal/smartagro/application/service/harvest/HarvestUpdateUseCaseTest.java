@@ -1,6 +1,5 @@
 package com.ufal.smartagro.application.service.harvest;
 
-import com.ufal.smartagro.adapters.in.web.dto.harvest.HarvestResponseDTO;
 import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionVersionGuard;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
@@ -203,7 +202,7 @@ class HarvestUpdateUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(HARVEST_ID, patchData, admin, originalTime))
                 .isInstanceOf(ConcurrentUpdateException.class)
                 .hasMessageContaining("A safra foi alterada por outro usuário")
-                .satisfies(ex -> assertThat(((ConcurrentUpdateException) ex).getCurrent()).isInstanceOf(HarvestResponseDTO.class));
+                .satisfies(ex -> assertThat(((ConcurrentUpdateException) ex).getCurrent()).isEqualTo(existing));
 
         verify(harvestRepository, never()).save(any());
         verifyNoInteractions(auditLogService);

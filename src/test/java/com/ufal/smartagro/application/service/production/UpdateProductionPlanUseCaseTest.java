@@ -1,6 +1,5 @@
 package com.ufal.smartagro.application.service.production;
 
-import com.ufal.smartagro.adapters.in.web.dto.production.ProductionPlanResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionPlanUpdateDTO;
 import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.model.Crop;
@@ -157,8 +156,8 @@ class UpdateProductionPlanUseCaseTest {
     }
 
     @Test
-    @DisplayName("Controle de concorrência recebe ProductionPlanResponseDTO (sem vazar modelo de domínio)")
-    void givenUpdate_whenCheckingVersion_thenPassesResponseDtoToVersionGuard() {
+    @DisplayName("Controle de concorrência recebe o ProductionPlan atual para verificação de versão")
+    void givenUpdate_whenCheckingVersion_thenPassesExistingPlanToVersionGuard() {
         User admin = UserTestFactory.user().admin().build();
         ProductionPlan existing = existingPlan();
         when(productionPlanRepository.findById(PLAN_ID)).thenReturn(Optional.of(existing));
@@ -175,7 +174,7 @@ class UpdateProductionPlanUseCaseTest {
                 isNull(),
                 eq(existing.getUpdatedAt()),
                 eq(existing.getCreatedAt()),
-                any(ProductionPlanResponseDTO.class),
+                eq(existing),
                 anyString()
         );
     }

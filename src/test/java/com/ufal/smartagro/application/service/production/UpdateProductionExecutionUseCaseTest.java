@@ -1,6 +1,5 @@
 package com.ufal.smartagro.application.service.production;
 
-import com.ufal.smartagro.adapters.in.web.dto.production.ProductionExecutionResponseDTO;
 import com.ufal.smartagro.adapters.in.web.dto.production.ProductionExecutionUpdateDTO;
 import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.InvalidStateTransitionException;
@@ -284,8 +283,8 @@ class UpdateProductionExecutionUseCaseTest {
     }
 
     @Test
-    @DisplayName("Controle de concorrência recebe ProductionExecutionResponseDTO (sem vazar modelo de domínio)")
-    void givenUpdate_whenCheckingVersion_thenPassesResponseDtoToVersionGuard() {
+    @DisplayName("Controle de concorrência recebe a ProductionExecution atual para verificação de versão")
+    void givenUpdate_whenCheckingVersion_thenPassesExistingExecutionToVersionGuard() {
         User tech = UserTestFactory.user().technician().build();
         Farmer farmer = UserTestFactory.farmerProfile().build();
         ProductionExecution execution = createExecution(farmer, ExecutionStatus.PENDING, null);
@@ -303,7 +302,7 @@ class UpdateProductionExecutionUseCaseTest {
                 isNull(),
                 eq(execution.getUpdatedAt()),
                 eq(execution.getCreatedAt()),
-                any(ProductionExecutionResponseDTO.class),
+                eq(execution),
                 anyString()
         );
     }
