@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerUpdateDTO;
 import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.User;
@@ -113,5 +114,51 @@ class UpdateFarmerUseCaseTest {
         assertThatThrownBy(() -> useCase.update(FARMER_ID, dto))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage("Agricultor não encontrado.");
+    }
+
+    @Test
+    @DisplayName("FARMER não pode alterar o próprio campo isCompliant")
+    void givenFarmer_whenTriesToChangeIsCompliant_thenThrowsAccessDeniedException() {
+        Farmer existing = Farmer.builder()
+                .id(FARMER_ID)
+                .fullName("João da Silva")
+                .cpf("12345678901")
+                .isCompliant(false)
+                .build();
+        User farmerUser = UserTestFactory.user().farmer().build();
+        when(farmerRepository.findById(FARMER_ID)).thenReturn(Optional.of(existing));
+
+        FarmerUpdateDTO dto = new FarmerUpdateDTO(
+                null, null, null, null, null, null, null, null, null, null, null, null, null, true
+        );
+
+        assertThatThrownBy(() -> useCase.update(FARMER_ID, dto, farmerUser))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("O agricultor não tem permissão para alterar sua situação de conformidade.");
+
+        verify(farmerRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("FARMER mantendo isCompliant igual ou null consegue atualizar outros campos")
+    void givenFarmer_whenIsCompliantUnchangedOrNull_thenUpdatesSuccessfully() {
+        Farmer existing = Farmer.builder()
+                .id(FARMER_ID)
+                .fullName("João da Silva")
+                .cpf("12345678901")
+                .isCompliant(true)
+                .build();
+        User farmerUser = UserTestFactory.user().farmer().build();
+        when(farmerRepository.findById(FARMER_ID)).thenReturn(Optional.of(existing));
+        when(farmerRepository.save(any(Farmer.class))).thenAnswer(i -> i.getArgument(0));
+
+        FarmerUpdateDTO dto = new FarmerUpdateDTO(
+                null, null, null, null, null, "82988887777", null, null, null, null, null, null, null, true
+        );
+
+        Farmer updated = useCase.update(FARMER_ID, dto, farmerUser);
+
+        assertThat(updated.getPhone()).isEqualTo("82988887777");
+        assertThat(updated.getIsCompliant()).isTrue();
     }
 }

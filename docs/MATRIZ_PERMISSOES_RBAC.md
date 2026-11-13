@@ -96,7 +96,7 @@ Este documento especifica a política de controle de acesso aos recursos do back
 | Planos | `DELETE`| `/production-plans/{id}` | `ADMIN, TECHNICIAN, FARMER` | Soft delete do plano de produção (bloqueado com `409 Conflict` se houver execuções). |
 | Apontamentos| `GET`| `/production-plans/{planId}/executions`| `ADMIN, MANAGER, TECHNICIAN, FARMER` | Filtrado automaticamente pelo escopo do ator. |
 | Apontamentos| `POST`| `/production-plans/{planId}/executions`| `ADMIN, TECHNICIAN, FARMER` | Lançamento de colheita (`PENDING` por padrão se lançado por produtor). |
-| Apontamentos| `PUT`| `/production-executions/{id}`| `ADMIN, TECHNICIAN, FARMER` | Farmer: reverte para PENDING se alterar peso/data; Tech: valida/rejeita (`409 Conflict` em transição inválida). |
+| Apontamentos| `PUT`| `/production-executions/{id}`| `ADMIN, TECHNICIAN, FARMER` | Farmer: reverte para PENDING se alterar peso/data/observação/GPS; Tech: valida/rejeita (`409 Conflict` em transição inválida). |
 | Apontamentos| `DELETE`| `/production-executions/{id}`| `ADMIN, TECHNICIAN, FARMER` | Soft delete do apontamento de colheita (bloqueado para `FARMER` se `VALIDATED`). |
 | Ocorrências | `GET` | `/production-executions/{eId}/occurrences` | `ADMIN, MANAGER, TECHNICIAN, FARMER` | Acesso aos registros fitossanitários/climáticos do apontamento. |
 | Ocorrências | `POST`| `/production-executions/{eId}/occurrences` | `ADMIN, TECHNICIAN, FARMER` | Registro de praga, clima ou observação de campo (bloqueado para `FARMER` se `VALIDATED`). |

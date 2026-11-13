@@ -3,10 +3,12 @@ package com.ufal.smartagro.application.service.farmer;
 import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerUpdateDTO;
 import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.AuditAction;
+import com.ufal.smartagro.domain.model.enums.Role;
 import com.ufal.smartagro.domain.port.out.FarmerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,11 @@ public class UpdateFarmerUseCase {
 
         if (loggedUser != null) {
             accessValidator.validateAccess(existingFarmer, loggedUser);
+            if (loggedUser.getRole() == Role.FARMER
+                    && dto.isCompliant() != null
+                    && !dto.isCompliant().equals(existingFarmer.getIsCompliant())) {
+                throw new AccessDeniedException("O agricultor não tem permissão para alterar sua situação de conformidade.");
+            }
         }
 
         String fullName = existingFarmer.getFullName();
@@ -121,7 +128,9 @@ public class UpdateFarmerUseCase {
                 .longitude(dto.longitude() != null ? dto.longitude() : existingFarmer.getLongitude())
                 .registrationSource(existingFarmer.getRegistrationSource())
                 .createdBy(existingFarmer.getCreatedBy())
-                .isCompliant(dto.isCompliant() != null ? dto.isCompliant() : existingFarmer.getIsCompliant())
+                .isCompliant((loggedUser != null && loggedUser.getRole() == Role.FARMER)
+                        ? existingFarmer.getIsCompliant()
+                        : (dto.isCompliant() != null ? dto.isCompliant() : existingFarmer.getIsCompliant()))
                 .createdAt(existingFarmer.getCreatedAt())
                 .updatedAt(null)
                 .deletedAt(existingFarmer.getDeletedAt())

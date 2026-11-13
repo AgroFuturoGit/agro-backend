@@ -112,6 +112,47 @@ class RegisterFarmerUseCaseTest {
             verifyCapturedFarmerRoleAndCommunity(dto, community);
             verify(auditLogService).record(eq(managerUser), eq(AuditAction.CREATE), eq("farmers"), any(), any());
         }
+
+        @Test
+        @DisplayName("Given campos opcionais vazios ou com espaços When register Then normaliza para null")
+        void givenBlankOptionalFields_whenRegister_thenNormalizesToNull() {
+            User admin = UserTestFactory.user().admin().build();
+            Community community = UserTestFactory.community().build();
+            FarmerRegisterDTO dto = new FarmerRegisterDTO(
+                    "Maria José",
+                    "12345678901",
+                    "maria@smartagro.test",
+                    "SenhaSegura123",
+                    null,
+                    "   ",
+                    "",
+                    "  ",
+                    "",
+                    "   ",
+                    "",
+                    "   ",
+                    "",
+                    "  ",
+                    null,
+                    null
+            );
+            stubSuccessfulPersist(community, dto);
+
+            registerFarmerUseCase.register(community.getId(), dto, admin);
+
+            ArgumentCaptor<Farmer> farmerCaptor = ArgumentCaptor.forClass(Farmer.class);
+            verify(farmerRepository).save(farmerCaptor.capture());
+            Farmer savedArg = farmerCaptor.getValue();
+            assertThat(savedArg.getMotherName()).isNull();
+            assertThat(savedArg.getOrigin()).isNull();
+            assertThat(savedArg.getEducationLevel()).isNull();
+            assertThat(savedArg.getPhone()).isNull();
+            assertThat(savedArg.getLocalName()).isNull();
+            assertThat(savedArg.getStreet()).isNull();
+            assertThat(savedArg.getCity()).isNull();
+            assertThat(savedArg.getState()).isNull();
+            assertThat(savedArg.getIbgeCode()).isNull();
+        }
     }
 
     @Nested

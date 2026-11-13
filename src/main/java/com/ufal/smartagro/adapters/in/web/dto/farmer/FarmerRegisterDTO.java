@@ -1,5 +1,6 @@
 package com.ufal.smartagro.adapters.in.web.dto.farmer;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Past;
@@ -28,9 +29,11 @@ public record FarmerRegisterDTO(
         @Past(message = "A data de nascimento deve estar no passado")
         LocalDate dateOfBirth,
 
+        @Schema(description = "Nome da mãe do agricultor (opcional; strings vazias são normalizadas para null)", nullable = true)
         @Size(max = 150, message = "O nome da mãe deve ter no máximo 150 caracteres")
         String motherName,
 
+        @Schema(description = "Naturalidade / local de origem do agricultor (ex: município/UF de nascimento ou procedência)", example = "Arapiraca - AL", nullable = true)
         @Size(max = 100, message = "A origem deve ter no máximo 100 caracteres")
         String origin,
 
@@ -55,7 +58,10 @@ public record FarmerRegisterDTO(
         @Size(max = 10, message = "O código IBGE deve ter no máximo 10 caracteres")
         String ibgeCode,
 
+        @Schema(description = "Latitude da propriedade (opcional; no frontend pode ser obtida via endereço/mapa ou deixada em branco)", nullable = true)
         BigDecimal latitude,
+
+        @Schema(description = "Longitude da propriedade (opcional; no frontend pode ser obtida via endereço/mapa ou deixada em branco)", nullable = true)
         BigDecimal longitude
 ) {
     public FarmerRegisterDTO(
