@@ -35,17 +35,15 @@ public class FindAllFarmersUseCase {
     private final TechnicalAssistanceRepository technicalAssistanceRepository;
 
     @Transactional(readOnly = true)
-    public List<Farmer> findAll(UUID communityId) {
-        return findAll(communityId, null);
-    }
-
-    @Transactional(readOnly = true)
     public List<Farmer> findAll(UUID communityId, User loggedUser) {
-        if (loggedUser != null && loggedUser.getRole() == Role.FARMER) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+        if (loggedUser.getRole() == Role.FARMER) {
             throw new AccessDeniedException("Agricultores não têm permissão para listar outros agricultores.");
         }
 
-        if (loggedUser != null && loggedUser.getRole() == Role.MANAGER) {
+        if (loggedUser.getRole() == Role.MANAGER) {
             Manager manager = managerRepository.findByUserId(loggedUser.getId())
                     .orElseThrow(() -> new AccessDeniedException("Gestor não encontrado."));
             UUID managerOrgId = manager.getOrganization() != null ? manager.getOrganization().getId() : null;
@@ -66,7 +64,7 @@ public class FindAllFarmersUseCase {
             return farmerRepository.findAllByOrganizationId(managerOrgId);
         }
 
-        if (loggedUser != null && loggedUser.getRole() == Role.TECHNICIAN) {
+        if (loggedUser.getRole() == Role.TECHNICIAN) {
             Technician technician = technicianRepository.findByUserId(loggedUser.getId())
                     .orElseThrow(() -> new AccessDeniedException("Técnico não encontrado."));
 

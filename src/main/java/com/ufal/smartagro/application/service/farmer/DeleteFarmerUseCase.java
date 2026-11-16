@@ -33,22 +33,15 @@ public class DeleteFarmerUseCase {
     private final AuditLogService auditLogService;
 
     @Transactional
-    public void delete(UUID id) {
-        delete(id, null);
-    }
-
-    @Transactional
     public void delete(UUID id, User loggedUser) {
-        if (loggedUser != null && loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.MANAGER) {
+        if (loggedUser == null || (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.MANAGER)) {
             throw new AccessDeniedException("Apenas administradores e gestores podem excluir agricultores.");
         }
 
         Farmer existingFarmer = farmerRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Agricultor não encontrado."));
 
-        if (loggedUser != null) {
-            accessValidator.validateAccess(existingFarmer, loggedUser);
-        }
+        accessValidator.validateAccess(existingFarmer, loggedUser);
 
         long planCount = productionPlanRepository.countByFarmerId(id);
         if (planCount > 0) {

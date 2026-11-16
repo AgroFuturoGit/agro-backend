@@ -87,12 +87,13 @@ class UpdateOrganizationUseCaseTest {
     @Test
     @DisplayName("Nome contendo apenas espaços lança IllegalArgumentException")
     void givenBlankName_whenUpdate_thenThrowsIllegalArgumentException() {
+        User admin = UserTestFactory.user().admin().build();
         Organization existing = new Organization(ORG_ID, "Cooperativa Original", "12345678000199", OrganizationType.COOP, null, null, null);
         when(organizationRepository.findById(ORG_ID)).thenReturn(Optional.of(existing));
 
         OrganizationUpdateDTO dto = new OrganizationUpdateDTO("   ", null);
 
-        assertThatThrownBy(() -> useCase.update(ORG_ID, dto))
+        assertThatThrownBy(() -> useCase.update(ORG_ID, dto, admin))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("O nome da organização não pode ser vazio.");
 
@@ -102,12 +103,24 @@ class UpdateOrganizationUseCaseTest {
     @Test
     @DisplayName("Organização inexistente lança EntityNotFoundException")
     void givenNonExistentId_whenUpdate_thenThrowsEntityNotFoundException() {
+        User admin = UserTestFactory.user().admin().build();
         when(organizationRepository.findById(ORG_ID)).thenReturn(Optional.empty());
 
         OrganizationUpdateDTO dto = new OrganizationUpdateDTO("Novo Nome", null);
 
-        assertThatThrownBy(() -> useCase.update(ORG_ID, dto))
+        assertThatThrownBy(() -> useCase.update(ORG_ID, dto, admin))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage("Organização não encontrada.");
+    }
+
+    @Test
+    @DisplayName("Usuário nulo lança AccessDeniedException")
+    void givenNullUser_whenUpdate_thenThrowsAccessDeniedException() {
+        OrganizationUpdateDTO dto = new OrganizationUpdateDTO("Novo Nome", null);
+
+        assertThatThrownBy(() -> useCase.update(ORG_ID, dto, null))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(organizationRepository, never()).save(any());
     }
 }

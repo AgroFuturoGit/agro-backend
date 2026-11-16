@@ -91,13 +91,14 @@ class UpdateFarmerUseCaseTest {
     @DisplayName("Nome completo vazio ou apenas com espaços lança IllegalArgumentException")
     void givenBlankFullName_whenUpdate_thenThrowsIllegalArgumentException() {
         Farmer existing = existingFarmer();
+        User admin = UserTestFactory.user().admin().build();
         when(farmerRepository.findById(FARMER_ID)).thenReturn(Optional.of(existing));
 
         FarmerUpdateDTO dto = new FarmerUpdateDTO(
                 "   ", null, null, null, null, null, null, null, null, null, null, null, null, null
         );
 
-        assertThatThrownBy(() -> useCase.update(FARMER_ID, dto))
+        assertThatThrownBy(() -> useCase.update(FARMER_ID, dto, admin))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("O nome completo não pode ser vazio.");
 
@@ -107,13 +108,25 @@ class UpdateFarmerUseCaseTest {
     @Test
     @DisplayName("Agricultor inexistente lança EntityNotFoundException")
     void givenNonExistentId_whenUpdate_thenThrowsEntityNotFoundException() {
+        User admin = UserTestFactory.user().admin().build();
         when(farmerRepository.findById(FARMER_ID)).thenReturn(Optional.empty());
 
         FarmerUpdateDTO dto = new FarmerUpdateDTO("Novo Apelido");
 
-        assertThatThrownBy(() -> useCase.update(FARMER_ID, dto))
+        assertThatThrownBy(() -> useCase.update(FARMER_ID, dto, admin))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage("Agricultor não encontrado.");
+    }
+
+    @Test
+    @DisplayName("Usuário nulo lança AccessDeniedException")
+    void givenNullUser_whenUpdate_thenThrowsAccessDeniedException() {
+        FarmerUpdateDTO dto = new FarmerUpdateDTO("Novo Apelido");
+
+        assertThatThrownBy(() -> useCase.update(FARMER_ID, dto, null))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(farmerRepository, never()).save(any());
     }
 
     @Test

@@ -27,22 +27,19 @@ public class UpdateFarmerUseCase {
     private final AuditLogService auditLogService;
 
     @Transactional
-    public Farmer update(UUID id, FarmerUpdateDTO dto) {
-        return update(id, dto, null);
-    }
-
-    @Transactional
     public Farmer update(UUID id, FarmerUpdateDTO dto, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         Farmer existingFarmer = farmerRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Agricultor não encontrado."));
 
-        if (loggedUser != null) {
-            accessValidator.validateAccess(existingFarmer, loggedUser);
-            if (loggedUser.getRole() == Role.FARMER
-                    && dto.isCompliant() != null
-                    && !dto.isCompliant().equals(existingFarmer.getIsCompliant())) {
-                throw new AccessDeniedException("O agricultor não tem permissão para alterar sua situação de conformidade.");
-            }
+        accessValidator.validateAccess(existingFarmer, loggedUser);
+        if (loggedUser.getRole() == Role.FARMER
+                && dto.isCompliant() != null
+                && !dto.isCompliant().equals(existingFarmer.getIsCompliant())) {
+            throw new AccessDeniedException("O agricultor não tem permissão para alterar sua situação de conformidade.");
         }
 
         String fullName = existingFarmer.getFullName();

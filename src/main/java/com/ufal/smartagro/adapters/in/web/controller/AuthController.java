@@ -7,6 +7,7 @@ import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.auth.LoginUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.config.security.ratelimit.LoginRateLimiter;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -60,6 +61,9 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<UserResponseDTO> me(
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if (userDetails == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
         return ResponseEntity.ok(Mapper.toUserResponseDTO(userDetails.getUser()));
     }
 

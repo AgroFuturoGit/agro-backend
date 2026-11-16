@@ -32,20 +32,15 @@ public class DeleteCommunityUseCase {
     private final AuditLogService auditLogService;
 
     @Transactional
-    public void delete(UUID id) {
-        delete(id, null);
-    }
-
-    @Transactional
     public void delete(UUID id, User loggedUser) {
-        if (loggedUser != null && loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.MANAGER) {
+        if (loggedUser == null || (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.MANAGER)) {
             throw new AccessDeniedException("Papel não autorizado para excluir comunidade.");
         }
 
         Community existingCommunity = communityRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Comunidade não encontrada."));
 
-        if (loggedUser != null && loggedUser.getRole() == Role.MANAGER) {
+        if (loggedUser.getRole() == Role.MANAGER) {
             Manager manager = managerRepository.findByUserId(loggedUser.getId())
                     .orElseThrow(() -> new AccessDeniedException("Gestor não encontrado."));
             UUID managerOrgId = manager.getOrganization() != null ? manager.getOrganization().getId() : null;

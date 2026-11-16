@@ -27,13 +27,8 @@ public class UpdateOrganizationUseCase {
     private final AuditLogService auditLogService;
 
     @Transactional
-    public Organization update(UUID id, OrganizationUpdateDTO dto) {
-        return update(id, dto, null);
-    }
-
-    @Transactional
     public Organization update(UUID id, OrganizationUpdateDTO dto, User loggedUser) {
-        if (loggedUser != null && loggedUser.getRole() != Role.ADMIN) {
+        if (loggedUser == null || loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException("Apenas administradores podem atualizar organizações.");
         }
 

@@ -65,10 +65,11 @@ class DeleteOrganizationUseCaseTest {
     @DisplayName("Quando existem comunidades vinculadas à organização, lança EntityInUseException (409)")
     void givenOrgWithCommunities_whenDelete_thenThrowsEntityInUseException() {
         UUID orgId = UUID.randomUUID();
+        User admin = UserTestFactory.user().admin().build();
         when(organizationRepository.findById(orgId)).thenReturn(Optional.of(mock(Organization.class)));
         when(communityRepository.countByOrganizationId(orgId)).thenReturn(1L);
 
-        assertThatThrownBy(() -> useCase.delete(orgId))
+        assertThatThrownBy(() -> useCase.delete(orgId, admin))
                 .isInstanceOf(EntityInUseException.class)
                 .hasMessageContaining("comunidades vinculadas");
 
@@ -79,11 +80,12 @@ class DeleteOrganizationUseCaseTest {
     @DisplayName("Quando existem gestores vinculados à organização, lança EntityInUseException (409)")
     void givenOrgWithManagers_whenDelete_thenThrowsEntityInUseException() {
         UUID orgId = UUID.randomUUID();
+        User admin = UserTestFactory.user().admin().build();
         when(organizationRepository.findById(orgId)).thenReturn(Optional.of(mock(Organization.class)));
         when(communityRepository.countByOrganizationId(orgId)).thenReturn(0L);
         when(managerRepository.countByOrganizationId(orgId)).thenReturn(2L);
 
-        assertThatThrownBy(() -> useCase.delete(orgId))
+        assertThatThrownBy(() -> useCase.delete(orgId, admin))
                 .isInstanceOf(EntityInUseException.class)
                 .hasMessageContaining("gestores vinculados");
 
@@ -94,9 +96,10 @@ class DeleteOrganizationUseCaseTest {
     @DisplayName("Quando a organização não existe, lança EntityNotFoundException (404)")
     void givenNonExistentOrg_whenDelete_thenThrowsEntityNotFoundException() {
         UUID orgId = UUID.randomUUID();
+        User admin = UserTestFactory.user().admin().build();
         when(organizationRepository.findById(orgId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> useCase.delete(orgId))
+        assertThatThrownBy(() -> useCase.delete(orgId, admin))
                 .isInstanceOf(EntityNotFoundException.class);
 
         verify(organizationRepository, never()).delete(any());
@@ -117,5 +120,14 @@ class DeleteOrganizationUseCaseTest {
 
         verify(organizationRepository).delete(orgId);
         verify(auditLogService).record(eq(admin), eq(AuditAction.DELETE), eq("organizations"), eq(orgId), any());
+    }
+
+    @Test
+    @DisplayName("Usuário nulo lança AccessDeniedException")
+    void givenNullUser_whenDelete_thenThrowsAccessDeniedException() {
+        assertThatThrownBy(() -> useCase.delete(UUID.randomUUID(), null))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(organizationRepository, never()).delete(any());
     }
 }
