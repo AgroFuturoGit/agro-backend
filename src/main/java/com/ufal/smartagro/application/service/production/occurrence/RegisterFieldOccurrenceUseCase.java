@@ -61,7 +61,7 @@ public class RegisterFieldOccurrenceUseCase {
                 .logType(dto.logType())
                 .description(dto.description().trim())
                 .weatherObservation(dto.weatherObservation() != null ? dto.weatherObservation().trim() : null)
-                .evidenceUrl(dto.evidenceUrl() != null ? dto.evidenceUrl().trim() : null)
+                .evidenceUrl(EvidenceUrlValidator.normalizeAndValidate(dto.evidenceUrl()))
                 .build();
 
         FieldOccurrence saved = fieldOccurrenceRepository.save(occurrence);

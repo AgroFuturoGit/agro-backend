@@ -70,7 +70,21 @@ class UploadExecutionAttachmentTest {
     }
 
     private NewExecutionAttachment foto(UUID clientId, String contentType, int bytes) {
-        return new NewExecutionAttachment(clientId, "colheita.jpg", contentType, new byte[bytes]);
+        byte[] content = new byte[bytes];
+        if ("image/jpeg".equals(contentType) && bytes >= 3) {
+            content[0] = (byte) 0xFF;
+            content[1] = (byte) 0xD8;
+            content[2] = (byte) 0xFF;
+        } else if ("image/png".equals(contentType) && bytes >= 8) {
+            byte[] png = {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+            System.arraycopy(png, 0, content, 0, png.length);
+        } else if ("image/webp".equals(contentType) && bytes >= 12) {
+            byte[] riff = {'R', 'I', 'F', 'F'};
+            byte[] webp = {'W', 'E', 'B', 'P'};
+            System.arraycopy(riff, 0, content, 0, 4);
+            System.arraycopy(webp, 0, content, 8, 4);
+        }
+        return new NewExecutionAttachment(clientId, "colheita.jpg", contentType, content);
     }
 
     private void apontamentoExiste() {
@@ -198,5 +212,37 @@ class UploadExecutionAttachmentTest {
         assertThatThrownBy(() -> useCase.upload(EXECUTION_ID, foto(CLIENT_ID, "image/jpeg", 1024), usuario()))
                 .isInstanceOf(com.ufal.smartagro.domain.exception.AccessDeniedException.class)
                 .hasMessageContaining("já validado");
+    }
+
+    @Test
+    @DisplayName("recusa arquivo cujo conteúdo não bate com os magic bytes de JPEG/PNG/WebP")
+    void recusaAssinaturaForjada() {
+        apontamentoExiste();
+        byte[] htmlPayload = "<script>alert(1)</script>".getBytes();
+        NewExecutionAttachment forged = new NewExecutionAttachment(CLIENT_ID, "foto.jpg", "image/jpeg", htmlPayload);
+
+        assertThatThrownBy(() -> useCase.upload(EXECUTION_ID, forged, usuario()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("conteúdo do arquivo não corresponde");
+
+        verify(attachmentRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("aceita imagens PNG e WebP válidas e sanitiza nome do arquivo")
+    void aceitaPngEWebpESanitizaNome() {
+        apontamentoExiste();
+        when(attachmentRepository.countByExecutionId(EXECUTION_ID)).thenReturn(0L);
+        when(attachmentRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        NewExecutionAttachment png = new NewExecutionAttachment(
+                null, "../../pasta/foto\"\r\n.png", "image/png", foto(null, "image/png", 64).content()
+        );
+        AttachmentUploadResult pngResult = useCase.upload(EXECUTION_ID, png, usuario());
+        assertThat(pngResult.created()).isTrue();
+        assertThat(pngResult.attachment().getFilename()).doesNotContain("\r").doesNotContain("\n").doesNotContain("\"");
+
+        AttachmentUploadResult webpResult = useCase.upload(EXECUTION_ID, foto(null, "image/webp", 64), usuario());
+        assertThat(webpResult.created()).isTrue();
     }
 }

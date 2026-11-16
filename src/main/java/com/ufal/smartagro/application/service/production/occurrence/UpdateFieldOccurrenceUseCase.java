@@ -64,8 +64,7 @@ public class UpdateFieldOccurrenceUseCase {
 
         String evidenceUrl = existing.getEvidenceUrl();
         if (dto.evidenceUrl() != null) {
-            String trimmed = dto.evidenceUrl().trim();
-            evidenceUrl = trimmed.isEmpty() ? null : trimmed;
+            evidenceUrl = EvidenceUrlValidator.normalizeAndValidate(dto.evidenceUrl());
         }
 
         FieldOccurrence updated = FieldOccurrence.builder()

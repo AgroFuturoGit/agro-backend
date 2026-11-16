@@ -86,7 +86,7 @@ public class UploadExecutionAttachmentUseCase {
                 null,
                 executionId,
                 incoming.clientId(),
-                incoming.filename(),
+                sanitizeFilename(incoming.filename()),
                 incoming.contentType(),
                 incoming.content().length,
                 incoming.content(),
@@ -118,5 +118,41 @@ public class UploadExecutionAttachmentUseCase {
         if (incoming.contentType() == null || !ALLOWED_CONTENT_TYPES.contains(incoming.contentType())) {
             throw new IllegalArgumentException("Formato não aceito. Envie a imagem como JPEG, PNG ou WebP.");
         }
+
+        if (!matchesImageSignature(incoming.content(), incoming.contentType())) {
+            throw new IllegalArgumentException(
+                    "O conteúdo do arquivo não corresponde a uma imagem JPEG, PNG ou WebP válida.");
+        }
+    }
+
+    private boolean matchesImageSignature(byte[] content, String contentType) {
+        return switch (contentType) {
+            case "image/jpeg" -> content.length >= 3
+                    && (content[0] & 0xFF) == 0xFF
+                    && (content[1] & 0xFF) == 0xD8
+                    && (content[2] & 0xFF) == 0xFF;
+            case "image/png" -> content.length >= 8
+                    && (content[0] & 0xFF) == 0x89
+                    && content[1] == 0x50
+                    && content[2] == 0x4E
+                    && content[3] == 0x47
+                    && content[4] == 0x0D
+                    && content[5] == 0x0A
+                    && content[6] == 0x1A
+                    && content[7] == 0x0A;
+            case "image/webp" -> content.length >= 12
+                    && content[0] == 'R' && content[1] == 'I' && content[2] == 'F' && content[3] == 'F'
+                    && content[8] == 'W' && content[9] == 'E' && content[10] == 'B' && content[11] == 'P';
+            default -> false;
+        };
+    }
+
+    private String sanitizeFilename(String rawFilename) {
+        if (rawFilename == null || rawFilename.isBlank()) {
+            return "anexo";
+        }
+        String baseName = rawFilename.substring(Math.max(rawFilename.lastIndexOf('/'), rawFilename.lastIndexOf('\\')) + 1);
+        String cleaned = baseName.replaceAll("[\\r\\n\\u0000\"\\\\/;]+", "_").trim();
+        return cleaned.isEmpty() ? "anexo" : cleaned;
     }
 }

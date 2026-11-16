@@ -180,4 +180,19 @@ class FieldOccurrenceControllerTest {
                         .with(user(userDetailsFor(UserTestFactory.user().manager().build()))))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @DisplayName("POST /production-executions/{id}/occurrences com evidenceUrl javascript: retorna 400 Bad Request")
+    void givenRegisterWithUnsafeEvidenceUrl_whenPost_thenReturns400() throws Exception {
+        UUID execId = UUID.randomUUID();
+        FieldOccurrenceRegisterDTO dto = new FieldOccurrenceRegisterDTO(
+                OccurrenceType.PEST, "Lagarta detectada", null, "javascript:alert(1)"
+        );
+
+        mockMvc.perform(post("/production-executions/" + execId + "/occurrences")
+                        .with(user(userDetailsFor(UserTestFactory.user().farmer().build())))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+    }
 }

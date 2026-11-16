@@ -175,4 +175,23 @@ class RegisterFieldOccurrenceUseCaseTest {
                 .isInstanceOf(com.ufal.smartagro.domain.exception.AccessDeniedException.class)
                 .hasMessageContaining("já validado");
     }
+
+    @Test
+    @DisplayName("Recusa evidenceUrl com esquema não-HTTP (ex: javascript:, data:, file:)")
+    void givenUnsafeEvidenceUrlScheme_whenRegister_thenThrowsIllegalArgumentException() {
+        User admin = UserTestFactory.user().admin().build();
+        UUID executionId = UUID.randomUUID();
+        ProductionExecution execution = ProductionExecution.builder().id(executionId).build();
+        when(productionExecutionRepository.findById(executionId)).thenReturn(Optional.of(execution));
+
+        for (String unsafeUrl : java.util.List.of("javascript:alert(1)", "data:text/html,<script>", "file:///etc/passwd")) {
+            FieldOccurrenceRegisterDTO dto = new FieldOccurrenceRegisterDTO(
+                    OccurrenceType.PEST, "Praga", null, unsafeUrl
+            );
+            assertThatThrownBy(() -> useCase.register(executionId, dto, admin))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("http:// ou https://");
+        }
+        verify(fieldOccurrenceRepository, never()).save(any());
+    }
 }

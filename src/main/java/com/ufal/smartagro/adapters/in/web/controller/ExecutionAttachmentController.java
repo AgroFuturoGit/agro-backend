@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -111,11 +113,23 @@ public class ExecutionAttachmentController {
         User loggedUser = loadUser(loggedUserDetails);
         ExecutionAttachment attachment = downloadUseCase.download(executionId, attachmentId, loggedUser);
 
+        ContentDisposition contentDisposition = ContentDisposition.inline()
+                .filename(sanitizeFilename(attachment.getFilename()), StandardCharsets.UTF_8)
+                .build();
+
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(attachment.getContentType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "inline; filename=\"" + attachment.getFilename() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
                 .body(attachment.getContent());
+    }
+
+    private String sanitizeFilename(String rawFilename) {
+        if (rawFilename == null || rawFilename.isBlank()) {
+            return "anexo";
+        }
+        String baseName = rawFilename.substring(Math.max(rawFilename.lastIndexOf('/'), rawFilename.lastIndexOf('\\')) + 1);
+        String cleaned = baseName.replaceAll("[\\r\\n\\u0000\"\\\\/;]+", "_").trim();
+        return cleaned.isEmpty() ? "anexo" : cleaned;
     }
 
     @Operation(summary = "Remover um anexo", security = @SecurityRequirement(name = "bearerAuth"))

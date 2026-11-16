@@ -129,4 +129,25 @@ class UpdateFieldOccurrenceUseCaseTest {
         verify(accessValidator).validateWriteAccess(null, manager);
         verify(fieldOccurrenceRepository, never()).save(any());
     }
+
+    @Test
+    @DisplayName("Recusa evidenceUrl com esquema inseguro ao atualizar ocorrência")
+    void givenUnsafeEvidenceUrl_whenUpdate_thenThrowsIllegalArgumentException() {
+        User admin = UserTestFactory.user().admin().build();
+        UUID id = UUID.randomUUID();
+        FieldOccurrence existing = FieldOccurrence.builder()
+                .id(id)
+                .execution(ProductionExecution.builder().id(UUID.randomUUID()).build())
+                .description("Lagarta")
+                .build();
+        when(fieldOccurrenceRepository.findById(id)).thenReturn(Optional.of(existing));
+
+        FieldOccurrenceUpdateDTO dto = new FieldOccurrenceUpdateDTO(null, null, null, "javascript:alert(1)");
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> useCase.update(id, dto, admin))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("http:// ou https://");
+
+        verify(fieldOccurrenceRepository, never()).save(any());
+    }
 }
