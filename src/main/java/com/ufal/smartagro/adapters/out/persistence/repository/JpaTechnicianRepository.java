@@ -23,6 +23,7 @@ public interface JpaTechnicianRepository extends JpaRepository<TechnicianEntity,
                 WHERE ta.technician = t
                   AND ta.community.organization.id = :organizationId
                   AND ta.deletedAt IS NULL
+                  AND (ta.endDate IS NULL OR ta.endDate >= CURRENT_TIMESTAMP)
             )
             OR EXISTS (
                 SELECT 1 FROM ManagerEntity m
@@ -45,6 +46,7 @@ public interface JpaTechnicianRepository extends JpaRepository<TechnicianEntity,
                   WHERE ta.technician = t
                     AND ta.community.organization.id = :organizationId
                     AND ta.deletedAt IS NULL
+                    AND (ta.endDate IS NULL OR ta.endDate >= CURRENT_TIMESTAMP)
               )
               OR EXISTS (
                   SELECT 1 FROM ManagerEntity m

@@ -247,9 +247,20 @@ public class Mapper {
                 technician.getRegistrationNumber(),
                 technician.getProfessionalId(),
                 technician.getSpecialty(),
-                toUserResponseDTO(technician.getCreatedBy()),
+                toRedactedCreatorDTO(technician.getCreatedBy()),
                 technician.getCreatedAt(),
                 technician.getUpdatedAt()
+        );
+    }
+
+    private static UserResponseDTO toRedactedCreatorDTO(User user) {
+        if (user == null) return null;
+        return new UserResponseDTO(
+                user.getId(),
+                user.getFullName(),
+                null,
+                null,
+                user.getRole()
         );
     }
     public static FinancingResponseDTO toFinancingResponseDTO(com.ufal.smartagro.domain.model.Financing fin) {

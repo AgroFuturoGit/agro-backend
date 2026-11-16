@@ -4,13 +4,11 @@ import com.ufal.smartagro.adapters.in.web.dto.technician.TechnicianUpdateDTO;
 import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
-import com.ufal.smartagro.domain.model.Manager;
 import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.AuditAction;
 import com.ufal.smartagro.domain.model.enums.ProfessionalRegistrationType;
 import com.ufal.smartagro.domain.model.enums.Role;
-import com.ufal.smartagro.domain.port.out.ManagerRepository;
 import com.ufal.smartagro.domain.port.out.TechnicianRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,13 +23,12 @@ import java.util.UUID;
 public class UpdateTechnicianUseCase {
 
     private final TechnicianRepository technicianRepository;
-    private final ManagerRepository managerRepository;
     private final AuditLogService auditLogService;
 
     @Transactional
     public Technician update(UUID id, TechnicianUpdateDTO dto, User loggedUser) {
         if (loggedUser == null) {
-            throw new AccessDeniedException("Apenas administradores, gestores ou o próprio técnico podem atualizar este perfil.");
+            throw new AccessDeniedException("Apenas administradores ou o próprio técnico podem atualizar este perfil.");
         }
 
         Technician existing = technicianRepository.findById(id)
@@ -42,16 +39,8 @@ public class UpdateTechnicianUseCase {
             if (existing.getUser() == null || !existing.getUser().getId().equals(loggedUser.getId())) {
                 throw new AccessDeniedException("O técnico só pode atualizar seu próprio perfil.");
             }
-        } else if (loggedUser.getRole() == Role.MANAGER) {
-            Manager manager = managerRepository.findByUserId(loggedUser.getId())
-                    .orElseThrow(() -> new AccessDeniedException("Gestor não encontrado."));
-            boolean isCreator = existing.getCreatedBy() != null && existing.getCreatedBy().getId().equals(loggedUser.getId());
-            boolean inOrg = manager.getOrganization() != null && technicianRepository.existsByIdAndOrganizationId(id, manager.getOrganization().getId());
-            if (!isCreator && !inOrg) {
-                throw new AccessDeniedException("O gestor só tem acesso aos técnicos da sua própria organização.");
-            }
         } else if (loggedUser.getRole() != Role.ADMIN) {
-            throw new AccessDeniedException("Apenas administradores, gestores ou o próprio técnico podem atualizar este perfil.");
+            throw new AccessDeniedException("Apenas administradores ou o próprio técnico podem atualizar este perfil.");
         }
 
         ProfessionalRegistrationType regType;

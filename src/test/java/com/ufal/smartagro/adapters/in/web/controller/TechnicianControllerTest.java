@@ -373,7 +373,10 @@ class TechnicianControllerTest {
         mockMvc.perform(get("/technicians/{id}", technician.getId())
                         .with(user(userDetails(adminUser))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(technician.getId().toString()));
+                .andExpect(jsonPath("$.id").value(technician.getId().toString()))
+                .andExpect(jsonPath("$.createdBy.id").value(technician.getCreatedBy().getId().toString()))
+                .andExpect(jsonPath("$.createdBy.email").doesNotExist())
+                .andExpect(jsonPath("$.createdBy.cpf").doesNotExist());
     }
 
     @Test
@@ -425,20 +428,15 @@ class TechnicianControllerTest {
     }
 
     @Test
-    void updateTechnician_asManager_returnsUpdatedTechnician() throws Exception {
+    void updateTechnician_asManager_forbidden() throws Exception {
         User managerUser = UserTestFactory.user().manager().build();
-        Technician technician = UserTestFactory.technicianProfile().build();
         TechnicianUpdateDTO dto = new TechnicianUpdateDTO("CRBio-99999", "Solo");
 
-        when(userRepository.findById(any())).thenReturn(Optional.of(managerUser));
-        when(updateTechnicianUseCase.update(eq(technician.getId()), any(), eq(managerUser))).thenReturn(technician);
-
-        mockMvc.perform(put("/technicians/{id}", technician.getId())
+        mockMvc.perform(put("/technicians/{id}", UUID.randomUUID())
                         .with(user(userDetails(managerUser)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(technician.getId().toString()));
+                .andExpect(status().isForbidden());
     }
 
     @Test
