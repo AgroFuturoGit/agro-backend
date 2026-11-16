@@ -36,9 +36,10 @@ public class DeleteProductionExecutionUseCase {
         ProductionExecution execution = productionExecutionRepository.findById(executionId)
                 .orElseThrow(() -> new EntityNotFoundException("Execução de produção não encontrada."));
 
-        if (execution.getProductionPlan() != null) {
-            accessValidator.validateWriteAccess(execution.getProductionPlan().getFarmer(), loggedUser);
-        }
+        accessValidator.validateWriteAccess(
+                execution.getProductionPlan() != null ? execution.getProductionPlan().getFarmer() : null,
+                loggedUser
+        );
 
         if (execution.getStatus() == ExecutionStatus.VALIDATED) {
             if (loggedUser.getRole() == Role.FARMER) {

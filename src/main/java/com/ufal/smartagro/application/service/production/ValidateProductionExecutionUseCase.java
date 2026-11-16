@@ -44,9 +44,10 @@ public class ValidateProductionExecutionUseCase {
             throw new InvalidStateTransitionException("Apenas apontamentos com status PENDENTE podem ser validados. Status atual: " + execution.getStatus());
         }
 
-        if (execution.getProductionPlan() != null) {
-            accessValidator.validateWriteAccess(execution.getProductionPlan().getFarmer(), loggedUser);
-        }
+        accessValidator.validateWriteAccess(
+                execution.getProductionPlan() != null ? execution.getProductionPlan().getFarmer() : null,
+                loggedUser
+        );
 
         ExecutionStatus oldStatus = execution.getStatus();
 

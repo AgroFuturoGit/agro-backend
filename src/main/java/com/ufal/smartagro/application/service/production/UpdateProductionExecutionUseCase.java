@@ -46,9 +46,10 @@ public class UpdateProductionExecutionUseCase {
         ProductionExecution existingExecution = productionExecutionRepository.findById(executionId)
                 .orElseThrow(() -> new EntityNotFoundException("Execução de produção não encontrada."));
 
-        if (existingExecution.getProductionPlan() != null) {
-            accessValidator.validateWriteAccess(existingExecution.getProductionPlan().getFarmer(), loggedUser);
-        }
+        accessValidator.validateWriteAccess(
+                existingExecution.getProductionPlan() != null ? existingExecution.getProductionPlan().getFarmer() : null,
+                loggedUser
+        );
 
         if (dto.harvestedAt() != null) {
             if (dto.harvestedAt().isAfter(LocalDate.now())) {

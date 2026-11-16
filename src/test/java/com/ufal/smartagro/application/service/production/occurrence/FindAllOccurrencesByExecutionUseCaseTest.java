@@ -63,4 +63,22 @@ class FindAllOccurrencesByExecutionUseCaseTest {
         assertThat(result).containsExactly(o1, o2);
         verify(accessValidator).validateAccess(farmer, admin);
     }
+
+    @Test
+    @DisplayName("Execução órfã (sem plano) invoca accessValidator com farmer null para bloqueio de não-ADMIN")
+    void givenOrphanExecution_whenFindAll_thenValidatesAccessWithNullFarmer() {
+        UUID executionId = UUID.randomUUID();
+        User tech = UserTestFactory.user().technician().build();
+        ProductionExecution orphan = ProductionExecution.builder().id(executionId).productionPlan(null).build();
+
+        when(productionExecutionRepository.findById(executionId)).thenReturn(Optional.of(orphan));
+        doThrow(new com.ufal.smartagro.domain.exception.AccessDeniedException("Registro sem agricultor vinculado; acesso restrito a administradores."))
+                .when(accessValidator).validateAccess(null, tech);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> useCase.findAll(executionId, tech))
+                .isInstanceOf(com.ufal.smartagro.domain.exception.AccessDeniedException.class);
+
+        verify(accessValidator).validateAccess(null, tech);
+        verify(fieldOccurrenceRepository, never()).findAllByExecutionId(any());
+    }
 }

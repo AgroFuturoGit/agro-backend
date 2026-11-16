@@ -139,4 +139,26 @@ class DeleteProductionExecutionUseCaseTest {
 
         verify(productionExecutionRepository, never()).delete(any());
     }
+
+    @Test
+    @DisplayName("Apontamento órfão (sem plano) invoca accessValidator com farmer null para bloqueio de não-ADMIN")
+    void givenOrphanExecution_whenDelete_thenValidatesWriteAccessWithNullFarmer() {
+        UUID executionId = UUID.randomUUID();
+        User farmerUser = UserTestFactory.user().farmer().build();
+        ProductionExecution orphan = ProductionExecution.builder()
+                .id(executionId)
+                .productionPlan(null)
+                .status(ExecutionStatus.PENDING)
+                .build();
+
+        when(productionExecutionRepository.findById(executionId)).thenReturn(Optional.of(orphan));
+        doThrow(new AccessDeniedException("Registro sem agricultor vinculado; acesso restrito a administradores."))
+                .when(accessValidator).validateWriteAccess(null, farmerUser);
+
+        assertThatThrownBy(() -> useCase.delete(executionId, farmerUser))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(accessValidator).validateWriteAccess(null, farmerUser);
+        verify(productionExecutionRepository, never()).delete(any());
+    }
 }

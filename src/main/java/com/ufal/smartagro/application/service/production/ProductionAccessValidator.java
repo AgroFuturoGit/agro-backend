@@ -31,7 +31,12 @@ public class ProductionAccessValidator {
         if (loggedUser == null || loggedUser.getRole() == null) {
             throw new AccessDeniedException("Usuário não autenticado.");
         }
-        if (farmer == null) return;
+        if (farmer == null) {
+            if (loggedUser.getRole() == Role.ADMIN) {
+                return;
+            }
+            throw new AccessDeniedException("Registro sem agricultor vinculado; acesso restrito a administradores.");
+        }
 
         if (loggedUser.getRole() == Role.FARMER) {
             if (farmer.getUser() == null || !farmer.getUser().getId().equals(loggedUser.getId())) {
@@ -64,8 +69,11 @@ public class ProductionAccessValidator {
         if (loggedUser == null || loggedUser.getRole() == null) {
             throw new AccessDeniedException("Usuário não autenticado.");
         }
-        if (loggedUser.getRole() == Role.TECHNICIAN && farmer == null) {
-            throw new AccessDeniedException(TECHNICIAN_WRITE_DENIED);
+        if (farmer == null && loggedUser.getRole() != Role.ADMIN) {
+            if (loggedUser.getRole() == Role.TECHNICIAN) {
+                throw new AccessDeniedException(TECHNICIAN_WRITE_DENIED);
+            }
+            throw new AccessDeniedException("Registro sem agricultor vinculado; acesso restrito a administradores.");
         }
         validateAccess(farmer, loggedUser);
     }

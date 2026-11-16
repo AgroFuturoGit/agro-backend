@@ -39,9 +39,10 @@ public class RegisterFieldOccurrenceUseCase {
         ProductionExecution execution = productionExecutionRepository.findById(executionId)
                 .orElseThrow(() -> new EntityNotFoundException("Execução de produção não encontrada."));
 
-        if (execution.getProductionPlan() != null) {
-            accessValidator.validateWriteAccess(execution.getProductionPlan().getFarmer(), loggedUser);
-        }
+        accessValidator.validateWriteAccess(
+                execution.getProductionPlan() != null ? execution.getProductionPlan().getFarmer() : null,
+                loggedUser
+        );
 
         if (execution.getStatus() == ExecutionStatus.VALIDATED && loggedUser.getRole() == Role.FARMER) {
             throw new AccessDeniedException("Não é permitido registrar ocorrências em um apontamento já validado.");

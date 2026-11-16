@@ -32,9 +32,10 @@ public class FindAllOccurrencesByExecutionUseCase {
         ProductionExecution execution = productionExecutionRepository.findById(executionId)
                 .orElseThrow(() -> new EntityNotFoundException("Execução de produção não encontrada."));
 
-        if (execution.getProductionPlan() != null) {
-            accessValidator.validateAccess(execution.getProductionPlan().getFarmer(), loggedUser);
-        }
+        accessValidator.validateAccess(
+                execution.getProductionPlan() != null ? execution.getProductionPlan().getFarmer() : null,
+                loggedUser
+        );
 
         return fieldOccurrenceRepository.findAllByExecutionId(executionId);
     }
