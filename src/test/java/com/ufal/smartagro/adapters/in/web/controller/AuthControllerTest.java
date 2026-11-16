@@ -83,19 +83,23 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("Given requisição com X-Forwarded-For When login Then limita estritamente pelo IP do cliente")
-    void givenLoginWithForwardedFor_whenLogin_thenLimitsByIp() throws Exception {
+    @DisplayName("Given requisição com X-Forwarded-For não confiável When login Then ignora header forjado e usa remoteAddr")
+    void givenLoginWithUntrustedForwardedFor_whenLogin_thenIgnoresRawHeaderAndUsesRemoteAddr() throws Exception {
         LoginDTO loginDTO = new LoginDTO("user@test.com", "password");
         User user = UserTestFactory.user().farmer().build();
         when(loginUseCase.login(any(LoginDTO.class))).thenReturn(new LoginResult("fake-token", user));
 
         mockMvc.perform(post("/auth/login")
                         .header("X-Forwarded-For", "203.0.113.195, 70.41.3.18")
+                        .with(request -> {
+                            request.setRemoteAddr("198.51.100.10");
+                            return request;
+                        })
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginDTO)))
                 .andExpect(status().isOk());
 
-        verify(rateLimiter).checkAndIncrement("203.0.113.195");
+        verify(rateLimiter).checkAndIncrement("198.51.100.10");
     }
 
     @Test

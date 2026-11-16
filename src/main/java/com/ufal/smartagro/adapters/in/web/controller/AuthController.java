@@ -64,10 +64,7 @@ public class AuthController {
     }
 
     private String resolveClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip != null && !ip.isBlank()) {
-            return ip.split(",")[0].trim();
-        }
+        // server.forward-headers-strategy=framework já resolve cabeçalhos de proxy confiáveis em remoteAddr.
         String remoteAddr = request.getRemoteAddr();
         return (remoteAddr != null && !remoteAddr.isBlank()) ? remoteAddr : "unknown";
     }
