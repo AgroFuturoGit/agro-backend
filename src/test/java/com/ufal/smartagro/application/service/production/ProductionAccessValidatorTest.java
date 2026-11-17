@@ -48,18 +48,38 @@ class ProductionAccessValidatorTest {
     private ProductionAccessValidator productionAccessValidator;
 
     @Nested
-    @DisplayName("Farmer nulo — nenhum papel é bloqueado")
+    @DisplayName("Farmer nulo (órfão pós-soft delete) — apenas ADMIN tem acesso")
     class NullFarmer {
 
-        @ParameterizedTest(name = "Given Role.{0} e farmer null When validateAccess Then não lança")
-        @EnumSource(Role.class)
-        void givenAnyRole_whenFarmerIsNull_thenAllows(Role role) {
-            User loggedUser = UserTestFactory.user().role(role).build();
+        @Test
+        @DisplayName("Given ADMIN e farmer null When validateAccess/validateWriteAccess Then permite")
+        void givenAdmin_whenFarmerIsNull_thenAllows() {
+            User admin = UserTestFactory.user().admin().build();
 
-            assertThatCode(() -> productionAccessValidator.validateAccess(null, loggedUser))
+            assertThatCode(() -> productionAccessValidator.validateAccess(null, admin))
+                    .doesNotThrowAnyException();
+            assertThatCode(() -> productionAccessValidator.validateWriteAccess(null, admin))
                     .doesNotThrowAnyException();
 
-            verifyNoInteractions(managerRepository);
+            verifyNoInteractions(managerRepository, technicianRepository, technicalAssistanceRepository);
+        }
+
+        @ParameterizedTest(name = "Given Role.{0} e farmer null When validateAccess Then AccessDeniedException")
+        @EnumSource(value = Role.class, names = {"FARMER", "MANAGER", "TECHNICIAN"})
+        void givenNonAdmin_whenFarmerIsNull_thenDeniesReadAccess(Role role) {
+            User loggedUser = UserTestFactory.user().role(role).build();
+
+            assertThatThrownBy(() -> productionAccessValidator.validateAccess(null, loggedUser))
+                    .isInstanceOf(AccessDeniedException.class);
+        }
+
+        @ParameterizedTest(name = "Given Role.{0} e farmer null When validateWriteAccess Then AccessDeniedException")
+        @EnumSource(value = Role.class, names = {"FARMER", "MANAGER", "TECHNICIAN"})
+        void givenNonAdmin_whenFarmerIsNull_thenDeniesWriteAccess(Role role) {
+            User loggedUser = UserTestFactory.user().role(role).build();
+
+            assertThatThrownBy(() -> productionAccessValidator.validateWriteAccess(null, loggedUser))
+                    .isInstanceOf(AccessDeniedException.class);
         }
     }
 

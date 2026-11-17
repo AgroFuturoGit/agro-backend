@@ -129,4 +129,33 @@ class ExecutionAttachmentControllerTest {
                 .andExpect(jsonPath("$.status").value(413))
                 .andExpect(jsonPath("$.message").value("A imagem excede o limite de 5 MB."));
     }
+
+    @Test
+    @DisplayName("Given nome malicioso no anexo When download Then sanitiza Content-Disposition contra Header Injection")
+    void givenUnsafeFilename_whenDownload_thenSanitizesContentDisposition() throws Exception {
+        UUID executionId = UUID.randomUUID();
+        UUID attachmentId = UUID.randomUUID();
+        User farmer = UserTestFactory.user().farmer().build();
+        UserDetailsImpl userDetails = new UserDetailsImpl(farmer, "password");
+
+        byte[] jpegBytes = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0x00};
+        ExecutionAttachment attachment = new ExecutionAttachment(
+                attachmentId, executionId, null, "../../evil\"\r\nX-Injected: true.jpg",
+                MediaType.IMAGE_JPEG_VALUE, jpegBytes.length, jpegBytes, LocalDateTime.now()
+        );
+
+        when(downloadUseCase.download(eq(executionId), eq(attachmentId), any(User.class))).thenReturn(attachment);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/production-executions/{executionId}/attachments/{attachmentId}", executionId, attachmentId)
+                        .with(user(userDetails)))
+                .andExpect(status().isOk())
+                .andExpect(header().string(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        org.hamcrest.Matchers.allOf(
+                                org.hamcrest.Matchers.startsWith("inline;"),
+                                org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("\r")),
+                                org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("\n")),
+                                org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString(".."))
+                        )));
+    }
 }

@@ -34,7 +34,7 @@ public class HarvestUpdateUseCase {
 
     @Transactional
     public Harvest execute(UUID id, Harvest updatedHarvestData, User loggedUser, LocalDateTime baseUpdatedAt) {
-        if (loggedUser == null || (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN)) {
+        if (loggedUser == null || loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException("Usuário não tem permissão para atualizar uma safra.");
         }
 

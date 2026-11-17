@@ -18,11 +18,6 @@ public class FindAllOrganizationsUseCase {
     private final OrganizationRepository organizationRepository;
 
     @Transactional(readOnly = true)
-    public List<Organization> findAll() {
-        return findAll(null);
-    }
-
-    @Transactional(readOnly = true)
     public List<Organization> findAll(User loggedUser) {
         if (loggedUser == null || loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException("Apenas administradores podem listar todas as organizações.");

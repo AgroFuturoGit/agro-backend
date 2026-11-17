@@ -56,8 +56,10 @@ Este documento especifica a política de controle de acesso aos recursos do back
 | Técnico | `GET` | `/technicians` | `ADMIN, MANAGER` | Listagem da equipe técnica (Gestor vê técnicos da organização e os criados por ele). |
 | Técnico | `GET` | `/technicians/{id}` | `ADMIN, MANAGER` | Consulta de técnico por ID (Gestor vê técnicos da organização e os criados por ele). |
 | Técnico | `POST` | `/technicians` | `ADMIN, MANAGER` | Cadastro de técnicos com CREA/CFT/CFTA. |
-| Técnico | `PUT` | `/technicians/{id}` | `ADMIN, MANAGER, TECHNICIAN` | Atualização cadastral da equipe técnica (Técnico edita apenas o próprio perfil). |
+| Técnico | `PUT` | `/technicians/{id}` | `ADMIN, TECHNICIAN` | Atualização cadastral da equipe técnica (Técnico edita apenas o próprio perfil). |
 | Técnico | `DELETE`| `/technicians/{id}` | `ADMIN` | Soft delete de perfil técnico e usuário vinculado. |
+| Assistência| `GET` | `/technicians/me/assistances` | `TECHNICIAN` | Lista assistências ativas do técnico autenticado com comunidade, organização e total de agricultores. |
+| Assistência| `GET` | `/technicians/{id}/assistances` | `ADMIN, MANAGER` | Lista assistências ativas de um técnico (Gestor filtrado para comunidades da sua organização). |
 | Assistência| `POST` | `/technicians/{id}/assistances` | `ADMIN, MANAGER` | Vinculação do técnico às comunidades atendidas. |
 | Assistência| `DELETE`| `/technicians/{id}/assistances/{cId}` | `ADMIN, MANAGER` | Encerramento de vínculo de assistência técnica. |
 | Gestor | `GET` | `/managers/me` | `MANAGER` | Consulta dos dados cadastrais e organização do gestor autenticado. |
@@ -74,14 +76,14 @@ Este documento especifica a política de controle de acesso aos recursos do back
 | :--- | :--- | :--- | :--- | :--- |
 | Culturas | `GET` | `/crops` | `ADMIN, MANAGER, TECHNICIAN, FARMER` | Consulta do catálogo de culturas agrícolas cadastradas. |
 | Culturas | `GET` | `/crops/{id}` | `ADMIN, MANAGER, TECHNICIAN, FARMER` | Detalhes da cultura, tipo de colheita e produtividade esperada. |
-| Culturas | `POST` | `/crops` | `ADMIN, TECHNICIAN` | Cadastro de nova cultura (unicidade por nome + variedade ativa). |
-| Culturas | `PUT`, `PATCH` | `/crops/{id}` | `ADMIN, TECHNICIAN` | Atualização com controle de concorrência (`baseUpdatedAt`). |
-| Culturas | `DELETE`| `/crops/{id}` | `ADMIN, TECHNICIAN` | Bloqueado com `409 Conflict` se houver planos vinculados ativos. |
+| Culturas | `POST` | `/crops` | `ADMIN` | Cadastro de nova cultura (unicidade por nome + variedade ativa). |
+| Culturas | `PUT`, `PATCH` | `/crops/{id}` | `ADMIN` | Atualização com controle de concorrência (`baseUpdatedAt`). |
+| Culturas | `DELETE`| `/crops/{id}` | `ADMIN` | Bloqueado com `409 Conflict` se houver planos vinculados ativos. |
 | Safras | `GET` | `/harvests` | `ADMIN, MANAGER, TECHNICIAN, FARMER` | Consulta do calendário de safras vigentes e históricas. |
 | Safras | `GET` | `/harvests/{id}` | `ADMIN, MANAGER, TECHNICIAN, FARMER` | Detalhes do período e label da safra. |
-| Safras | `POST` | `/harvests` | `ADMIN, TECHNICIAN` | Criação de safra (`start_date <= end_date`). |
-| Safras | `PUT`, `PATCH` | `/harvests/{id}` | `ADMIN, TECHNICIAN` | Atualização do ciclo de safra. |
-| Safras | `DELETE`| `/harvests/{id}` | `ADMIN, TECHNICIAN` | Bloqueado com `409 Conflict` se houver planos vinculados ativos. |
+| Safras | `POST` | `/harvests` | `ADMIN` | Criação de safra (`start_date <= end_date`). |
+| Safras | `PUT`, `PATCH` | `/harvests/{id}` | `ADMIN` | Atualização do ciclo de safra. |
+| Safras | `DELETE`| `/harvests/{id}` | `ADMIN` | Bloqueado com `409 Conflict` se houver planos vinculados ativos. |
 
 ---
 
@@ -96,7 +98,7 @@ Este documento especifica a política de controle de acesso aos recursos do back
 | Planos | `DELETE`| `/production-plans/{id}` | `ADMIN, TECHNICIAN, FARMER` | Soft delete do plano de produção (bloqueado com `409 Conflict` se houver execuções). |
 | Apontamentos| `GET`| `/production-plans/{planId}/executions`| `ADMIN, MANAGER, TECHNICIAN, FARMER` | Filtrado automaticamente pelo escopo do ator. |
 | Apontamentos| `POST`| `/production-plans/{planId}/executions`| `ADMIN, TECHNICIAN, FARMER` | Lançamento de colheita (`PENDING` por padrão se lançado por produtor). |
-| Apontamentos| `PUT`| `/production-executions/{id}`| `ADMIN, TECHNICIAN, FARMER` | Farmer: reverte para PENDING se alterar peso/data; Tech: valida/rejeita (`409 Conflict` em transição inválida). |
+| Apontamentos| `PUT`| `/production-executions/{id}`| `ADMIN, TECHNICIAN, FARMER` | Farmer: reverte para PENDING se alterar peso/data/observação/GPS; Tech: valida/rejeita (`409 Conflict` em transição inválida). |
 | Apontamentos| `DELETE`| `/production-executions/{id}`| `ADMIN, TECHNICIAN, FARMER` | Soft delete do apontamento de colheita (bloqueado para `FARMER` se `VALIDATED`). |
 | Ocorrências | `GET` | `/production-executions/{eId}/occurrences` | `ADMIN, MANAGER, TECHNICIAN, FARMER` | Acesso aos registros fitossanitários/climáticos do apontamento. |
 | Ocorrências | `POST`| `/production-executions/{eId}/occurrences` | `ADMIN, TECHNICIAN, FARMER` | Registro de praga, clima ou observação de campo (bloqueado para `FARMER` se `VALIDATED`). |

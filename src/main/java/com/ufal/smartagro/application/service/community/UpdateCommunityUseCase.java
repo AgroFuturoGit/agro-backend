@@ -30,20 +30,15 @@ public class UpdateCommunityUseCase {
     private final AuditLogService auditLogService;
 
     @Transactional
-    public Community update(UUID id, CommunityUpdateDTO dto) {
-        return update(id, dto, null);
-    }
-
-    @Transactional
     public Community update(UUID id, CommunityUpdateDTO dto, User loggedUser) {
-        if (loggedUser != null && loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.MANAGER) {
+        if (loggedUser == null || (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.MANAGER)) {
             throw new AccessDeniedException("Papel não autorizado para atualizar comunidade.");
         }
 
         Community existingCommunity = communityRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Comunidade não encontrada."));
 
-        if (loggedUser != null && loggedUser.getRole() == Role.MANAGER) {
+        if (loggedUser.getRole() == Role.MANAGER) {
             Manager manager = managerRepository.findByUserId(loggedUser.getId())
                     .orElseThrow(() -> new AccessDeniedException("Gestor não encontrado."));
             UUID managerOrgId = manager.getOrganization() != null ? manager.getOrganization().getId() : null;

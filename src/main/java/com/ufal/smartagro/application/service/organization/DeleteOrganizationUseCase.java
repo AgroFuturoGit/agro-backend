@@ -29,13 +29,8 @@ public class DeleteOrganizationUseCase {
     private final AuditLogService auditLogService;
 
     @Transactional
-    public void delete(UUID id) {
-        delete(id, null);
-    }
-
-    @Transactional
     public void delete(UUID id, User loggedUser) {
-        if (loggedUser != null && loggedUser.getRole() != Role.ADMIN) {
+        if (loggedUser == null || loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException("Apenas administradores podem excluir organizações.");
         }
 

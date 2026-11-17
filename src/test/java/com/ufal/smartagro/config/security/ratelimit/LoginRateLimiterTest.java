@@ -92,4 +92,32 @@ class LoginRateLimiterTest {
             rateLimiter.checkAndIncrement("   ");
         }).doesNotThrowAnyException();
     }
+
+    @Test
+    @DisplayName("Given entradas expiradas When nova tentativa após janela Then limpa chaves expiradas")
+    void givenExpiredEntries_whenWindowElapses_thenEvictsExpiredKeys() throws Exception {
+        setField("windowSeconds", 0L);
+
+        rateLimiter.checkAndIncrement("192.0.2.1");
+        rateLimiter.checkAndIncrement("192.0.2.2");
+        Thread.sleep(5);
+
+        rateLimiter.checkAndIncrement("192.0.2.3");
+
+        assertThat(rateLimiter.trackedKeyCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Given mapa atingindo maxEntries When novas chaves chegam Then limita crescimento em memória")
+    void givenMaxEntriesReached_whenNewKeysArrive_thenBoundsMapSize() throws Exception {
+        setField("maxEntries", 3);
+
+        rateLimiter.checkAndIncrement("192.0.2.10");
+        rateLimiter.checkAndIncrement("192.0.2.11");
+        rateLimiter.checkAndIncrement("192.0.2.12");
+        rateLimiter.checkAndIncrement("192.0.2.13");
+        rateLimiter.checkAndIncrement("192.0.2.14");
+
+        assertThat(rateLimiter.trackedKeyCount()).isLessThanOrEqualTo(3);
+    }
 }

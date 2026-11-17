@@ -77,9 +77,7 @@ public class FarmerController {
             @RequestParam(required = false) UUID communityId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        List<Farmer> farmers = loggedUserDetails != null
-                ? findAllFarmersUseCase.findAll(communityId, resolveLoggedUser(loggedUserDetails))
-                : findAllFarmersUseCase.findAll(communityId);
+        List<Farmer> farmers = findAllFarmersUseCase.findAll(communityId, resolveLoggedUser(loggedUserDetails));
         List<FarmerResponseDTO> response = farmers.stream()
                 .map(Mapper::toFarmerResponseDTO)
                 .toList();
@@ -98,9 +96,7 @@ public class FarmerController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        Farmer farmer = loggedUserDetails != null
-                ? findFarmerByIdUseCase.findById(id, resolveLoggedUser(loggedUserDetails))
-                : findFarmerByIdUseCase.findById(id);
+        Farmer farmer = findFarmerByIdUseCase.findById(id, resolveLoggedUser(loggedUserDetails));
         FarmerResponseDTO response = Mapper.toFarmerResponseDTO(farmer);
         return ResponseEntity.ok(response);
     }
@@ -119,9 +115,7 @@ public class FarmerController {
             @Valid @RequestBody FarmerUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        Farmer farmer = loggedUserDetails != null
-                ? updateFarmerUseCase.update(id, dto, resolveLoggedUser(loggedUserDetails))
-                : updateFarmerUseCase.update(id, dto);
+        Farmer farmer = updateFarmerUseCase.update(id, dto, resolveLoggedUser(loggedUserDetails));
         FarmerResponseDTO response = Mapper.toFarmerResponseDTO(farmer);
         return ResponseEntity.ok(response);
     }
@@ -138,15 +132,14 @@ public class FarmerController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        if (loggedUserDetails != null) {
-            deleteFarmerUseCase.delete(id, resolveLoggedUser(loggedUserDetails));
-        } else {
-            deleteFarmerUseCase.delete(id);
-        }
+        deleteFarmerUseCase.delete(id, resolveLoggedUser(loggedUserDetails));
         return ResponseEntity.noContent().build();
     }
 
     private User resolveLoggedUser(UserDetailsImpl loggedUserDetails) {
-        return loggedUserDetails != null ? loggedUserDetails.toDomainUser() : null;
+        if (loggedUserDetails == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+        return loggedUserDetails.toDomainUser();
     }
 }

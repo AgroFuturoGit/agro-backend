@@ -47,6 +47,7 @@ public class TechnicianController {
     private final RemoveCommunityFromTechnicianUseCase removeCommunityFromTechnicianUseCase;
     private final GetAssignedCommunitiesUseCase getAssignedCommunitiesUseCase;
     private final GetAssignedFarmersUseCase getAssignedFarmersUseCase;
+    private final GetAssignedAssistancesUseCase getAssignedAssistancesUseCase;
 
     @Operation(summary = "Cadastrar técnico", description = "Registra um novo técnico agrícola no sistema.", security = @SecurityRequirement(name = "bearerAuth"))
     @ApiResponses({
@@ -129,7 +130,7 @@ public class TechnicianController {
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
             @ApiResponse(responseCode = "404", description = "Técnico não encontrado")
     })
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'TECHNICIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
     @PutMapping("/{id}")
     public ResponseEntity<TechnicianResponseDTO> updateTechnician(
             @PathVariable UUID id,
@@ -234,6 +235,43 @@ public class TechnicianController {
         List<Community> communities = getAssignedCommunitiesUseCase.getAssignedCommunities(id, loggedUser);
         List<CommunityResponseDTO> response = communities.stream()
                 .map(Mapper::toCommunityResponseDTO)
+                .toList();
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Listar assistências do técnico logado", description = "Retorna as assistências técnicas ativas do técnico autenticado com comunidade, organização e quantidade de agricultores ativos.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado (requer perfil TECHNICIAN)")
+    })
+    @PreAuthorize("hasRole('TECHNICIAN')")
+    @GetMapping("/me/assistances")
+    public ResponseEntity<List<TechnicalAssistanceResponseDTO>> getMyAssistances(
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
+        List<TechnicalAssistanceResponseDTO> response = getAssignedAssistancesUseCase.getAssignedAssistances(loggedUser).stream()
+                .map(item -> Mapper.toTechnicalAssistanceResponseDTO(item.assistance(), item.activeFarmersCount()))
+                .toList();
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Listar assistências de determinado técnico", description = "Permite a gestores e administradores visualizar as assistências técnicas ativas de um técnico específico.", security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Não autorizado"),
+            @ApiResponse(responseCode = "404", description = "Técnico não encontrado")
+    })
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+    @GetMapping("/{id}/assistances")
+    public ResponseEntity<List<TechnicalAssistanceResponseDTO>> getTechnicianAssistances(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
+
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
+        List<TechnicalAssistanceResponseDTO> response = getAssignedAssistancesUseCase.getAssignedAssistances(id, loggedUser).stream()
+                .map(item -> Mapper.toTechnicalAssistanceResponseDTO(item.assistance(), item.activeFarmersCount()))
                 .toList();
         return ResponseEntity.ok(response);
     }

@@ -52,7 +52,7 @@ public class HarvestController {
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
             @ApiResponse(responseCode = "403", description = "Não autorizado")
     })
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping({"", "/register"})
     public ResponseEntity<HarvestResponseDTO> register(@Valid @RequestBody HarvestRegisterDTO harvestRegisterDTO,
                                                        @AuthenticationPrincipal UserDetailsImpl userDetails) {
@@ -75,7 +75,7 @@ public class HarvestController {
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
             @ApiResponse(responseCode = "404", description = "Colheita não encontrada")
     })
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping(value = "/{id}", method = {RequestMethod.PATCH, RequestMethod.PUT})
     public ResponseEntity<HarvestResponseDTO> update(@PathVariable UUID id,
                                                      @Valid @RequestBody HarvestUpdateDTO harvestUpdateDTO,
@@ -135,7 +135,7 @@ public class HarvestController {
             @ApiResponse(responseCode = "403", description = "Não autorizado"),
             @ApiResponse(responseCode = "404", description = "Colheita não encontrada")
     })
-    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id,
                                        @AuthenticationPrincipal UserDetailsImpl userDetails) {

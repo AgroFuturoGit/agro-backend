@@ -104,4 +104,26 @@ class DeleteFieldOccurrenceUseCaseTest {
                 .isInstanceOf(com.ufal.smartagro.domain.exception.AccessDeniedException.class)
                 .hasMessageContaining("já validado");
     }
+
+    @Test
+    @DisplayName("Ocorrência órfã (sem execução) invoca accessValidator com farmer null para bloqueio de não-ADMIN")
+    void givenOrphanOccurrence_whenDelete_thenValidatesWriteAccessWithNullFarmer() {
+        UUID occurrenceId = UUID.randomUUID();
+        User manager = UserTestFactory.user().manager().build();
+        FieldOccurrence orphan = FieldOccurrence.builder()
+                .id(occurrenceId)
+                .execution(null)
+                .description("Órfã")
+                .build();
+
+        when(fieldOccurrenceRepository.findById(occurrenceId)).thenReturn(Optional.of(orphan));
+        doThrow(new com.ufal.smartagro.domain.exception.AccessDeniedException("Registro sem agricultor vinculado; acesso restrito a administradores."))
+                .when(accessValidator).validateWriteAccess(null, manager);
+
+        assertThatThrownBy(() -> useCase.delete(occurrenceId, manager))
+                .isInstanceOf(com.ufal.smartagro.domain.exception.AccessDeniedException.class);
+
+        verify(accessValidator).validateWriteAccess(null, manager);
+        verify(fieldOccurrenceRepository, never()).delete(any());
+    }
 }

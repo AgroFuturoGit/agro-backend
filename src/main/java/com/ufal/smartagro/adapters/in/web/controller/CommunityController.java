@@ -11,6 +11,7 @@ import com.ufal.smartagro.application.service.community.FindCommunityByIdUseCase
 import com.ufal.smartagro.application.service.community.UpdateCommunityUseCase;
 import com.ufal.smartagro.application.service.farmer.RegisterFarmerUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.Community;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.User;
@@ -56,7 +57,7 @@ public class CommunityController {
             @Valid @RequestBody FarmerRegisterDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        User loggedUser = loggedUserDetails.toDomainUser();
+        User loggedUser = resolveLoggedUser(loggedUserDetails);
 
         Farmer farmer = registerFarmerUseCase.register(id, dto, loggedUser);
         FarmerResponseDTO response = Mapper.toFarmerResponseDTO(farmer);
@@ -75,9 +76,7 @@ public class CommunityController {
             @RequestParam(required = false) UUID orgId,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        List<Community> communities = loggedUserDetails != null
-                ? findAllCommunitiesUseCase.findAll(orgId, resolveLoggedUser(loggedUserDetails))
-                : findAllCommunitiesUseCase.findAll(orgId);
+        List<Community> communities = findAllCommunitiesUseCase.findAll(orgId, resolveLoggedUser(loggedUserDetails));
         List<CommunityResponseDTO> response = communities.stream()
                 .map(Mapper::toCommunityResponseDTO)
                 .toList();
@@ -96,9 +95,7 @@ public class CommunityController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        Community community = loggedUserDetails != null
-                ? findCommunityByIdUseCase.findById(id, resolveLoggedUser(loggedUserDetails))
-                : findCommunityByIdUseCase.findById(id);
+        Community community = findCommunityByIdUseCase.findById(id, resolveLoggedUser(loggedUserDetails));
         CommunityResponseDTO response = Mapper.toCommunityResponseDTO(community);
         return ResponseEntity.ok(response);
     }
@@ -117,9 +114,7 @@ public class CommunityController {
             @Valid @RequestBody CommunityUpdateDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        Community community = loggedUserDetails != null
-                ? updateCommunityUseCase.update(id, dto, resolveLoggedUser(loggedUserDetails))
-                : updateCommunityUseCase.update(id, dto);
+        Community community = updateCommunityUseCase.update(id, dto, resolveLoggedUser(loggedUserDetails));
         CommunityResponseDTO response = Mapper.toCommunityResponseDTO(community);
         return ResponseEntity.ok(response);
     }
@@ -136,13 +131,14 @@ public class CommunityController {
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
-        if (loggedUserDetails != null) {
-            deleteCommunityUseCase.delete(id, resolveLoggedUser(loggedUserDetails));
-        } else {
-            deleteCommunityUseCase.delete(id);
-        }
+        deleteCommunityUseCase.delete(id, resolveLoggedUser(loggedUserDetails));
         return ResponseEntity.noContent().build();
     }
 
-    private User resolveLoggedUser(UserDetailsImpl loggedUserDetails) { return loggedUserDetails != null ? loggedUserDetails.toDomainUser() : null; }
+    private User resolveLoggedUser(UserDetailsImpl loggedUserDetails) {
+        if (loggedUserDetails == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+        return loggedUserDetails.toDomainUser();
+    }
 }

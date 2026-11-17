@@ -281,4 +281,111 @@ class UpdateProductionExecutionUseCaseTest {
         assertThat(updated.getRejectionReason()).isEqualTo("Qualidade inadequada");
         verify(auditLogService).record(eq(tech), eq(AuditAction.REJECT), eq("production_executions"), eq(ID), any());
     }
+
+    @Test
+    @DisplayName("Controle de concorrência recebe a ProductionExecution atual para verificação de versão")
+    void givenUpdate_whenCheckingVersion_thenPassesExistingExecutionToVersionGuard() {
+        User tech = UserTestFactory.user().technician().build();
+        Farmer farmer = UserTestFactory.farmerProfile().build();
+        ProductionExecution execution = createExecution(farmer, ExecutionStatus.PENDING, null);
+        when(repository.findById(ID)).thenReturn(Optional.of(execution));
+        when(repository.save(any(ProductionExecution.class))).thenAnswer(i -> i.getArgument(0));
+
+        ProductionExecutionUpdateDTO dto = new ProductionExecutionUpdateDTO(
+                null, null, null, null, null, null, "ok",
+                null, null, null, null, null, null
+        );
+
+        useCase.update(ID, dto, tech);
+
+        verify(versionGuard).ensureUpToDate(
+                isNull(),
+                eq(execution.getUpdatedAt()),
+                eq(execution.getCreatedAt()),
+                eq(execution),
+                anyString()
+        );
+    }
+
+    @Test
+    @DisplayName("FARMER alterando observação (notes) de apontamento VALIDADO reverte status para PENDING")
+    void givenValidatedExecution_whenFarmerEditsNotes_thenRevertsToPending() {
+        User farmerUser = UserTestFactory.user().farmer().build();
+        User techValidator = UserTestFactory.user().technician().build();
+        Farmer farmer = UserTestFactory.farmerProfile().user(farmerUser).build();
+        ProductionExecution execution = createExecution(farmer, ExecutionStatus.VALIDATED, techValidator);
+
+        when(repository.findById(ID)).thenReturn(Optional.of(execution));
+        when(repository.save(any(ProductionExecution.class))).thenAnswer(i -> i.getArgument(0));
+
+        ProductionExecutionUpdateDTO dto = new ProductionExecutionUpdateDTO(
+                null, null, null, null, null, null, "Observação adulterada",
+                null, null, null, null, null, null
+        );
+
+        ProductionExecution updated = useCase.update(ID, dto, farmerUser);
+
+        assertThat(updated.getStatus()).isEqualTo(ExecutionStatus.PENDING);
+        assertThat(updated.getValidatedBy()).isNull();
+        assertThat(updated.getValidatedAt()).isNull();
+        assertThat(updated.getNotes()).isEqualTo("Observação adulterada");
+    }
+
+    @Test
+    @DisplayName("FARMER alterando GPS de apontamento VALIDADO reverte status para PENDING")
+    void givenValidatedExecution_whenFarmerEditsGps_thenRevertsToPending() {
+        User farmerUser = UserTestFactory.user().farmer().build();
+        User techValidator = UserTestFactory.user().technician().build();
+        Farmer farmer = UserTestFactory.farmerProfile().user(farmerUser).build();
+        ProductionExecution execution = createExecution(farmer, ExecutionStatus.VALIDATED, techValidator);
+
+        when(repository.findById(ID)).thenReturn(Optional.of(execution));
+        when(repository.save(any(ProductionExecution.class))).thenAnswer(i -> i.getArgument(0));
+
+        ProductionExecutionUpdateDTO dto = new ProductionExecutionUpdateDTO(
+                null, null, null, null, null, null, null,
+                new BigDecimal("-9.7525"), new BigDecimal("-36.6611"), new BigDecimal("5.0"), null, null, null
+        );
+
+        ProductionExecution updated = useCase.update(ID, dto, farmerUser);
+
+        assertThat(updated.getStatus()).isEqualTo(ExecutionStatus.PENDING);
+        assertThat(updated.getValidatedBy()).isNull();
+        assertThat(updated.getValidatedAt()).isNull();
+        assertThat(updated.getLatitude()).isEqualByComparingTo("-9.7525");
+    }
+
+    @Test
+    @DisplayName("FARMER limpando GPS (clearLocation) de apontamento VALIDADO reverte status para PENDING")
+    void givenValidatedExecutionWithGps_whenFarmerClearsLocation_thenRevertsToPending() {
+        User farmerUser = UserTestFactory.user().farmer().build();
+        User techValidator = UserTestFactory.user().technician().build();
+        Farmer farmer = UserTestFactory.farmerProfile().user(farmerUser).build();
+        ProductionExecution base = createExecution(farmer, ExecutionStatus.VALIDATED, techValidator);
+        ProductionExecution withGps = new ProductionExecution(
+                base.getId(), base.getClientId(), base.getProductionPlan(),
+                base.getQuantity(), base.getQuantityKg(), base.getHarvestedAt(),
+                base.getStatus(), base.getValidatedBy(), base.getValidatedAt(),
+                base.getNotes(), base.getRejectionReason(),
+                new BigDecimal("-9.7525"), new BigDecimal("-36.6611"), new BigDecimal("8.0"),
+                LocalDateTime.of(2026, 5, 10, 9, 0),
+                base.getCreatedAt(), base.getUpdatedAt(), base.getDeletedAt()
+        );
+
+        when(repository.findById(ID)).thenReturn(Optional.of(withGps));
+        when(repository.save(any(ProductionExecution.class))).thenAnswer(i -> i.getArgument(0));
+
+        ProductionExecutionUpdateDTO dto = new ProductionExecutionUpdateDTO(
+                null, null, null, null, null, null, null,
+                null, null, null, null, true, null
+        );
+
+        ProductionExecution updated = useCase.update(ID, dto, farmerUser);
+
+        assertThat(updated.getStatus()).isEqualTo(ExecutionStatus.PENDING);
+        assertThat(updated.getValidatedBy()).isNull();
+        assertThat(updated.getValidatedAt()).isNull();
+        assertThat(updated.getLatitude()).isNull();
+        assertThat(updated.getLongitude()).isNull();
+    }
 }

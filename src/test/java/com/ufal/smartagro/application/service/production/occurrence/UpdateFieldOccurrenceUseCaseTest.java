@@ -105,4 +105,49 @@ class UpdateFieldOccurrenceUseCaseTest {
                 .isInstanceOf(com.ufal.smartagro.domain.exception.AccessDeniedException.class)
                 .hasMessageContaining("já validado");
     }
+
+    @Test
+    @DisplayName("Ocorrência órfã (sem execução) invoca accessValidator com farmer null para bloqueio de não-ADMIN")
+    void givenOrphanOccurrence_whenUpdate_thenValidatesWriteAccessWithNullFarmer() {
+        UUID occurrenceId = UUID.randomUUID();
+        User manager = UserTestFactory.user().manager().build();
+        FieldOccurrence orphan = FieldOccurrence.builder()
+                .id(occurrenceId)
+                .execution(null)
+                .description("Órfã")
+                .build();
+
+        when(fieldOccurrenceRepository.findById(occurrenceId)).thenReturn(Optional.of(orphan));
+        doThrow(new com.ufal.smartagro.domain.exception.AccessDeniedException("Registro sem agricultor vinculado; acesso restrito a administradores."))
+                .when(accessValidator).validateWriteAccess(null, manager);
+
+        FieldOccurrenceUpdateDTO dto = new FieldOccurrenceUpdateDTO(null, "Nova", null, null);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> useCase.update(occurrenceId, dto, manager))
+                .isInstanceOf(com.ufal.smartagro.domain.exception.AccessDeniedException.class);
+
+        verify(accessValidator).validateWriteAccess(null, manager);
+        verify(fieldOccurrenceRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Recusa evidenceUrl com esquema inseguro ao atualizar ocorrência")
+    void givenUnsafeEvidenceUrl_whenUpdate_thenThrowsIllegalArgumentException() {
+        User admin = UserTestFactory.user().admin().build();
+        UUID id = UUID.randomUUID();
+        FieldOccurrence existing = FieldOccurrence.builder()
+                .id(id)
+                .execution(ProductionExecution.builder().id(UUID.randomUUID()).build())
+                .description("Lagarta")
+                .build();
+        when(fieldOccurrenceRepository.findById(id)).thenReturn(Optional.of(existing));
+
+        FieldOccurrenceUpdateDTO dto = new FieldOccurrenceUpdateDTO(null, null, null, "javascript:alert(1)");
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> useCase.update(id, dto, admin))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("http:// ou https://");
+
+        verify(fieldOccurrenceRepository, never()).save(any());
+    }
 }

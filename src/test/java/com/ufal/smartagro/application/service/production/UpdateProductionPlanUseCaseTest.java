@@ -154,4 +154,28 @@ class UpdateProductionPlanUseCaseTest {
 
         verify(productionPlanRepository, never()).save(any());
     }
+
+    @Test
+    @DisplayName("Controle de concorrência recebe o ProductionPlan atual para verificação de versão")
+    void givenUpdate_whenCheckingVersion_thenPassesExistingPlanToVersionGuard() {
+        User admin = UserTestFactory.user().admin().build();
+        ProductionPlan existing = existingPlan();
+        when(productionPlanRepository.findById(PLAN_ID)).thenReturn(Optional.of(existing));
+        when(productionPlanRepository.save(any(ProductionPlan.class))).thenAnswer(i -> i.getArgument(0));
+
+        ProductionPlanUpdateDTO dto = new ProductionPlanUpdateDTO(
+                null, null, null, null, null, null, null, null, null, null,
+                false, false, null
+        );
+
+        useCase.update(PLAN_ID, dto, admin);
+
+        verify(versionGuard).ensureUpToDate(
+                isNull(),
+                eq(existing.getUpdatedAt()),
+                eq(existing.getCreatedAt()),
+                eq(existing),
+                anyString()
+        );
+    }
 }

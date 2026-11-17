@@ -36,7 +36,7 @@ public class CropUpdateUseCase {
     /** Preserva o identificador e grava também ciclo, produtividade, tipo e unidade atualizados, com controle de concorrência. */
     @Transactional
     public Crop execute(UUID id, Crop updatedCropData, User loggedUser, LocalDateTime baseUpdatedAt) {
-        if (loggedUser == null || (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN)) {
+        if (loggedUser == null || loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException("Usuário não tem permissão para atualizar culturas.");
         }
 

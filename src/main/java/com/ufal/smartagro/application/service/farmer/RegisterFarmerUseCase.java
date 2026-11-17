@@ -102,15 +102,15 @@ public class RegisterFarmerUseCase {
                 .fullName(dto.fullName())
                 .cpf(normalizedCpf)
                 .dateOfBirth(dto.dateOfBirth())
-                .motherName(dto.motherName())
-                .origin(dto.origin())
-                .educationLevel(dto.educationLevel())
-                .phone(dto.phone())
-                .localName(dto.localName())
-                .street(dto.street())
-                .city(dto.city())
-                .state(dto.state())
-                .ibgeCode(dto.ibgeCode())
+                .motherName(trimToNull(dto.motherName()))
+                .origin(trimToNull(dto.origin()))
+                .educationLevel(trimToNull(dto.educationLevel()))
+                .phone(trimToNull(dto.phone()))
+                .localName(trimToNull(dto.localName()))
+                .street(trimToNull(dto.street()))
+                .city(trimToNull(dto.city()))
+                .state(trimToNull(dto.state()))
+                .ibgeCode(trimToNull(dto.ibgeCode()))
                 .latitude(dto.latitude())
                 .longitude(dto.longitude())
                 .registrationSource(source)
@@ -138,5 +138,11 @@ public class RegisterFarmerUseCase {
         );
 
         return saved;
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

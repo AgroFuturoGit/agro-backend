@@ -27,9 +27,10 @@ public class FindProductionExecutionByIdUseCase {
         ProductionExecution execution = productionExecutionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Execução de produção não encontrada."));
 
-        if (execution.getProductionPlan() != null) {
-            accessValidator.validateAccess(execution.getProductionPlan().getFarmer(), loggedUser);
-        }
+        accessValidator.validateAccess(
+                execution.getProductionPlan() != null ? execution.getProductionPlan().getFarmer() : null,
+                loggedUser
+        );
 
         return execution;
     }

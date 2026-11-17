@@ -7,6 +7,7 @@ import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.role.AssignRoleUseCase;
 import com.ufal.smartagro.application.service.role.ListRolesUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -57,6 +58,9 @@ public class RoleController {
             @Valid @RequestBody AssignRoleDTO dto,
             @AuthenticationPrincipal UserDetailsImpl loggedUserDetails) {
 
+        if (loggedUserDetails == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
         User loggedUser = loggedUserDetails.toDomainUser();
 
         User updated = assignRoleUseCase.assignRole(userId, dto.role(), loggedUser);

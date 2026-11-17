@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.ufal.smartagro.adapters.in.web.dto.farmer.FarmerUpdateDTO;
 import com.ufal.smartagro.application.service.audit.AuditLogService;
 import com.ufal.smartagro.application.service.production.ProductionAccessValidator;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Farmer;
 import com.ufal.smartagro.domain.model.User;
@@ -90,13 +91,14 @@ class UpdateFarmerUseCaseTest {
     @DisplayName("Nome completo vazio ou apenas com espaços lança IllegalArgumentException")
     void givenBlankFullName_whenUpdate_thenThrowsIllegalArgumentException() {
         Farmer existing = existingFarmer();
+        User admin = UserTestFactory.user().admin().build();
         when(farmerRepository.findById(FARMER_ID)).thenReturn(Optional.of(existing));
 
         FarmerUpdateDTO dto = new FarmerUpdateDTO(
                 "   ", null, null, null, null, null, null, null, null, null, null, null, null, null
         );
 
-        assertThatThrownBy(() -> useCase.update(FARMER_ID, dto))
+        assertThatThrownBy(() -> useCase.update(FARMER_ID, dto, admin))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("O nome completo não pode ser vazio.");
 
@@ -106,12 +108,70 @@ class UpdateFarmerUseCaseTest {
     @Test
     @DisplayName("Agricultor inexistente lança EntityNotFoundException")
     void givenNonExistentId_whenUpdate_thenThrowsEntityNotFoundException() {
+        User admin = UserTestFactory.user().admin().build();
         when(farmerRepository.findById(FARMER_ID)).thenReturn(Optional.empty());
 
         FarmerUpdateDTO dto = new FarmerUpdateDTO("Novo Apelido");
 
-        assertThatThrownBy(() -> useCase.update(FARMER_ID, dto))
+        assertThatThrownBy(() -> useCase.update(FARMER_ID, dto, admin))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessage("Agricultor não encontrado.");
+    }
+
+    @Test
+    @DisplayName("Usuário nulo lança AccessDeniedException")
+    void givenNullUser_whenUpdate_thenThrowsAccessDeniedException() {
+        FarmerUpdateDTO dto = new FarmerUpdateDTO("Novo Apelido");
+
+        assertThatThrownBy(() -> useCase.update(FARMER_ID, dto, null))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(farmerRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("FARMER não pode alterar o próprio campo isCompliant")
+    void givenFarmer_whenTriesToChangeIsCompliant_thenThrowsAccessDeniedException() {
+        Farmer existing = Farmer.builder()
+                .id(FARMER_ID)
+                .fullName("João da Silva")
+                .cpf("12345678901")
+                .isCompliant(false)
+                .build();
+        User farmerUser = UserTestFactory.user().farmer().build();
+        when(farmerRepository.findById(FARMER_ID)).thenReturn(Optional.of(existing));
+
+        FarmerUpdateDTO dto = new FarmerUpdateDTO(
+                null, null, null, null, null, null, null, null, null, null, null, null, null, true
+        );
+
+        assertThatThrownBy(() -> useCase.update(FARMER_ID, dto, farmerUser))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("O agricultor não tem permissão para alterar sua situação de conformidade.");
+
+        verify(farmerRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("FARMER mantendo isCompliant igual ou null consegue atualizar outros campos")
+    void givenFarmer_whenIsCompliantUnchangedOrNull_thenUpdatesSuccessfully() {
+        Farmer existing = Farmer.builder()
+                .id(FARMER_ID)
+                .fullName("João da Silva")
+                .cpf("12345678901")
+                .isCompliant(true)
+                .build();
+        User farmerUser = UserTestFactory.user().farmer().build();
+        when(farmerRepository.findById(FARMER_ID)).thenReturn(Optional.of(existing));
+        when(farmerRepository.save(any(Farmer.class))).thenAnswer(i -> i.getArgument(0));
+
+        FarmerUpdateDTO dto = new FarmerUpdateDTO(
+                null, null, null, null, null, "82988887777", null, null, null, null, null, null, null, true
+        );
+
+        Farmer updated = useCase.update(FARMER_ID, dto, farmerUser);
+
+        assertThat(updated.getPhone()).isEqualTo("82988887777");
+        assertThat(updated.getIsCompliant()).isTrue();
     }
 }

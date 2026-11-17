@@ -2,6 +2,7 @@ package com.ufal.smartagro.application.service.farmer;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -105,26 +106,38 @@ class DeleteFarmerUseCaseTest {
     @Test
     @DisplayName("Quando agricultor não possui User vinculado e sem planos, exclui apenas o agricultor")
     void givenFarmerWithoutUser_whenDelete_thenDeletesOnlyFarmer() {
+        User admin = UserTestFactory.user().admin().build();
         Farmer farmer = UserTestFactory.farmerProfile().user(null).build();
         when(farmerRepository.findById(farmer.getId())).thenReturn(Optional.of(farmer));
         when(productionPlanRepository.countByFarmerId(farmer.getId())).thenReturn(0L);
 
-        useCase.delete(farmer.getId());
+        useCase.delete(farmer.getId(), admin);
 
         verify(farmerRepository).delete(farmer.getId());
-        verifyNoInteractions(userRepository, auditLogService);
+        verifyNoInteractions(userRepository);
+        verify(auditLogService).record(eq(admin), eq(AuditAction.DELETE), eq("farmers"), eq(farmer.getId()), any());
     }
 
     @Test
     @DisplayName("Quando agricultor não existe, lança EntityNotFoundException (404)")
     void givenNonExistentFarmer_whenDelete_thenThrowsEntityNotFoundException() {
+        User admin = UserTestFactory.user().admin().build();
         UUID missingId = UUID.randomUUID();
         when(farmerRepository.findById(missingId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> useCase.delete(missingId))
+        assertThatThrownBy(() -> useCase.delete(missingId, admin))
                 .isInstanceOf(EntityNotFoundException.class);
 
         verify(farmerRepository, never()).delete(any());
         verifyNoInteractions(userRepository, auditLogService);
+    }
+
+    @Test
+    @DisplayName("Quando usuário autenticado for nulo, lança AccessDeniedException")
+    void givenNullUser_whenDelete_thenThrowsAccessDeniedException() {
+        assertThatThrownBy(() -> useCase.delete(UUID.randomUUID(), null))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(farmerRepository, never()).delete(any());
     }
 }

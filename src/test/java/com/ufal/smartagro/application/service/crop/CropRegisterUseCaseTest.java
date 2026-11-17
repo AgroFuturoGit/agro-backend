@@ -67,22 +67,17 @@ class CropRegisterUseCaseTest {
     }
 
     @Test
-    @DisplayName("TECHNICIAN cadastra cultura com sucesso")
-    void givenTechnician_whenRegister_thenSucceeds() {
+    @DisplayName("TECHNICIAN não tem permissão para cadastrar cultura")
+    void givenTechnician_whenRegister_thenThrowsAccessDeniedException() {
         User tech = UserTestFactory.user().technician().build();
         Crop crop = new Crop(null, "Feijão", "Carioca", true, 60, new BigDecimal("2500.00"), HarvestType.CONTINUOUS, MeasurementUnit.KG, new BigDecimal("0.10"));
 
-        when(cropRepository.existsByNameAndVariety("Feijão", "Carioca")).thenReturn(false);
-        when(cropRepository.save(any(Crop.class))).thenAnswer(i -> {
-            Crop c = i.getArgument(0);
-            return new Crop(UUID.randomUUID(), c.getName(), c.getVariety(), c.getIsPriority(), c.getCycleDays(), c.getExpectedProductivity(), c.getHarvestType(), c.getUnit(), c.getUnitWeightKg());
-        });
+        assertThatThrownBy(() -> useCase.execute(crop, tech))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Usuário não tem permissão para cadastrar culturas.");
 
-        Crop saved = useCase.execute(crop, tech);
-
-        assertThat(saved).isNotNull();
-        verify(cropRepository).save(any(Crop.class));
-        verify(auditLogService).record(eq(tech), eq(AuditAction.CREATE), eq("crops"), eq(saved.getId()), any());
+        verify(cropRepository, never()).save(any());
+        verifyNoInteractions(auditLogService);
     }
 
     @Test

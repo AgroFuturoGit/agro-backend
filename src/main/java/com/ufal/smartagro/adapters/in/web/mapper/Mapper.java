@@ -247,9 +247,20 @@ public class Mapper {
                 technician.getRegistrationNumber(),
                 technician.getProfessionalId(),
                 technician.getSpecialty(),
-                toUserResponseDTO(technician.getCreatedBy()),
+                toRedactedCreatorDTO(technician.getCreatedBy()),
                 technician.getCreatedAt(),
                 technician.getUpdatedAt()
+        );
+    }
+
+    private static UserResponseDTO toRedactedCreatorDTO(User user) {
+        if (user == null) return null;
+        return new UserResponseDTO(
+                user.getId(),
+                user.getFullName(),
+                null,
+                null,
+                user.getRole()
         );
     }
     public static FinancingResponseDTO toFinancingResponseDTO(com.ufal.smartagro.domain.model.Financing fin) {
@@ -294,13 +305,21 @@ public class Mapper {
     }
 
     public static TechnicalAssistanceResponseDTO toTechnicalAssistanceResponseDTO(TechnicalAssistance assistance) {
+        return toTechnicalAssistanceResponseDTO(assistance, null);
+    }
+
+    public static TechnicalAssistanceResponseDTO toTechnicalAssistanceResponseDTO(
+            TechnicalAssistance assistance,
+            Long activeFarmersCount) {
         if (assistance == null) return null;
         return new TechnicalAssistanceResponseDTO(
                 assistance.getId(),
                 assistance.getTechnician() != null ? assistance.getTechnician().getId() : null,
                 assistance.getCommunity() != null ? assistance.getCommunity().getId() : null,
                 assistance.getStartDate(),
-                assistance.getEndDate()
+                assistance.getEndDate(),
+                toCommunityResponseDTO(assistance.getCommunity()),
+                activeFarmersCount
         );
     }
 }

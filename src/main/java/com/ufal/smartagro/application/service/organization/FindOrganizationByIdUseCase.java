@@ -22,11 +22,6 @@ public class FindOrganizationByIdUseCase {
     private final ManagerRepository managerRepository;
 
     @Transactional(readOnly = true)
-    public Organization findById(UUID id) {
-        return findById(id, null);
-    }
-
-    @Transactional(readOnly = true)
     public Organization findById(UUID id, User loggedUser) {
         if (loggedUser == null) {
             throw new AccessDeniedException("Apenas administradores e gestores podem consultar os dados da organização.");

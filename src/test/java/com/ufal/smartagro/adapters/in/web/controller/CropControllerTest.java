@@ -125,21 +125,31 @@ class CropControllerTest {
     }
 
     @Test
-    @DisplayName("PATCH /crops/{id} — TECHNICIAN pode atualizar cultura (200 OK)")
-    void updateCrop_asTechnician_returnsOk() throws Exception {
+    @DisplayName("POST /crops — TECHNICIAN não pode cadastrar cultura (403 Forbidden)")
+    void registerCrop_asTechnician_returnsForbidden() throws Exception {
+        User techUser = UserTestFactory.user().technician().build();
+        CropRegisterDTO dto = new CropRegisterDTO(
+                "Milho", "Híbrido", true, 90, BigDecimal.valueOf(8000), HarvestType.SINGLE, MeasurementUnit.KG, BigDecimal.valueOf(0.25));
+
+        mockMvc.perform(post("/crops")
+                        .with(user(userDetails(techUser)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("PATCH /crops/{id} — TECHNICIAN não pode atualizar cultura (403 Forbidden)")
+    void updateCrop_asTechnician_returnsForbidden() throws Exception {
         User techUser = UserTestFactory.user().technician().build();
         UUID cropId = UUID.randomUUID();
-        Crop updatedCrop = new Crop(cropId, "Milho Especial", "Híbrido", true, 95, BigDecimal.valueOf(8500), HarvestType.SINGLE, MeasurementUnit.KG, BigDecimal.valueOf(0.25));
-        when(cropUpdateUseCase.execute(eq(cropId), any(), any(), any())).thenReturn(updatedCrop);
-
         CropUpdateDTO dto = new CropUpdateDTO("Milho Especial", null, null, 95, null, null, null, null, null);
 
         mockMvc.perform(patch("/crops/{id}", cropId)
                         .with(user(userDetails(techUser)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Milho Especial"));
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -197,6 +207,17 @@ class CropControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(cropDeleteUseCase).execute(eq(cropId), any());
+    }
+
+    @Test
+    @DisplayName("DELETE /crops/{id} — TECHNICIAN não pode excluir cultura (403 Forbidden)")
+    void deleteCrop_asTechnician_returnsForbidden() throws Exception {
+        User techUser = UserTestFactory.user().technician().build();
+        UUID cropId = UUID.randomUUID();
+
+        mockMvc.perform(delete("/crops/{id}", cropId)
+                        .with(user(userDetails(techUser))))
+                .andExpect(status().isForbidden());
     }
 
     @Test

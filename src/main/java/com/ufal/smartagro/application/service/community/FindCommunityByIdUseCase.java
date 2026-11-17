@@ -30,18 +30,13 @@ public class FindCommunityByIdUseCase {
     private final FarmerRepository farmerRepository;
 
     @Transactional(readOnly = true)
-    public Community findById(UUID id) {
-        return findById(id, null);
-    }
-
-    @Transactional(readOnly = true)
     public Community findById(UUID id, User loggedUser) {
+        if (loggedUser == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
+
         Community community = communityRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Comunidade não encontrada."));
-
-        if (loggedUser == null) {
-            return community;
-        }
 
         Role role = loggedUser.getRole();
 

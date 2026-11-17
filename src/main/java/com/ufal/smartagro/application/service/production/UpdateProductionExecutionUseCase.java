@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /** Atualiza quantidades, horário, validação e localização de um apontamento existente. */
@@ -45,9 +46,10 @@ public class UpdateProductionExecutionUseCase {
         ProductionExecution existingExecution = productionExecutionRepository.findById(executionId)
                 .orElseThrow(() -> new EntityNotFoundException("Execução de produção não encontrada."));
 
-        if (existingExecution.getProductionPlan() != null) {
-            accessValidator.validateWriteAccess(existingExecution.getProductionPlan().getFarmer(), loggedUser);
-        }
+        accessValidator.validateWriteAccess(
+                existingExecution.getProductionPlan() != null ? existingExecution.getProductionPlan().getFarmer() : null,
+                loggedUser
+        );
 
         if (dto.harvestedAt() != null) {
             if (dto.harvestedAt().isAfter(LocalDate.now())) {
@@ -94,12 +96,23 @@ public class UpdateProductionExecutionUseCase {
         User newValidatedBy = existingExecution.getValidatedBy();
         LocalDateTime newValidatedAt = existingExecution.getValidatedAt();
 
+        String newNotes = existingExecution.getNotes();
+        if (dto.notes() != null) {
+            newNotes = dto.notes().trim().isEmpty() ? null : dto.notes();
+        }
+
         boolean isQuantityOrDateChanged = (dto.quantity() != null && !dto.quantity().equals(existingExecution.getQuantity()))
                 || (dto.quantityKg() != null && !dto.quantityKg().equals(existingExecution.getQuantityKg()))
                 || (dto.harvestedAt() != null && !dto.harvestedAt().equals(existingExecution.getHarvestedAt()));
+        boolean isNotesChanged = !Objects.equals(newNotes, existingExecution.getNotes());
+        boolean isLocationChanged = !Objects.equals(localizacao.latitude(), existingExecution.getLatitude())
+                || !Objects.equals(localizacao.longitude(), existingExecution.getLongitude())
+                || !Objects.equals(localizacao.accuracy(), existingExecution.getLocationAccuracy())
+                || !Objects.equals(localizacao.recordedAt(), existingExecution.getLocationRecordedAt());
 
         if (loggedUser.getRole() == Role.FARMER) {
-            if (isQuantityOrDateChanged && existingExecution.getStatus() != ExecutionStatus.PENDING) {
+            if ((isQuantityOrDateChanged || isNotesChanged || isLocationChanged)
+                    && existingExecution.getStatus() != ExecutionStatus.PENDING) {
                 newStatus = ExecutionStatus.PENDING;
                 newValidatedBy = null;
                 newValidatedAt = null;
@@ -130,11 +143,6 @@ public class UpdateProductionExecutionUseCase {
                     newValidatedAt = null;
                 }
             }
-        }
-
-        String newNotes = existingExecution.getNotes();
-        if (dto.notes() != null) {
-            newNotes = dto.notes().trim().isEmpty() ? null : dto.notes();
         }
 
         String newRejectionReason = existingExecution.getRejectionReason();

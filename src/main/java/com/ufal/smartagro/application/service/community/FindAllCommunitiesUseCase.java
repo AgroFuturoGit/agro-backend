@@ -32,17 +32,9 @@ public class FindAllCommunitiesUseCase {
     private final FarmerRepository farmerRepository;
 
     @Transactional(readOnly = true)
-    public List<Community> findAll(UUID orgId) {
-        return findAll(orgId, null);
-    }
-
-    @Transactional(readOnly = true)
     public List<Community> findAll(UUID orgId, User loggedUser) {
         if (loggedUser == null) {
-            if (orgId != null) {
-                return communityRepository.findAllByOrganizationId(orgId);
-            }
-            return communityRepository.findAll();
+            throw new AccessDeniedException("Usuário não autenticado.");
         }
 
         Role role = loggedUser.getRole();

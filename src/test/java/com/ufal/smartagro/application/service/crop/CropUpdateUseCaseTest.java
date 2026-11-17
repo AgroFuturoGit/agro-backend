@@ -114,6 +114,20 @@ class CropUpdateUseCaseTest {
     }
 
     @Test
+    @DisplayName("TECHNICIAN não tem permissão para alterar culturas")
+    void givenTechnician_whenExecute_thenThrowsAccessDeniedException() {
+        User tech = UserTestFactory.user().technician().build();
+        Crop patchData = new Crop(null, "Novo Nome", null, null);
+
+        assertThatThrownBy(() -> useCase.execute(CROP_ID, patchData, tech))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Usuário não tem permissão para atualizar culturas.");
+
+        verify(cropRepository, never()).save(any());
+        verifyNoInteractions(auditLogService);
+    }
+
+    @Test
     @DisplayName("FARMER não tem permissão para alterar culturas")
     void givenFarmer_whenExecute_thenThrowsAccessDeniedException() {
         User farmer = UserTestFactory.user().farmer().build();
@@ -171,7 +185,8 @@ class CropUpdateUseCaseTest {
 
         assertThatThrownBy(() -> useCase.execute(CROP_ID, patchData, admin, originalTime))
                 .isInstanceOf(ConcurrentUpdateException.class)
-                .hasMessageContaining("A cultura foi alterada por outro usuário");
+                .hasMessageContaining("A cultura foi alterada por outro usuário")
+                .satisfies(ex -> assertThat(((ConcurrentUpdateException) ex).getCurrent()).isEqualTo(existing));
 
         verify(cropRepository, never()).save(any());
         verifyNoInteractions(auditLogService);

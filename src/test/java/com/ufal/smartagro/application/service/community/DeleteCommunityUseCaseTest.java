@@ -77,10 +77,11 @@ class DeleteCommunityUseCaseTest {
     @DisplayName("Quando existem agricultores vinculados à comunidade, lança EntityInUseException (409)")
     void givenCommunityWithFarmers_whenDelete_thenThrowsEntityInUseException() {
         UUID communityId = UUID.randomUUID();
+        User admin = UserTestFactory.user().admin().build();
         when(communityRepository.findById(communityId)).thenReturn(Optional.of(mock(Community.class)));
         when(farmerRepository.countByCommunityId(communityId)).thenReturn(1L);
 
-        assertThatThrownBy(() -> useCase.delete(communityId))
+        assertThatThrownBy(() -> useCase.delete(communityId, admin))
                 .isInstanceOf(EntityInUseException.class)
                 .hasMessageContaining("agricultores vinculados");
 
@@ -91,12 +92,13 @@ class DeleteCommunityUseCaseTest {
     @DisplayName("Quando existem assistências técnicas ativas vinculadas, lança EntityInUseException (409)")
     void givenCommunityWithActiveAssistances_whenDelete_thenThrowsEntityInUseException() {
         UUID communityId = UUID.randomUUID();
+        User admin = UserTestFactory.user().admin().build();
 
         when(communityRepository.findById(communityId)).thenReturn(Optional.of(mock(Community.class)));
         when(farmerRepository.countByCommunityId(communityId)).thenReturn(0L);
         when(technicalAssistanceRepository.countActiveByCommunityId(communityId)).thenReturn(1L);
 
-        assertThatThrownBy(() -> useCase.delete(communityId))
+        assertThatThrownBy(() -> useCase.delete(communityId, admin))
                 .isInstanceOf(EntityInUseException.class)
                 .hasMessageContaining("assistências técnicas ativas vinculadas");
 
@@ -107,9 +109,10 @@ class DeleteCommunityUseCaseTest {
     @DisplayName("Quando a comunidade não existe, lança EntityNotFoundException (404)")
     void givenNonExistentCommunity_whenDelete_thenThrowsEntityNotFoundException() {
         UUID communityId = UUID.randomUUID();
+        User admin = UserTestFactory.user().admin().build();
         when(communityRepository.findById(communityId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> useCase.delete(communityId))
+        assertThatThrownBy(() -> useCase.delete(communityId, admin))
                 .isInstanceOf(EntityNotFoundException.class);
 
         verify(communityRepository, never()).delete(any());
@@ -149,5 +152,14 @@ class DeleteCommunityUseCaseTest {
 
         verify(communityRepository).delete(communityId);
         verify(auditLogService).record(eq(admin), eq(AuditAction.DELETE), eq("communities"), eq(communityId), any());
+    }
+
+    @Test
+    @DisplayName("Usuário nulo lança AccessDeniedException")
+    void givenNullUser_whenDelete_thenThrowsAccessDeniedException() {
+        assertThatThrownBy(() -> useCase.delete(UUID.randomUUID(), null))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(communityRepository, never()).delete(any());
     }
 }

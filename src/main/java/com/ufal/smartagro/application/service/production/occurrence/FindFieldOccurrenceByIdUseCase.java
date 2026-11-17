@@ -28,9 +28,12 @@ public class FindFieldOccurrenceByIdUseCase {
         FieldOccurrence occurrence = fieldOccurrenceRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Ocorrência de campo não encontrada."));
 
-        if (occurrence.getExecution() != null && occurrence.getExecution().getProductionPlan() != null) {
-            accessValidator.validateAccess(occurrence.getExecution().getProductionPlan().getFarmer(), loggedUser);
-        }
+        accessValidator.validateAccess(
+                (occurrence.getExecution() != null && occurrence.getExecution().getProductionPlan() != null)
+                        ? occurrence.getExecution().getProductionPlan().getFarmer()
+                        : null,
+                loggedUser
+        );
 
         return occurrence;
     }

@@ -4,6 +4,7 @@ import com.ufal.smartagro.domain.model.enums.OccurrenceType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
@@ -25,6 +26,7 @@ public record FieldOccurrenceRegisterDTO(
         @Schema(description = "Observação climática no momento do registro", example = "Sol forte, 32°C")
         String weatherObservation,
 
+        @Pattern(regexp = "^$|(?i)^https?://\\S+$", message = "O link de evidência deve usar protocolo http:// ou https://")
         @Size(max = 500, message = "O link de evidência deve ter no máximo 500 caracteres")
         @Schema(description = "Link para evidência fotográfica externa ou relatório", example = "https://storage.smartagro.test/evidence/123.jpg")
         String evidenceUrl

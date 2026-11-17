@@ -70,11 +70,12 @@ class CommunityControllerTest {
     @Test
     void returnsCommunitiesForManager() throws Exception {
         UUID id = UUID.randomUUID();
-        when(findAllCommunitiesUseCase.findAll(null)).thenReturn(List.of(
+        com.ufal.smartagro.domain.model.User managerUser = com.ufal.smartagro.testsupport.UserTestFactory.user().manager().build();
+        when(findAllCommunitiesUseCase.findAll(any(), any())).thenReturn(List.of(
                 new Community(id, "Comunidade Norte", null, null, null, null)));
 
         mockMvc.perform(get("/communities")
-                        .with(user("manager").roles("MANAGER"))
+                        .with(user(userDetails(managerUser)))
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(id.toString()))
@@ -90,11 +91,12 @@ class CommunityControllerTest {
     @Test
     void returnsCommunitiesForFarmer() throws Exception {
         UUID id = UUID.randomUUID();
-        when(findAllCommunitiesUseCase.findAll(null)).thenReturn(List.of(
+        com.ufal.smartagro.domain.model.User farmerUser = com.ufal.smartagro.testsupport.UserTestFactory.user().farmer().build();
+        when(findAllCommunitiesUseCase.findAll(any(), any())).thenReturn(List.of(
                 new Community(id, "Comunidade Sul", null, null, null, null)));
 
         mockMvc.perform(get("/communities")
-                        .with(user("farmer").roles("FARMER"))
+                        .with(user(userDetails(farmerUser)))
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(id.toString()))
@@ -104,11 +106,12 @@ class CommunityControllerTest {
     @Test
     void returnsCommunitiesForTechnician() throws Exception {
         UUID id = UUID.randomUUID();
-        when(findAllCommunitiesUseCase.findAll(null)).thenReturn(List.of(
+        com.ufal.smartagro.domain.model.User techUser = com.ufal.smartagro.testsupport.UserTestFactory.user().technician().build();
+        when(findAllCommunitiesUseCase.findAll(any(), any())).thenReturn(List.of(
                 new Community(id, "Comunidade Leste", null, null, null, null)));
 
         mockMvc.perform(get("/communities")
-                        .with(user("technician").roles("TECHNICIAN"))
+                        .with(user(userDetails(techUser)))
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(id.toString()))

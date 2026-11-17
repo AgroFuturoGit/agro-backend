@@ -7,7 +7,6 @@ import com.ufal.smartagro.domain.exception.EntityNotFoundException;
 import com.ufal.smartagro.domain.model.Technician;
 import com.ufal.smartagro.domain.model.User;
 import com.ufal.smartagro.domain.model.enums.AuditAction;
-import com.ufal.smartagro.domain.port.out.ManagerRepository;
 import com.ufal.smartagro.domain.port.out.TechnicianRepository;
 import com.ufal.smartagro.testsupport.UserTestFactory;
 import org.junit.jupiter.api.DisplayName;
@@ -32,8 +31,6 @@ class UpdateTechnicianUseCaseTest {
 
     @Mock
     private TechnicianRepository technicianRepository;
-    @Mock
-    private ManagerRepository managerRepository;
     @Mock
     private AuditLogService auditLogService;
 
@@ -104,7 +101,7 @@ class UpdateTechnicianUseCaseTest {
 
         assertThatThrownBy(() -> updateTechnicianUseCase.update(technician.getId(), dto, farmer))
                 .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("Apenas administradores, gestores ou o próprio técnico podem atualizar este perfil.");
+                .hasMessage("Apenas administradores ou o próprio técnico podem atualizar este perfil.");
 
         verify(auditLogService, never()).record(any(), any(), any(), any(), any());
     }
@@ -117,7 +114,7 @@ class UpdateTechnicianUseCaseTest {
 
         assertThatThrownBy(() -> updateTechnicianUseCase.update(id, dto, null))
                 .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("Apenas administradores, gestores ou o próprio técnico podem atualizar este perfil.");
+                .hasMessage("Apenas administradores ou o próprio técnico podem atualizar este perfil.");
 
         verify(auditLogService, never()).record(any(), any(), any(), any(), any());
     }
@@ -155,42 +152,19 @@ class UpdateTechnicianUseCaseTest {
     }
 
     @Test
-    @DisplayName("Given MANAGER When técnico pertence à organização Then atualiza com sucesso")
-    void givenManager_whenTechnicianInOrg_thenUpdatesSuccessfully() {
-        com.ufal.smartagro.domain.model.Organization org = UserTestFactory.organization().build();
+    @DisplayName("Given MANAGER When update Then AccessDeniedException mesmo se técnico criado por ele")
+    void givenManager_whenUpdate_thenThrowsAccessDeniedException() {
         User managerUser = UserTestFactory.user().manager().build();
-        com.ufal.smartagro.domain.model.Manager manager = UserTestFactory.managerProfile().user(managerUser).organization(org).build();
-        Technician technician = UserTestFactory.technicianProfile().build();
+        Technician technician = UserTestFactory.technicianProfile().createdBy(managerUser).build();
         TechnicianUpdateDTO dto = new TechnicianUpdateDTO("CRBio-Manager", "Solo");
 
         when(technicianRepository.findById(technician.getId())).thenReturn(Optional.of(technician));
-        when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
-        when(technicianRepository.existsByIdAndOrganizationId(technician.getId(), org.getId())).thenReturn(true);
-        when(technicianRepository.save(any(Technician.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        Technician result = updateTechnicianUseCase.update(technician.getId(), dto, managerUser);
-
-        assertThat(result.getProfessionalId()).isEqualTo("CRBio-Manager");
-        verify(auditLogService).record(eq(managerUser), eq(AuditAction.UPDATE), eq("technicians"), eq(technician.getId()), any());
-    }
-
-    @Test
-    @DisplayName("Given MANAGER When técnico não pertence à organização e não foi criado pelo gestor Then AccessDeniedException")
-    void givenManager_whenTechnicianNotInOrg_thenAccessDenied() {
-        com.ufal.smartagro.domain.model.Organization org = UserTestFactory.organization().build();
-        User managerUser = UserTestFactory.user().manager().build();
-        com.ufal.smartagro.domain.model.Manager manager = UserTestFactory.managerProfile().user(managerUser).organization(org).build();
-        Technician technician = UserTestFactory.technicianProfile().build();
-        TechnicianUpdateDTO dto = new TechnicianUpdateDTO("CRBio-Manager", "Solo");
-
-        when(technicianRepository.findById(technician.getId())).thenReturn(Optional.of(technician));
-        when(managerRepository.findByUserId(managerUser.getId())).thenReturn(Optional.of(manager));
-        when(technicianRepository.existsByIdAndOrganizationId(technician.getId(), org.getId())).thenReturn(false);
 
         assertThatThrownBy(() -> updateTechnicianUseCase.update(technician.getId(), dto, managerUser))
                 .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("O gestor só tem acesso aos técnicos da sua própria organização.");
+                .hasMessage("Apenas administradores ou o próprio técnico podem atualizar este perfil.");
 
+        verify(technicianRepository, never()).save(any());
         verify(auditLogService, never()).record(any(), any(), any(), any(), any());
     }
 }

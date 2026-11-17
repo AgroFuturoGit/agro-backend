@@ -24,7 +24,7 @@ public class HarvestRegisterUseCase {
 
     @Transactional
     public Harvest execute(Harvest harvest, User loggedUser) {
-        if (loggedUser == null || (loggedUser.getRole() != Role.ADMIN && loggedUser.getRole() != Role.TECHNICIAN)) {
+        if (loggedUser == null || loggedUser.getRole() != Role.ADMIN) {
             throw new AccessDeniedException("Usuário não tem permissão para registar uma safra.");
         }
 

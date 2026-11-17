@@ -36,9 +36,12 @@ public class UpdateFieldOccurrenceUseCase {
         FieldOccurrence existing = fieldOccurrenceRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Ocorrência de campo não encontrada."));
 
-        if (existing.getExecution() != null && existing.getExecution().getProductionPlan() != null) {
-            accessValidator.validateWriteAccess(existing.getExecution().getProductionPlan().getFarmer(), loggedUser);
-        }
+        accessValidator.validateWriteAccess(
+                (existing.getExecution() != null && existing.getExecution().getProductionPlan() != null)
+                        ? existing.getExecution().getProductionPlan().getFarmer()
+                        : null,
+                loggedUser
+        );
 
         if (existing.getExecution() != null && existing.getExecution().getStatus() == ExecutionStatus.VALIDATED
                 && loggedUser.getRole() == Role.FARMER) {
@@ -61,8 +64,7 @@ public class UpdateFieldOccurrenceUseCase {
 
         String evidenceUrl = existing.getEvidenceUrl();
         if (dto.evidenceUrl() != null) {
-            String trimmed = dto.evidenceUrl().trim();
-            evidenceUrl = trimmed.isEmpty() ? null : trimmed;
+            evidenceUrl = EvidenceUrlValidator.normalizeAndValidate(dto.evidenceUrl());
         }
 
         FieldOccurrence updated = FieldOccurrence.builder()

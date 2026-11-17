@@ -7,6 +7,7 @@ import com.ufal.smartagro.adapters.in.web.mapper.Mapper;
 import com.ufal.smartagro.application.service.auth.LoginUseCase;
 import com.ufal.smartagro.config.security.details.UserDetailsImpl;
 import com.ufal.smartagro.config.security.ratelimit.LoginRateLimiter;
+import com.ufal.smartagro.domain.exception.AccessDeniedException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -60,14 +61,14 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<UserResponseDTO> me(
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if (userDetails == null) {
+            throw new AccessDeniedException("Usuário não autenticado.");
+        }
         return ResponseEntity.ok(Mapper.toUserResponseDTO(userDetails.getUser()));
     }
 
     private String resolveClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip != null && !ip.isBlank()) {
-            return ip.split(",")[0].trim();
-        }
+        // server.forward-headers-strategy=framework já resolve cabeçalhos de proxy confiáveis em remoteAddr.
         String remoteAddr = request.getRemoteAddr();
         return (remoteAddr != null && !remoteAddr.isBlank()) ? remoteAddr : "unknown";
     }
